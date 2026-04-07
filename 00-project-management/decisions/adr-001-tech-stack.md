@@ -130,7 +130,15 @@ Ellie already has experience with: Neon (Postgres), FalkorDB, Fly.io, Claude API
 
 **Why:**
 - Tailwind: utility-first, fast to build with, consistent styling, works perfectly with Next.js
-- shadcn/ui: not a component library you install — it's copy-paste components you own. Accessible, well-designed defaults, fully customisable. Built on Radix primitives.
+- shadcn/ui: not a component library you install — it's copy-paste components you own. Accessible, well-designed defaults, fully customisable. **Note (2026-03-31):** The version installed in this project uses Base UI primitives (not Radix). This changes the component API — use `render={<Link href="..." />}` instead of `asChild` for polymorphic components. Any shadcn examples from the docs or internet that use `asChild` must be updated to use `render` prop instead. See session log 2026-03-31.
+
+**Base UI patterns to follow:**
+
+1. **Polymorphic components** — use `render={<Link href="..." />}` (not `asChild`) when a Button or other component should render as a different element. When the rendered element is not a native `<button>` (e.g. a `Link`), also set `nativeButton={false}` — otherwise Base UI warns that it expected a `<button>` and button semantics may be lost.
+
+2. **TooltipTrigger always renders as `<span>` when wrapping a Button** — `TooltipTrigger` renders as `<button>` by default. If the child is also a `<button>`, this creates invalid HTML (button inside button) that causes a React hydration error. Always use `<TooltipTrigger render={<span />}>` when wrapping a Button.
+
+3. **Controlled-open modals: use `useEffect` for open-triggered side effects** — when a modal's `open` state is controlled by the parent (i.e. the parent calls `setOpen(true)` directly), `Dialog.onOpenChange` only fires when the dialog initiates its own close (ESC key, overlay click). It does NOT fire with `true` when the parent opens it programmatically. To run async logic when the modal opens (e.g. a dependency check), use `useEffect` watching the `open` prop, not an `onOpenChange` handler.
 - This combination means: professional-looking UI without a design system buildout phase. Iterate on function first, refine aesthetics later.
 - Both are what Claude Code is most fluent in for frontend work — faster iteration.
 

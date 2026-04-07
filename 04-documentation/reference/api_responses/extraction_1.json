@@ -1,0 +1,749 @@
+{
+    "metadata": {
+        "title": "Coaching -31 March 2026",
+        "sourceType": "transcript",
+        "date": "2026-04-02",
+        "brandId": "ea444c72-d332-4765-afd5-8dda97f5cf6f"
+    },
+    "text": "Robert | 00:00\nSo anyways, I'll drop a link over here and probably that'll be interesting, but yeah, control and all of that.\nRay | 00:07\nIt's good you download it because it's getting DMCA all over the place because it's actually copyrighted stuff.\nRobert | 00:13\nSo it's actually real. That's how, you know, it's real. Like that when it starts getting DMC, it's like, nice.\nRay | 00:23\nYeah, and, you know, it's actually probably interesting for looking at, like, how it thinks about setting up the, system prompt and all that.\nRobert | 00:32\nYeah, I mean...\nRay | 00:37\nWe were just talking recently. That was very cool. Yeah, Ellie, we were just talking about the recent scandal of somebody at Anthropic making a mistake. The source code for Claude, right, which is their relatively popular coding platform.\nEllie Rofe | 00:51\nThe entire source code.\nRay | 00:53\nI was suddenly exposed for half a minute and then grabbed by a bunch of folks.\nEllie Rofe | 00:59\nWow.\nRay | 01:00\nThat's after earlier today, I think. Earlier this morning there was a big... What's called a supply chain attack.\nEllie Rofe | 01:07\nRight?\nRay | 01:07\nSo a relatively popular, widely used package, couple of packages, actually. Were infiltrated, so that the people...\nSo the new version went up that was... That contained malware, basically that would steal your stuff.\nEllie Rofe | 01:25\nWow.\nRay | 01:25\nThen about an hour later, it got... The folks at NPM that... We're going to make sure that we're going to roll back to the previous version or whatever.\nBut survey... This is the fast-moving world of information security right now in the AI space.\nEllie Rofe | 01:42\nYeah. Presumably they're using AI to generate these things and pop and populate them.\nRobert | 01:46\nYes.\nEllie Rofe | 01:49\nDo you know what I mean? Disseminate.\nRay | 01:55\nThat seems to be... What's going on?\nSo Ali is going to be your hot seat today. So with your permission, we'll just go around the horn with Robert and Demetrius and check in on what their week has been. Then we'll turn our attention to you and how we can be maxim service to you. Do we just start with you, sir?\ndimitris@3nuggets.io | 02:15\nYeah, what's true today, I was... That wasn't true last week. I would say many things. The most important is that I had the... Strong opportunity. Very strong one. Working with Ellie on her project, that gave me a lot of ideas for how to build things I can go and build for myself as use cases, for Raingraph, all of these kinds of things.\nAfter that, I'm focusing this week mostly on communication and marketing. So I stopped building stuff. What I'm building is everything that is in order to communicate. So at the moment I have the report from Zapier verification process where I tried to build a connection with Brain Graph and now I'm working on the tiny things. They flagged me as errors because I have some things to work on my side, so when everything is done, hopefully it can go in public.\nEllie Rofe | 03:32\nAmazing.\nRay | 03:36\nSuper. And Robert.\nRobert | 03:41\nYeah. So, what's happened last week or true today? Pretty much have done a pretty good job, I think, with managing the client relationships, but more or less just trying to get the next client is where my mind is at right now.\nSo I'm trying to... I made a post on LinkedIn. So I'm trying to... I'm going to make another one, and I'm going to just organize, I think, a Slack group or something like that to try to get some organization around it.\nThen I think that would be a good way to even just facilitate because I'm getting messages about it so that... Which is really good actually. Dan today I had a nice call with Bennois. It has been always a interesting, source of in general, just a good contact, right?\nLike he's good things kind of have always seemed to happen through Bennois. It's like he's a positive person. And so, like, but, yeah, it was always good to, see what comes out of the conversation because, like, usually, it was think making it, sorry, mean. Do you mean like charging it? Charging for it?\ndimitris@3nuggets.io | 05:12\nYeah. I'm sorry for interrupting you. I saw that right after closing my book in the morning, reading the offers from Alex Hormosi, and I am in that chapter talking about these kinds of events where he suggests to start doing events maximum for a couple of people, not too many, three or five, and put a price on it.\nI say, \"Okay, what about an actual workshop?\" Because some people asked me for a workshop with co-building live and said, \"Okay, fine. If it is for five people, that's a nice rate for an hour.\" Right after I got into LinkedIn, the first post I saw was from you. I said, \"Wow, I want to join in it.\"\nRobert | 06:02\nYeah, but I think, I'd be very happy to, that you're gonna be joining. And I'm going to and I think that there will be probably an opportunity. But just if anything, the next one or if people wanted to be paid.\nAnd. And then this will be the opportunity to test like the supply and demand. I think of it is I think yeah, free is the extreme side of it, but. So it definitely has more value than free. But I think I'll get something out of it.\nBut I appreciate that. Like in, you know, until there's reputation to be had in the meantime. But yeah, I think. I think you're right, though, that there is something there and if it if I should probably keep my mind towards that as well.\nAnd that's really actually what that's it like in general. Like that's the, I think theme of the week has been it has just been, you know, to try to look for revenue, generating value, creating opportunities and just trying to just gear everything towards that like just to try to make, you know, set things up to make it easier to provide more value in general, to emit more value. I suppose that's it.\nRay | 07:36\nAll right, well, then, Ellie, we get to turn to you, ma'am. What's true? It wasn't true last week. How can we put this time to be created maximum value for you today?\nEllie Rofe | 07:47\nWhat's true is I am now working with a rather fabulous consultant who's helped me to build my knowledge graph up. And, do you know what I really loved? There's so many elements of working with Demetris where he's given me insights and understanding that I just. I either wouldn't have got or would have just taken like four weeks of doing everything wrong first.\nSo that's incredible. But partly because he's quite a structured thinker. He helped me, build a structure around this project that wasn't there before. So I have, like. I have to. I have central rules that always must be observed through ingesting.\nBut that there's two skills he helped me create that are self improving. Everything's getting logged. All the raw data is in one place, and anything that gets processed is somewhere else. And you know, thanks to Robert as well, things are going to Neon and Falcore and it's it just feels like that self improvement logging, tracking. I the other thing I've got it start doing is noting every decision that I make.\nBecause what I've found a lot of the time is that I forget what decisions I've made because you're making them so fast. So. I'm actually quite tired today. Because I've spent most of the day. I've realized it's a really weird, was a very different working process. I spent an awful lot of the day jumping between chat windows, making decisions. I'm not really telling you anything anymore. I'm just telling you, like this is my decision on this. I'm anticipating this issue. I am reviewing this for errors.\nSo it's almost like it's much more sort of managerial but micromanaging at the same time on some levels. So it's quite tiring. And so the adding the decisions log has really helped, because if there's any questions, I can just go back and look at that.\nAnd yeah, that's been it's been really good. I've, starting to get really useful insights out of it. The amount of data that's going into it is vast. And in terms of the scope of getting it. So, some of it's scraping, some of it's apiis, some of it's just downloading massive data files, but it's been a big old learning thing.\nAnd then next Wednesday, which I'm slightly nervous about. So this is ridiculous. But. So next Wednesday, I'm. I'm going to meet with the party leader and the party chairman in the East India Club on Pall Mall in London, which is about as ridiculous as it sounds.\nAnd like, I don't know what. Like, even just like, I don't know what to wear. I hate eating dinner with work colleagues. I know it sounds ridiculous, but I'm like. I'm going to throw stuff over myself or like, just end up, like, spraying stuff while I was trying. Not to speak with my mouthful or like, you know.\nAnyway, I'm bringing them the first stage of results. And what's really beautiful is I get to do the analytical stuff I always do. There's research stuff I always do like the talking with people in the company and the wider market research.\nBut what this knowledge graph is bringing is things like because of ingested data from all over the place. And I've created a policy mapping sort of framework so that you can compare and contrast policy between different parties without it having or with a universal frame because it's quite difficult to compare because everyone obviously has their own sort of political philosophical outlook on things. I'm able to say to them, \"These electors, these constituencies, are the ones that are right for you.\"\nThis is why. By the way, this donor gives to this think tank and this party and this think tank, and he's spoken at this event. All of these are ideologically in your wheelhouse, and all of this stuff is starting.\nSo as much as I'm like, \"My God, I'm going to wear it. I'm going to be awkward at dinner.\" I'm really excited to be able to be like, \"There's so much thought and insight that's coming into this document for you.\"\nHopefully, they see it too. I think they will. They seem to be quite happy with even just the interviews so far. Never mind anything else coming out of this knowledge graph, but it's been a really interesting week.\nIt's been exciting and draining all at once, so, yeah.\nRay | 12:40\nYeah, I hear you. Exciting and draining. So how next week in this coming week more exciting and less training?\nEllie Rofe | 12:48\nWell, I guess one of the things I'm interested in is when you're in that messy middle of a project. Have you got any processes, rituals, mindset stuff? Anything whatsoever you do to help you push through the bit where you're too far from the beginning?\nSo it's not like that all-guard fresh page exciting. You're just that bit too far from the end to be in the last leg, the last sprint. What do you do?\nRay | 13:31\nOkay, messy middle, let's open it. Four Beatrice, go start with you.\ndimitris@3nuggets.io | 13:37\nYeah, I'm thinking, truthfully, is that in the past? I used to do something different than the thing I'm trying to do nowadays. The difference is that in the past, they used to try harder and harder every day till the deadline, completing and fine-tuning and perfectioning multiple different aspects.\nBut the thing is, on the day of presentation, showing people what I've done, they don't care about the perfection. They mostly care about the approach, the way I was thinking during the process, and at the end, they care about what I've already done. What is 100% sure as an outcome and what I'm already missing.\nSo I recognize that I'm missing or I'm not totally sure for these things. So I need some more time, which is cool to ask for more time, because you found something that made the time, not less effective.\nBut finally, you needed more time than the available one. So having these pillars on my presentations. Even with clients when I get in communication, you experienced it a few days ago when I came up to show you the scraper results. I expected that the scraper results were done. We had all the data inside.\nBut when I got in, I realized that a couple of data were missing. So wow, what happened here? Okay, but I focused my presentation for these couple of minutes. You saw how I worked on that. The process, the workflow, where it fails, and why it may fail.\nThen I started my investigation and four hours later it took you back with the final results, for example. So, yeah, this is how I'm trying to do. Ideally, I don't want to keep on my back the stress of other people, okay?\nIf they want me to do that, they have to pay even more because the deal was to do that thing. Come on, guys. Yeah, it's about mental health. Why should I get stressed because of you?\nEllie Rofe | 16:29\nNice. Quite agree, it's as much as anything. I would say it's my own just a natural flagging I have in the middle of a project where everything's a bit up in the air and some of the actually the system that we started to build here has really helped just as a small interjection.\nIt's really helped because it's capturing so much. If at any point, I'm like, \"God, I just don't know where everything is and everything's a mess. I can just go tell me this and it just starts me again.\nSo that is helpful. But yes, okay, thank you.\nRay | 17:14\nRobert, you can bring you into the conversation for sure.\nRobert | 17:19\nI would say that at least for me, like, just maybe one way to look at it is like, what is the messy middle part of the process that you're mentioning and can it just not be so painful anymore? Just in terms of, right like as a business right like or as a process for something that you're just trying to make more efficient.\nSo, you know, what is this the part of it that's causing a lot of pain? And. And trying to make it easier, I think would be, you know, probably to the benefit of you and the service and the client. But, you know, so it's kind of a non answer, I guess, but, like, so but hopefully you see what I mean, that it's in some ways right.\nEllie Rofe | 18:18\nYou do you or do you not find it?\nRobert | 18:18\nLike. Yeah.\nEllie Rofe | 18:21\nDo you not have that problem at all?\nRobert | 18:24\nSorry, I didn't catch the or.\nEllie Rofe | 18:26\nWhat would you do? Do you find those have the issue?\nRobert | 18:29\nWhat I do. Well, I find that, to be honest, nowadays feels like a luxury, to be having so much technology, like, maybe. You know what I try to do is I was thinking about it. That it's a combination of a lot of things.\nIt's, you know, because it's always going to be a different situation. You know, if I think about all the different projects that I've been involved with and just a range of most, you know, whatever situation that you have to deal with, mostly like just doing your best has never failed me in general.\nSo if I'm ever not sure, I just think back to the other stuff that's worked out. Like, I, like, wow, I did that. That was harder than this. Like, you know, most of something, there's always something that, you know, that usually will work for me.\nBut yeah, I mean, when it comes to nowadays especially, you know, there's a lot of technology that can be deployed to be able to gain more clarity on things if or be able to gain leverage on like to get stuff done even if motivation is necessarily maybe not as high or if there's pressures and.\nAnd things there's ways to, you know, to parse what the objective needs to be and then to basically deploy resources towards it and then to be able to make progress on it. Even if things are, you know, but they're just about maybe just thinking about, like, how do you actually just put them in a position to be able to just get those things done.\nAnd especially if you have those things already there ahead of time, that's a pretty good. That's how I try to think of, I think even just my own systems is that's why I'm putting energy into just making them more capable. Building up. Just their ability. To influence certain things in a certain way.\nAnd for those times, right, like for consistency that might that comes out of just putting a machine towards it, I think. And then that'll be something that, you know, I can rely on and maybe other people can.\nMaybe you can rely on those systems too. I think we all have to rely on systems. And that's maybe another way to look at it. The systems that help you deal with those hard times.\nEllie Rofe | 21:11\nHave you got an example of something that, like one of the.\nRobert | 21:15\nEven just the thing that... Even just like an email, meeting summary that goes out automatically, for example, it's just like that.\nIt's a small thing that's off my mind. That is just a bit of consistency too for the business that... It adds up. Start to notice that the engagements seem to start going better. It's like you start to add all these little things that are just always happening.\nThen it's just like all of a sudden things start to seem easier, and it's just small things, but I just little things even just off the mind. But yeah, I like those little things to find them.\nActually, it's hard to find those little things. That's what I've found. It's to find points of leverage, basically. Another one, for example, I set up a skill that basically, when I say dev update, it'll go...\nIt'll just go through the project and then look at the previous update and then document the gap. Create a whiteboard image and put it into a specific location every time, like in a very specific standard.\nThat's been a great way to just be able to document and communicate to the client without any lift from me and accumulate very naturally because I'll just finish doing something. Dev update.\nThen, that's something that again, like, a pretty big pebble out of my shoe. I used to be a very painful thing for me, but that was a painful thing. I got an update, and then that was getting me... I guess maybe towards where you were describing right, how do I get a... How do I push past? Allows me to focus on the other problems, basically.\nThen, yeah, that was a solution that I applied towards it.\nEllie Rofe | 23:15\nI love it. I love the whiteboards. You send me one. It's they're brilliant.\nRay | 23:19\nYeah.\nEllie Rofe | 23:19\nA good idea, but so much is hidden.\nRobert | 23:20\nThank you.\nEllie Rofe | 23:23\nLike one of the things I find different.\nSo my other half, you know, on Friday, he built some kitchen cabinets from scratch. And like at the end of the day, there are some kitchen cabinets there, and I spent ten hours flitting between different chat windows.\nAt the end of the day, you just go, \"There's a lot of stuff I can't see. It's great, but there's a lot of stuff that's just lines of code somewhere.\" So the idea of a whiteboard is really nice.\nIt's like making manifest.\nRobert | 23:52\nYeah, I that's true.\nEllie Rofe | 23:52\nWhat then?\nRobert | 23:54\nAnd it's actually kind of the point of it too, was actually for that to allow the client to see that there was stuff like the scale of what's being done and to be able to just, yeah, encapsulate, especially when you're using the technology and you're like going so quickly and just to be able to like keep up with that.\nBut yes, exactly, because a lot of this stuff can be very invisible and. And yeah, it's great to be able to capture it. I would say that I've found a lot of utility in creating, like Fronttent that are bespoke for, like, specific.\nIt's, you know, cheaper than ever. It doesn't take too much to be able to create a front end, obviously. And like, that's another way to, you know, bring something to the front, right? Thinking about the knowledge graph like neon with, you know, with fly, it would be pretty like there's a way to just, you know, put a front end on that like a pretty simple one and then be able to, yeah, just create another dimension for it, for whatever it's worth.\nEllie Rofe | 25:00\nCool.\ndimitris@3nuggets.io | 25:02\nAli, may I say something?\nEllie Rofe | 25:03\nH.\ndimitris@3nuggets.io | 25:05\nBased on what Robert described and inspired me. I think maybe one of the reasons having this frustration at the moment with a brilliant example you set of comparing you and your other half, maybe it comes as... The situation where every data analyst faces where they have tons of data front and they are responsible to recognize and get meaningful results and outcomes conclusions just looking at the data.\nSo this is not a standard operational procedure. Okay. What Robert described tends to be more like an SOP even where he puts intelligence every moment he has to make some customizations. He has to think and make decisions during the process. He has one starting point and a final point. While in making conclusions from data, I never saw the final point. You may get a conclusion, you may get into an rejection conversation.\nSo you... Because you want to validate... Is that true as an outcome and then starts a loop finding new things. So what Robert inspired me to think was that why not to... Because... Sorry, I'm just thinking right now, you already know the people. You want to go for the presentation.\nOkay, let's say you want to present to Ray, Robert, and Demetrius. You almost know a couple of things about their backgrounds. You know almost how they're thinking why not to create an empty file and technical terms.\nThat is actually their soul instead of a skill. A soul.\nEllie Rofe | 27:15\nYeah.\ndimitris@3nuggets.io | 27:16\nFinally, let those mental models in a very simple version ask the entire database for a couple of questions and not only get the questions, but get follow-up questions based on their interests.\nBased on what is the thing that burns their skin? So they can get deeper and deeper in those things.\nEllie Rofe | 27:45\nNo.\ndimitris@3nuggets.io | 27:45\nSo somehow you can have an overview of those interesting things. They want to be focused.\nSo immediately you can get a driver of a couple of domains. You can focus your analysis so you can get into the presentation with a report that includes data from this process.\nEllie Rofe | 28:11\nI love it. It's a really good idea. I really like it because I've got 90-minute transcripts for both of them as well. So we've got questions they asked. I've got you. You really see the pattern differences between them as well. The guys I'm delivering to on the eighth.\nSo, yeah, that's a really interesting idea. Then create a visual representation as well. From... Lovely. Very helpful. I'm going to tell the things against upper skills. Do that now.\nRay | 28:55\nYeah, I think the thing about the mushy middle is when I'm thinking about... I think about... I'm swimming in the water and I look behind me and I can't see the shore. I look in front of me. I can't see the shore, and I think...\nI think there are two things you can do about that, right? One is to just shorten the view. Right? Shortened swim. We talk about shortened sharp like what are those bits in the middle.\nSecond, is just to be more aware of where we are in the progress, right? I think that some of the ideas are coming from Robert and Beatrice are really just about visibility helping you...\nBecause the mushy middle can be like, \"I don't know what's going on here. I feel like I'm just doing work, but I'm blind.\" Right? When you're... It's just your head right above the water, you can't see very far, right? The kinds of things we're talking about and the tools that are available to us allow you to see a lot more clearly and to be interrogating your progress, which then makes it clear how far you've come and it gives you a better idea of how far it is to go.\nActually, on the swim, you can actually potentially shorten the swim through that greater handle on that information, right? I think it's when... Man, I'm just slogging that. I'm just trying to put one foot in front of the other.\nI think that's going to be the dangerous place to be, right? So how to have... It's something to you, something you can understand, right? Basically, your comprehension is increasing as you go forward, right? As opposed to just your energy level falling as you go forward.\nAnd that which I think is like what can happen when we get into, like what we might call the messy middle of this, right? Like at the end. Hey, at the end, tunnel, at the beginning. You're fresh and you're getting in deep, and it's like, this is great. The water's fine.\nBut in that middle part, how can we shorten that middle part? And I think one of the best ways to do that just through, you know, make through the information and the now that you're recording your calls, you get, you know, more of this data. You actually have a lot that you can work with and I will fairly routinely now you know, pop open, you know, whatever. Claude right. Which has Krisp MCP as the most common MCD that I'm using right now to be able to get.\nOkay. What's what happened this week? What you know, have feedback to me. The things about particular engagement or a particular thad, and, you know, one. I mean, we're both word people, so I think you'll probably find reading that relatively comfortable.\nBut that's where, like, you know, you can use a scow draw. You can use, you know, other things to sort of get to express to you in different ways. That can be pretty handy. Pretty handy as well.\nLike you talking about the whiteboard thing. But I think it's just sort of not allowing yourself to be blind.\nEllie Rofe | 31:41\nYes. I think one of the interesting things, and I don't know, I'd open the floor up to how people are finding this, just generally, not even like with answers, but just experience.\nI think one of the things is that it is such a different, such a new way of working for me. So there are small bits that suddenly become really helpful. I turned on the \"dangerous allow all permissions\" thing or whatever.\nSo you're not constantly going, \"Yes, carry on, right?\" And it's like, \"Good, that's done.\" Because I was really annoyed by it. You get the Claude Max subscription, so you're not worrying about running out of context and usage and stuff like that. Great.\nBut then every morning I meet with my accountability partner or whatever, and I'd say, \"I'm going to do these things, and I estimate how long I think something will take, and I try to break it down so that nothing takes more than an hour.\"\nSo that I'm not just going through something that has a big, messy middle. That visibility thing you're saying. Then I'm like, \"I've got to ingest this pole. I think that will take quite a long time because it's big and it's complex, and that takes 15 minutes, and then scraping a data source takes eight hours, and suddenly you're like, \"I can't predict this stuff because it's so... It's all a new world on some level, and I'm having to learn.\"\nI think it is getting there, but I think that's possibly... I'm actually not... I have to say... I'm not terribly in the messy middle. I have been in other places where I'm just like, \"I have enough because there are these structures in place, including Demetrius. Thank you for being a structure that just helps create the scaffolding around it for that visibility and even just people on the sales going, \"Keep swimming.\nIt's okay.\" It does help, definitely. But visibility is... I think it's an awful lot of it, yes, but yeah, how are people finding what you have noticed? I know you two have been working at all. You three have been working on a much more detailed basis with AI for a lot longer.\nWhat have you noticed that's changed in the way you work over the last year or two? Significantly.\nRay | 34:19\nIt was true today, wasn't true ago.\nEllie Rofe | 34:19\nEverything has changed.\nRobert | 34:26\nWell, okay, so I'll I can say that, yeah, pretty much. You know, I'm working with these things at like five windows at a time a lot of the time. And for me, I'm pretty comfortable with holding, like now multiple contacts at the same time and just being able to switch between them.\nI've well, the technology got a lot better, so it's a lot more comfortable to use the tools as well as. So I think that's been a great, you know, benefit to using them. But I find that.\nYeah. Just having more knowledge about how to use them and get them to improve themselves and to figure out, you know, a workflow that works for me. And being able to try things very quickly. Having less friction to like, basically. No friction to trying new things.\nLike just, you know, trying to try something very fast and finding out if it's not, you know, if it's going to work or not very quickly. And yeah, just basically trying to see things through from beginning to end of a total life cycle of, you know, solutions like just as much as possible like to get as many reps of that in as much as possible.\nThat's another thing I think that I. Yeah, like that's just by nature of it, just because you're able to just get there so much quicker. So, yeah, I think that those are some of the things that have changed, probably just like a lot more volume, definitely in the last year.\nEllie Rofe | 36:29\nThe being able to switch... It is interesting. I'm feeling tired, but it's like a new muscle that's been worked switching between multiple different context windows and still... But it's the same job, so you're switching the subject context, but the job itself is the same thing.\nRobert | 36:48\nYeah, I get it.\nEllie Rofe | 36:49\nSo it's like a different kind of context switching, I think. And broadly. Yeah. Interesting.\nRobert | 36:56\nBy the way, like, I try to tell them to, especially nowadays, like to offer me multiple choice when they come back to drive the conversation forward.\nSo it's like just give you multiple choice. And then that way I can just go choose one of them. Or usually none of them are good, but, like, it tells me what I. But it tells me what I don't want. And then that way, like, you know, pretty much makes it clear what I do want when I read that stuff.\nSo, yeah, it reveals sometimes things that it wouldn't necessarily have. It would have just kind of, glided by that, you know, when you kind of ask it to volunteer, you know, information and so on.\nSo, yeah, I have like five. And I'll be switching between them, and then I'll just. Each one's like offering me multiple choice. So, you know.\nEllie Rofe | 37:49\nMore I it. We got a song.\nRay | 38:00\nWell, just like it has a refrain of \"Give me one, two, or three choices. Stop questions.\"\nEllie Rofe | 38:11\nI'm going to have a look at it. I haven't heard any of the state change songs, so I'll have to take...\nRay | 38:19\nThis is the beta of the marketing side. Hopefully, I'll get up. I've got lots of ambitions. What I do today was a very sad day for me because the mountain is closed, so I don't get to go out. Snowboarding today.\nEllie Rofe | 38:32\nYou have to make AI songs instead.\nRay | 38:36\nYes, making yeah, songs and to make sure things work better and actually trying to get the new marketing up because the old marketing is just not good anymore. We've all been there, right?\nIt's sort of combination with the internal and the external stuff is sort of gets to your point of like the different projects, right? And how the how one project has lots and lots of different parts.\nEllie Rofe | 38:57\nH.\nRay | 38:59\nDo we just... Could we bring you back into this?\nI mean, you've... You know, one of the reasons I wanted to bring you back into this is, I think you as a distance runner, right? And this idea of, you know, the this mental space that one gets into right before you just started and before you're watching the finish line coming up in front of you is this middle part, which is where a lot of the work is.\nAnd I was. Yeah, I tried picking up running at the exact wrong time of my life. I started picking it up right before I was diagnosed with cancer. And then I thought, okay, this is something I'm going to do while I'm, you know, in between, right? I'm gonna finally. I finally got to the hospital.\nSo glad to be out of the hospital after the first round of it. And I got on the treadmill. I was doing this because I was doing indoors. Yes, or whatever. And I fell off. I could't understand why I fell off. I actually have, what's called neuropathy in my feet.\nAnd my, I now have no two steps are exactly the same, and so I can't really keep a rhythm. That's running stories, but I think Demetrius has probably much better running stories. But really the question detrius is like as you think about like the way that you manage as a distance runner.\nLike what goes on in your head right when you are, you know, in that middle point like the are there ideas there are there pans there that like li can be putting to work to be getting through like this messy middle as well.\ndimitris@3nuggets.io | 40:28\nYeah. That's when I explained the same thing to my own other health where she has a lot of frustrations in her mental health because of the pressure of her finances because of the new beginning with the pharmacy. She stopped being employed with the security of all of these umbrellas and all these positive stuff and suddenly got upfront of running a business taking care of the things from zero to 100. Everything is under her hands.\nShe realized that if you want to make money, you have to go outside to the market where an employee is something that never can see that easily. Even if she was able to see that, she wasn't able to realize how painful it can be.\nSo we have this almost every day, trying to encourage her because at the same time, she was me being so cool and nice. I track their bank accounts. I see them dropping down. I explain here that I took a big risk because one almost one year where I was working mostly with make consulting, building automations, and air table consulting, building stuff in there. It was quite nice, but I decided to switch to a totally different domain in doing my next step.\nI explain here that I took the risk to do it at the point where, as a family, me and her, we were in a big financial risk. Because if I had to remain back in where I was, I may have had the security of my own umbrella, but I would lose the security of a bigger horizon.\nI'm very glad I joined in a greater horizon. Where I am more free and without limits on where I want to go in this practice, and comparing myself with other air table consultants who have no clue what's going to happen after structuring the data. How can we use them? Which is part of my journey so far. I'm very glad that I'm there.\nI faced the difficulties of working for my personal branding communication, recognizing all of those skills I'm not having and how great consultants can help me and push me to my own limits and improve myself.\nSo all of this journey was an improvement. Now, what I say to her is that when we hit the wall, which is the point Ray has just described, is that point where you feel so disappointed because you don't see any alarming of success. You have so much pain. You feel so tired, you lose your actual mental health at the same time.\nOkay, so you have some concerns about why you get started. The thing is not why you get started is the act question is why we have to continue. We continue not only because of the journey, but because of what we expect to see at the finish line. You don't think of the marathon like a flat race. Think about it as a mountain run. Everybody starts to run to go on hiking or even have a walk. Not because of the journey, but mostly for the view at the peak.\nThis is the most encouraging thing. I'm not trying to do all my best. I have three months almost now working almost every single day, twelve hours a day because this is the peak I want to go. I'm not running so fast in this journey, but I'm working, making things done so I can push week by week myself to the big now.\nIt's not easy to listen to these romantic words. It sounds like poetry, which actually doesn't make any sense. The truth is, think up again where you were. Those dark moments where you don't see an alarm. Compare yourself to where you were when you made the decision to switch. On the day of National Women Day, I had a post about who is the woman who changed my life. Excess of my people and my family and all of this kind of person.\nYou changed the way I'm making decisions. She said something important. \"Don't criticize your decisions based on the outcome. Criticize them based on all the facts you have at the moment of making that decision.\"\nOkay. So are you in a better position than where you are? Nice, keep it, are you learning? Yes, all right. The thing that you are in a painful position means that something doesn't pay you back yet. Okay, let's work on that. Let's talk about these things. Let's recognize even the recognition of the things that don't work.\nIt's a huge step. Even in an example of a marathon, if you realize that you have a pain and a muscle, you have to do some stretching and you can move. You have a stomach disease. Stop, drink some water and then continue. Recognize what's going on there.\nOf course, we're being a member of a community with valuable people. I find it to be the greatest investment overall because not only can you receive supportive words from people, but you can receive nice ideas from people having similar journeys. How many incredible ideas are in these sessions?\nFrom you, from Robert, from Ray, too many learnings. Even one piece of them, if we put them down, we make bigger progress. That makes sense. You guys say, \"I was so weatic so philosophica.\"\nEllie Rofe | 47:31\nIt the sense, it makes an awful lot of sense.\nRobert | 47:34\nThat was very nice, it was very impressive, it was very helpful to them.\nEllie Rofe | 47:35\nYeah.\nRobert | 47:39\nAppreciated it.\ndimitris@3nuggets.io | 47:42\nThanks.\nEllie Rofe | 47:43\nNo, it was great. I was actually thinking partly... What's interesting is that when I ran a marathon many years ago now, part of what got me through... I had been sponsored to do it wearing a Wonder Woman costume by a CEO who I think might have been a bit skeey, but I was... I was much younger, and so I had bought a Wonder Woman costume in the week of the thing off Amazon, and it was...\nI hadn't really realized it was just a bit too tight. About mile 19, I got a terrible stitch, and it wasn't until I pulled it down a bit and released the muffin top and allowed a bit more breathing room that I could carry on moving.\nBut partly what pushed me through, I think, was how bad I'd feel if I didn't finish it as well. Like how gutted I would feel after all that energy if I just didn't finish. So I think it's interesting.\nI think partly I need to think about what the view will be like when I finish as well, rather than just... I feel like crap if I don't do that. But it's an interesting one. Thank you. That was really helpful.\nRight. My...\ndimitris@3nuggets.io | 48:59\nGreat slogan.\nEllie Rofe | 48:59\nBrain.\nRobert | 49:01\nOne of the seven principles that Ray just dropped in there. Begin with the end in mind and habits.\nEllie Rofe | 49:09\nThere we go.\nRay | 49:12\nBeing right in the middle, having the end of mind too.\nRobert | 49:14\nThat's...\nRay | 49:15\nThat's a good point. The VI visualization exercise becomes an important one. But I find that those kinds of things help, but I try to push back a little bit too much on these grind-set type things, right? On the one hand, I think the athletic analogy can be very helpful, as I wanted to bring back. I'm glad to bring back your own memory of the marathon, right?\nBecause that can help. But I read this book called The Inner Game of Tennis, and I was back when I was playing squash, and it was recommended to me. There was... The book goes through a few different things, but one of the things it talks about, towards the end of the book, is by Guy's tennis coach, obviously.\nHe says, \"Look, I've given you lots of things to do, like how to go run up to whatever and how to position yourself and how to set up your brain, blah.\" But eventually, you're going to get tired, and you're going to be in the middle of the match, and all of these ideas I gave you, all these frames are going to fly right out of your brain.\nAnd you know. So there's one thought that you can hold in your head. Let's love the ball because if you love the ball, you'll move towards it, and if you love the ball, you'll pay attention to it. If you're paying attention to it and you're moving towards it, you are far more likely to be successful than if you don't do those things.\nEllie Rofe | 50:53\n9.\nRay | 50:53\nBut you don't need to think about how to move. You don't need to think about what you're looking at. You just need to think, \"Love the ball,\" and your attention focuses on the ball. Your body starts to move towards the ball, and that helps.\nAnyway, that's my... In the mire, you hit the wall like what we were talking about. That's the framework I want to take away. What's the opportunity to love the ball?\nEllie Rofe | 51:18\nLove.\nRay | 51:18\nBut the, but like, that's sort of a little bit more grind steady, because it's about, hey, what do when you're really tired, you sort of need to keep going, you know?\nAnd like, there's a little bit of fighting joy in it. But I think the other is like, what can we do? You know, both yourself, but putting, like, this group together to work for you, right? To help elevate you from it.\nSo you're not just in the mire. So we can find ways to be shortening the path or shining light on it or whatever, right? So that you're not, you know, you're not just your head, you know, bobbing on the waist.\nEllie Rofe | 51:59\nYes. Yeah, okay, that's really helpful. I don't think I've got anything else to ask or add. This has been very interesting. Lots of things to take away.\nRay | 52:15\nNothing. I thought that both Beatrice and Robert came out with some really helpful stuff. Frankly, even your story about the marathon, you might leave out the part about the costume in the sketch. Boss does not, of course.\nBut I actually think all three... You brought up things that would probably make pretty good emotional side thought leadership content. These are just good stories that are worth sharing that will add value to people.\nSo, if you pull that out of Krisp, you might find that your own words have already been... They're already there for you.\nEllie Rofe | 52:51\nYeah.\nRobert | 52:53\nPick a note or the AI.\nEllie Rofe | 52:53\nYeah.\nRobert | 52:55\nThis is the part I'm talking about. You know, where I'm talking to you, as for all the.\nRay | 53:07\nAs I and didn't say at the beginning. Let me say at the end how I'm very grateful that you all accompany me last week. Just. You know. I wasn't able to. To do it. I was sort of on the road for my family.\nAnd it is likely, I think, that I've got something in a few weeks. But I'll. When I get that nailed down, I'll. I'll put that onto the calendar. But that won't be next week. And I'll be looking forward to talking to you all then.\nEllie Rofe | 53:33\nOkay. Have a fabulous season to celebrate.\nRay | 53:35\nTake you tooing.\nEllie Rofe | 53:37\nI shall. Being sh.",
+    "extraction": {
+        "ideas": [
+            {
+                "id": "b7abed84-idea-1",
+                "text": "Copyrighted material being subjected to DMCA claims indicates its authenticity and value.",
+                "confidence": "high",
+                "sourceQuote": "It's getting DMCA all over the place because it's actually copyrighted stuff. So it's actually real. That's how, you know, it's real."
+            },
+            {
+                "id": "b7abed84-idea-2",
+                "text": "Examining how a system like Claude sets up its system prompt can offer insights into its operational design.",
+                "confidence": "high",
+                "sourceQuote": "it's actually probably interesting for looking at, like, how it thinks about setting up the, system prompt and all that."
+            },
+            {
+                "id": "b7abed84-idea-3",
+                "text": "The information security landscape in the AI space is rapidly evolving, marked by significant vulnerabilities such as source code exposure and supply chain attacks.",
+                "confidence": "high",
+                "sourceQuote": "This is the fast-moving world of information security right now in the AI space."
+            },
+            {
+                "id": "b7abed84-idea-4",
+                "text": "AI is likely being used to generate and disseminate malware in current supply chain attacks.",
+                "confidence": "high",
+                "sourceQuote": "Presumably they're using AI to generate these things and pop and populate them."
+            },
+            {
+                "id": "b7abed84-idea-5",
+                "text": "Working with a structured thinker consultant can provide invaluable insights and prevent significant wasted effort in new projects.",
+                "confidence": "high",
+                "sourceQuote": "he's given me insights and understanding that I just. I either wouldn't have got or would have just taken like four weeks of doing everything wrong first."
+            },
+            {
+                "id": "b7abed84-idea-6",
+                "text": "A structured approach to knowledge graph building involves central ingestion rules, logging raw data in one place, and processing data elsewhere, enabling self-improvement.",
+                "confidence": "high",
+                "sourceQuote": "He helped me, build a structure around this project that wasn't there before. So I have, like. I have to. I have central rules that always must be observed through ingesting."
+            },
+            {
+                "id": "b7abed84-idea-7",
+                "text": "Noting every decision made helps prevent forgetting and provides a reliable reference point for project review and error checking.",
+                "confidence": "high",
+                "sourceQuote": "The other thing I've got it start doing is noting every decision that I make. Because what I've found a lot of the time is that I forget what decisions I've made because you're making them so fast."
+            },
+            {
+                "id": "b7abed84-idea-8",
+                "text": "The current mode of working can be exhausting, feeling both managerial and micromanaging due to rapid decision-making across multiple chat windows.",
+                "confidence": "high",
+                "sourceQuote": "So it's almost like it's much more sort of managerial but micromanaging at the same time on some levels. So it's quite tiring."
+            },
+            {
+                "id": "b7abed84-idea-9",
+                "text": "The scope of data ingestion for the knowledge graph is vast, incorporating scraping, APIs, and direct data file downloads.",
+                "confidence": "high",
+                "sourceQuote": "In terms of the scope of getting it. So, some of it's scraping, some of it's apiis, some of it's just downloading massive data files, but it's been a big old learning thing."
+            },
+            {
+                "id": "b7abed84-idea-10",
+                "text": "The knowledge graph can generate valuable political insights, including policy comparisons with a universal framework, identifying key constituencies, and mapping donor ideological alignment.",
+                "confidence": "high",
+                "sourceQuote": "I'm able to say to them, These electors, these constituencies, are the ones that are right for you. This is why. By the way, this donor gives to this think tank and this party and this think tank, and he's spoken at this event. All of these are ideologically in your wheelhouse, and all of this stuff is starting."
+            },
+            {
+                "id": "b7abed84-idea-11",
+                "text": "Clients often value understanding the project approach, thought process, and clear outcomes (what's done and what's still missing) more than absolute perfection by a deadline.",
+                "confidence": "high",
+                "sourceQuote": "they don't care about the perfection. They mostly care about the approach, the way I was thinking during the process, and at the end, they care about what I've already done."
+            },
+            {
+                "id": "b7abed84-idea-12",
+                "text": "Recognizing and admitting missing elements or uncertainties in a project is a valid reason to request more time, as it indicates a thorough and effective process.",
+                "confidence": "high",
+                "sourceQuote": "So I recognize that I'm missing or I'm not totally sure for these things. So I need some more time, which is cool to ask for more time, because you found something that made the time, not less effective."
+            },
+            {
+                "id": "b7abed84-idea-13",
+                "text": "Prioritizing mental health by avoiding unnecessary stress from client expectations or project demands is crucial, and additional work should be compensated.",
+                "confidence": "high",
+                "sourceQuote": "Ideally, I don't want to keep on my back the stress of other people, okay? If they want me to do that, they have to pay even more because the deal was to do that thing. Come on, guys. Yeah, it's about mental health. Why should I get stressed because of you?"
+            },
+            {
+                "id": "b7abed84-idea-14",
+                "text": "A robust system that captures project details can serve as a mental 'reset' button when a project feels overwhelming or disorganized.",
+                "confidence": "high",
+                "sourceQuote": "If at any point, I'm like, God, I just don't know where everything is and everything's a mess. I can just go tell me this and it just starts me again."
+            },
+            {
+                "id": "b7abed84-idea-15",
+                "text": "To make the 'messy middle' of a project less painful, identify the specific points of friction and work towards making those processes more efficient.",
+                "confidence": "high",
+                "sourceQuote": "what is the messy middle part of the process that you're mentioning and can it just not be so painful anymore? Just in terms of, right like as a business right like or as a process for something that you're just trying to make more efficient."
+            },
+            {
+                "id": "b7abed84-idea-16",
+                "text": "Leveraging available technology can provide clarity and accelerate progress, even when motivation is low or under pressure.",
+                "confidence": "high",
+                "sourceQuote": "there's a lot of technology that can be deployed to be able to gain more clarity on things if or be able to gain leverage on like to get stuff done even if motivation is necessarily maybe not as high or if there's pressures and."
+            },
+            {
+                "id": "b7abed84-idea-17",
+                "text": "Building robust systems, especially automated ones, is crucial for ensuring consistency and providing reliable support during challenging project phases.",
+                "confidence": "high",
+                "sourceQuote": "I'm putting energy into just making them more capable. Building up. Just their ability. To influence certain things in a certain way. And for those times, right, like for consistency that might that comes out of just putting a machine towards it, I think."
+            },
+            {
+                "id": "b7abed84-idea-18",
+                "text": "Small automated tasks, like meeting summaries, contribute to business consistency, reduce mental load, and cumulatively improve engagement.",
+                "confidence": "high",
+                "sourceQuote": "Even just the thing that... Even just like an email, meeting summary that goes out automatically, for example, it's just like that. It's a small thing that's off my mind. That is just a bit of consistency too for the business that... It adds up."
+            },
+            {
+                "id": "b7abed84-idea-19",
+                "text": "Visual representations of work, such as whiteboards, are particularly valuable for making 'invisible' digital or technical progress manifest and understandable to clients.",
+                "confidence": "high",
+                "sourceQuote": "It's like making manifest. And it's actually kind of the point of it too, was actually for that to allow the client to see that there was stuff like the scale of what's being done and to be able to just, yeah, encapsulate, especially when you're using the technology and you're like going so quickly and just to be able to like keep up with that. But yes, exactly, because a lot of this stuff can be very invisible."
+            },
+            {
+                "id": "b7abed84-idea-20",
+                "text": "Creating bespoke frontends is an increasingly accessible and cost-effective way to visualize complex data and provide an additional dimension to a project.",
+                "confidence": "high",
+                "sourceQuote": "I've found a lot of utility in creating, like Fronttent that are bespoke for, like, specific. It's, you know, cheaper than ever. It doesn't take too much to be able to create a front end, obviously."
+            },
+            {
+                "id": "b7abed84-idea-21",
+                "text": "Data analysts frequently face the challenge of deriving meaningful conclusions from vast datasets, a process that lacks a standardized operational procedure.",
+                "confidence": "high",
+                "sourceQuote": "every data analyst faces where they have tons of data front and they are responsible to recognize and get meaningful results and outcomes conclusions just looking at the data. So this is not a standard operational procedure."
+            },
+            {
+                "id": "b7abed84-idea-22",
+                "text": "When navigating the 'messy middle' of a project, shortening the perceived 'swim' (breaking it into smaller parts) or increasing visibility of progress are key strategies.",
+                "confidence": "high",
+                "sourceQuote": "I think there are two things you can do about that, right? One is to just shorten the view. Right? Shortened swim. We talk about shortened sharp like what are those bits in the middle. Second, is just to be more aware of where we are in the progress, right?"
+            },
+            {
+                "id": "b7abed84-idea-23",
+                "text": "Tools that enhance visibility and allow interrogation of progress during a project can clarify how far one has come and how much further there is to go, potentially shortening the overall effort.",
+                "confidence": "high",
+                "sourceQuote": "The kinds of things we're talking about and the tools that are available to us allow you to see a lot more clearly and to be interrogating your progress, which then makes it clear how far you've come and it gives you a better idea of how far it is to go. Actually, on the swim, you can actually potentially shorten the swim through that greater handle on that information, right?"
+            },
+            {
+                "id": "b7abed84-idea-24",
+                "text": "Maintaining comprehension of the project's direction as progress is made, rather than just experiencing a decline in energy, is crucial for managing the 'messy middle.'",
+                "confidence": "high",
+                "sourceQuote": "Basically, your comprehension is increasing as you go forward, right? As opposed to just your energy level falling as you go forward."
+            },
+            {
+                "id": "b7abed84-idea-25",
+                "text": "The adoption of AI technologies has fundamentally altered working methods, making them more comfortable and efficient due to technological improvements, but also requiring continuous learning.",
+                "confidence": "high",
+                "sourceQuote": "I know you two have been working at all. You three have been working on a much more detailed basis with AI for a lot longer. What have you noticed that's changed in the way you work over the last year or two? Significantly."
+            },
+            {
+                "id": "b7abed84-idea-26",
+                "text": "Activating 'dangerous allow all permissions' in software can streamline workflow by eliminating constant prompts, though it entails security risks.",
+                "confidence": "high",
+                "sourceQuote": "I turned on the 'dangerous allow all permissions' thing or whatever. So you're not constantly going, Yes, carry on, right? And it's like, Good, that's done. Because I was really annoyed by it."
+            },
+            {
+                "id": "b7abed84-idea-27",
+                "text": "Subscribing to premium AI services (e.g., Claude Max) removes usage and context limitations, enhancing productivity and creative flow.",
+                "confidence": "high",
+                "sourceQuote": "You get the Claude Max subscription, so you're not worrying about running out of context and usage and stuff like that. Great."
+            },
+            {
+                "id": "b7abed84-idea-28",
+                "text": "Breaking down tasks into small, time-boxed increments (e.g., less than an hour) and using an accountability partner enhances project visibility and helps manage the 'messy middle.'",
+                "confidence": "high",
+                "sourceQuote": "Every morning I meet with my accountability partner or whatever, and I'd say, I'm going to do these things, and I estimate how long I think something will take, and I try to break it down so that nothing takes more than an hour."
+            },
+            {
+                "id": "b7abed84-idea-29",
+                "text": "Accurately predicting task durations in new or AI-driven projects is challenging due to the unpredictable nature of emerging tools and processes.",
+                "confidence": "high",
+                "sourceQuote": "I can't predict this stuff because it's so... It's all a new world on some level, and I'm having to learn."
+            },
+            {
+                "id": "b7abed84-idea-30",
+                "text": "The use of multiple contact windows and contexts simultaneously has become more comfortable with improved technology and familiarity with AI tools.",
+                "confidence": "high",
+                "sourceQuote": "I'm working with these things at like five windows at a time a lot of the time. And for me, I'm pretty comfortable with holding, like now multiple contacts at the same time and just being able to switch between them. I've well, the technology got a lot better, so it's a lot more comfortable to use the tools as well as."
+            },
+            {
+                "id": "6d1bc057-idea-1",
+                "text": "Breaking down tasks into smaller, hourly segments helps avoid a 'messy middle' and increases visibility into project progress.",
+                "confidence": "high",
+                "sourceQuote": "I estimate how long I think something will take, and I try to break it down so that nothing takes more than an hour. So that I'm not just going through something that has a big, messy middle. That visibility thing you're saying."
+            },
+            {
+                "id": "6d1bc057-idea-2",
+                "text": "Predicting task duration in new and complex domains is difficult due to the constant learning involved.",
+                "confidence": "high",
+                "sourceQuote": "I can't predict this stuff because it's so... It's all a new world on some level, and I'm having to learn."
+            },
+            {
+                "id": "6d1bc057-idea-3",
+                "text": "External structures and support systems, like a consultant or supportive colleagues, are crucial for creating scaffolding and visibility to navigate challenging phases and avoid the 'messy middle'.",
+                "confidence": "high",
+                "sourceQuote": "I have enough because there are these structures in place, including Demetrius. Thank you for being a structure that just helps create the scaffolding around it for that visibility and even just people on the sales going, 'Keep swimming. It's okay.'"
+            },
+            {
+                "id": "6d1bc057-idea-4",
+                "text": "Working with AI often involves managing multiple context windows simultaneously.",
+                "confidence": "high",
+                "sourceQuote": "I'm working with these things at like five windows at a time a lot of the time."
+            },
+            {
+                "id": "6d1bc057-idea-5",
+                "text": "Improved AI technology makes using these tools more comfortable and efficient.",
+                "confidence": "high",
+                "sourceQuote": "The technology got a lot better, so it's a lot more comfortable to use the tools as well as."
+            },
+            {
+                "id": "6d1bc057-idea-6",
+                "text": "Gaining more knowledge about AI tools and optimizing personal workflows is key to effective usage and self-improvement of the AI.",
+                "confidence": "high",
+                "sourceQuote": "Just having more knowledge about how to use them and get them to improve themselves and to figure out, you know, a workflow that works for me."
+            },
+            {
+                "id": "6d1bc057-idea-7",
+                "text": "AI reduces friction for experimentation, allowing users to try new things and quickly assess their viability.",
+                "confidence": "high",
+                "sourceQuote": "Having less friction to like, basically. No friction to trying new things. Like just, you know, trying to try something very fast and finding out if it's not, you know, if it's going to work or not very quickly."
+            },
+            {
+                "id": "6d1bc057-idea-8",
+                "text": "AI enables faster iteration through the entire lifecycle of solutions, increasing the volume of development work.",
+                "confidence": "high",
+                "sourceQuote": "Just basically trying to see things through from beginning to end of a total life cycle of, you know, solutions like just as much as possible like to get as many reps of that in as much as possible. That's another thing I think that I. Yeah, like that's just by nature of it, just because you're able to just get there so much quicker."
+            },
+            {
+                "id": "6d1bc057-idea-9",
+                "text": "Using multiple-choice prompts with AI can help clarify user intent and reveal insights by showing what the user doesn't want.",
+                "confidence": "high",
+                "sourceQuote": "Give you multiple choice. And then that way I can just go choose one of them. Or usually none of them are good, but, like, it tells me what I. But it tells me what I don't want. And then that way, like, you know, pretty much makes it clear what I do want when I read that stuff."
+            },
+            {
+                "id": "6d1bc057-idea-10",
+                "text": "Switching between multiple AI context windows, even for the same job, is a new type of cognitive load that can be tiring, akin to working a new muscle.",
+                "confidence": "high",
+                "sourceQuote": "It is interesting. I'm feeling tired, but it's like a new muscle that's been worked switching between multiple different context windows and still... But it's the same job, so you're switching the subject context, but the job itself is the same thing. So it's like a different kind of context switching, I think."
+            },
+            {
+                "id": "6d1bc057-idea-11",
+                "text": "The feeling of 'hitting the wall' in a challenging journey is characterized by deep disappointment, pain, fatigue, and mental health strain due to a perceived lack of success.",
+                "confidence": "high",
+                "sourceQuote": "When we hit the wall... is that point where you feel so disappointed because you don't see any alarming of success. You have so much pain. You feel so tired, you lose your actual mental health at the same time."
+            },
+            {
+                "id": "6d1bc057-idea-12",
+                "text": "The motivation to persevere through difficult challenges comes primarily from the anticipated outcome at the 'finish line' or 'peak', rather than solely from the initial reason for starting.",
+                "confidence": "high",
+                "sourceQuote": "The thing is not why you get started is the act question is why we have to continue. We continue not only because of the journey, but because of what we expect to see at the finish line."
+            },
+            {
+                "id": "6d1bc057-idea-13",
+                "text": "Consistent, steady effort and 'making things done' week by week are more crucial for progress towards a long-term goal than striving for speed.",
+                "confidence": "high",
+                "sourceQuote": "I'm not running so fast in this journey, but I'm working, making things done so I can push week by week myself to the big now."
+            },
+            {
+                "id": "6d1bc057-idea-14",
+                "text": "Acknowledging skill gaps and seeking help from great consultants is vital for personal branding, self-improvement, and pushing personal limits.",
+                "confidence": "high",
+                "sourceQuote": "I faced the difficulties of working for my personal branding communication, recognizing all of those skills I'm not having and how great consultants can help me and push me to my own limits and improve myself."
+            },
+            {
+                "id": "6d1bc057-idea-15",
+                "text": "Evaluating decisions should be based on the facts available at the moment the decision was made, rather than criticizing them solely on their outcomes.",
+                "confidence": "high",
+                "sourceQuote": "Don't criticize your decisions based on the outcome. Criticize them based on all the facts you have at the moment of making that decision."
+            },
+            {
+                "id": "6d1bc057-idea-16",
+                "text": "Recognizing what isn't working and learning from painful experiences is a significant step forward.",
+                "confidence": "high",
+                "sourceQuote": "The thing that you are in a painful position means that something doesn't pay you back yet. Okay, let's work on that. Let's talk about these things. Let's recognize even the recognition of the things that don't work. It's a huge step."
+            },
+            {
+                "id": "6d1bc057-idea-17",
+                "text": "Self-awareness and addressing specific issues (like physical pain during a marathon) are essential for continuing and overcoming challenges.",
+                "confidence": "high",
+                "sourceQuote": "Even in an example of a marathon, if you realize that you have a pain and a muscle, you have to do some stretching and you can move. You have a stomach disease. Stop, drink some water and then continue. Recognize what's going on there."
+            },
+            {
+                "id": "6d1bc057-idea-18",
+                "text": "Being part of a valuable community is a significant investment for receiving both emotional support and practical ideas from people with similar journeys.",
+                "confidence": "high",
+                "sourceQuote": "Of course, we're being a member of a community with valuable people. I find it to be the greatest investment overall because not only can you receive supportive words from people, but you can receive nice ideas from people having similar journeys."
+            },
+            {
+                "id": "6d1bc057-idea-19",
+                "text": "The fear of regret or not finishing a significant undertaking can be a powerful motivator.",
+                "confidence": "high",
+                "sourceQuote": "partly what pushed me through, I think, was how bad I'd feel if I didn't finish it as well. Like how gutted I would feel after all that energy if I just didn't finish."
+            },
+            {
+                "id": "6d1bc057-idea-20",
+                "text": "Focusing on the positive future outcome or 'view at the peak' is a more effective motivator than focusing on the negative feelings of potential failure.",
+                "confidence": "high",
+                "sourceQuote": "I think partly I need to think about what the view will be like when I finish as well, rather than just... I feel like crap if I don't do that."
+            },
+            {
+                "id": "6d1bc057-idea-21",
+                "text": "In moments of fatigue or 'hitting the wall', identifying and focusing intensely on a core element (like 'loving the ball') can instinctively guide actions towards success without overthinking.",
+                "confidence": "high",
+                "sourceQuote": "So there's one thought that you can hold in your head. Let's love the ball because if you love the ball, you'll move towards it, and if you love the ball, you'll pay attention to it. If you're paying attention to it and you're moving towards it, you are far more likely to be successful than if you don't do those things."
+            },
+            {
+                "id": "6d1bc057-idea-22",
+                "text": "A supportive group or community can help individuals navigate challenging periods by shortening the path, providing clarity, or offering elevation, preventing them from being stuck in 'the mire'.",
+                "confidence": "high",
+                "sourceQuote": "what can we do? You know, both yourself, but putting, like, this group together to work for you, right? To help elevate you from it. So you're not just in the mire. So we can find ways to be shortening the path or shining light on it or whatever, right?"
+            }
+        ],
+        "concepts": [
+            {
+                "id": "b7abed84-concept-1",
+                "name": "Messy Middle",
+                "description": "The challenging phase of a project where one is too far from the initial excitement of starting and too far from the final sprint to completion, often characterized by uncertainty, flagging motivation, and a lack of clear progress markers.",
+                "confidence": "high",
+                "sourceQuote": "when you're in that messy middle of a project. Have you got any processes, rituals, mindset stuff? Anything whatsoever you do to help you push through the bit where you're too far from the beginning?"
+            },
+            {
+                "id": "b7abed84-concept-2",
+                "name": "Policy Mapping Framework",
+                "description": "A structured analytical approach to compare and contrast policies from different entities (e.g., political parties) using a consistent, universal frame, designed to overcome the inherent philosophical differences in how policies are presented.",
+                "confidence": "high",
+                "sourceQuote": "I've created a policy mapping sort of framework so that you can compare and contrast policy between different parties without it having or with a universal frame because it's quite difficult to compare because everyone obviously has their own sort of political philosophical outlook on things."
+            },
+            {
+                "id": "6d1bc057-concept-1",
+                "name": "The Messy Middle",
+                "description": "The challenging, sustained period of effort in a project or journey that occurs between the initial start and before the finish line is in sight, where most of the significant work takes place.",
+                "confidence": "high",
+                "sourceQuote": "this middle part, which is where a lot of the work is."
+            },
+            {
+                "id": "6d1bc057-concept-2",
+                "name": "Mountain Run Metaphor",
+                "description": "A mental model for approaching long-term challenges, suggesting that like a mountain run where hikers are motivated by the 'view at the peak' (the end goal), one should focus on the anticipated outcome rather than just the journey itself.",
+                "confidence": "high",
+                "sourceQuote": "You don't think of the marathon like a flat race. Think about it as a mountain run. Everybody starts to run to go on hiking or even have a walk. Not because of the journey, but mostly for the view at the peak."
+            },
+            {
+                "id": "6d1bc057-concept-3",
+                "name": "Decision-making Principle (Outcome vs. Context)",
+                "description": "A principle for evaluating past decisions by focusing on the information and facts available at the moment the decision was made, rather than judging them solely based on their eventual outcomes.",
+                "confidence": "high",
+                "sourceQuote": "Don't criticize your decisions based on the outcome. Criticize them based on all the facts you have at the moment of making that decision."
+            },
+            {
+                "id": "6d1bc057-concept-4",
+                "name": "Begin with the End in Mind",
+                "description": "A principle, likely from Stephen Covey's 'The 7 Habits of Highly Effective People,' which emphasizes starting any endeavor with a clear understanding of your destination or desired outcome.",
+                "confidence": "high",
+                "sourceQuote": "One of the seven principles that Ray just dropped in there. Begin with the end in mind and habits."
+            }
+        ],
+        "people": [
+            {
+                "id": "b7abed84-person-1",
+                "name": "Robert",
+                "context": "Participating in the discussion, sharing insights on client management, seeking new business, and using technology for automation.",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-person-2",
+                "name": "Ray",
+                "context": "Host of the session, discussing AI security issues and facilitating the conversation, asking Ellie about her project challenges.",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-person-3",
+                "name": "Ellie Rofe",
+                "role": "Strategic Communications and Positioning Consultant",
+                "organisation": "NicelyPut",
+                "context": "Client of Demetrius, building a knowledge graph for strategic communications, facing challenges in project management, and preparing for a high-stakes political presentation.",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-person-4",
+                "name": "Demetrius",
+                "organisation": "3nuggets.io",
+                "context": "A consultant working with Ellie Rofe, providing structural insights for her knowledge graph project, and working on communication and marketing for his own product, Raingraph.",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-person-5",
+                "name": "Bennois",
+                "context": "A contact of Robert's, described as an 'interesting source' and a 'positive person' through whom good things often happen.",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-person-6",
+                "name": "Alex Hormosi",
+                "context": "An author whose book provides advice on structuring and pricing events, specifically for small groups.",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-person-7",
+                "name": "Party Leader",
+                "context": "An unnamed political figure Ellie Rofe is scheduled to meet for dinner to present early results from her knowledge graph project.",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-person-8",
+                "name": "Party Chairman",
+                "context": "An unnamed political figure Ellie Rofe is scheduled to meet for dinner alongside the Party Leader.",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-person-9",
+                "name": "Ellie's other half",
+                "context": "Mentioned by Ellie as someone who tangibly built kitchen cabinets, contrasting with her less visible digital work.",
+                "confidence": "high"
+            },
+            {
+                "id": "6d1bc057-person-5",
+                "name": "Demetrius's wife",
+                "role": "Pharmacy business owner",
+                "context": "Started a new pharmacy business, facing financial and operational pressures after leaving secure employment.",
+                "confidence": "high"
+            },
+            {
+                "id": "6d1bc057-person-6",
+                "name": "CEO",
+                "context": "Sponsored Ellie to run a marathon in a Wonder Woman costume, described as 'a bit skeey'.",
+                "confidence": "high"
+            }
+        ],
+        "organisations": [
+            {
+                "id": "b7abed84-org-1",
+                "name": "Anthropic",
+                "types": [
+                    "AI Company"
+                ],
+                "context": "An AI company whose coding platform, Claude, had its source code accidentally exposed.",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-org-2",
+                "name": "NPM",
+                "types": [
+                    "Package Manager",
+                    "Software Platform"
+                ],
+                "context": "Responsible for managing widely used software packages; they rolled back a malicious version after a supply chain attack.",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-org-3",
+                "name": "Zapier",
+                "types": [
+                    "Automation Platform"
+                ],
+                "context": "A platform for which Demetrius is undergoing a verification process to connect with Brain Graph.",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-org-4",
+                "name": "Raingraph",
+                "types": [
+                    "Company",
+                    "Product"
+                ],
+                "context": "Demetrius's project or product for which he is developing use cases and focusing on communication and marketing.",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-org-5",
+                "name": "East India Club",
+                "types": [
+                    "Private Club"
+                ],
+                "context": "An exclusive club on Pall Mall in London where Ellie Rofe is scheduled to meet the party leader and chairman for dinner.",
+                "confidence": "high"
+            }
+        ],
+        "stories": [
+            {
+                "id": "b7abed84-story-1",
+                "title": "Anthropic Claude Source Code Exposure",
+                "narrative": "A recent 'scandal' where the entire source code for Anthropic's popular Claude coding platform was accidentally exposed for half a minute before being quickly acquired by others, highlighting a significant information security incident.",
+                "hook": "The entire source code. I was suddenly exposed for half a minute and then grabbed by a bunch of folks.",
+                "lesson": "Even leading AI companies face significant information security risks, including accidental source code exposure.",
+                "type": "client failure",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-story-2",
+                "title": "Software Supply Chain Attack via Malicious Package",
+                "narrative": "A recent incident where a widely used software package was infiltrated with malware designed to steal user data. A new, compromised version was uploaded, but the issue was detected, and NPM quickly rolled back to the previous, secure version.",
+                "hook": "Earlier this morning there was a big... What's called a supply chain attack. So a relatively popular, widely used package... Was infiltrated, so that the people... The new version went up that was... That contained malware, basically that would steal your stuff.",
+                "lesson": "Supply chain attacks are a significant and fast-moving threat in the software ecosystem, requiring vigilant monitoring and rapid response.",
+                "type": "illustrative example",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-story-3",
+                "title": "Demetrius's Scraper Results Presentation",
+                "narrative": "Demetrius recounted a recent experience where he presented scraper results to Ellie. During the presentation, he realized a couple of data points were missing. Instead of hiding it, he focused on explaining his process, workflow, where it failed, and why, then investigated and delivered the complete results hours later. This demonstrated his approach to client communication and problem-solving.",
+                "hook": "you experienced it a few days ago when I came up to show you the scraper results. I expected that the scraper results were done. We had all the data inside. But when I got in, I realized that a couple of data were missing.",
+                "lesson": "Transparency about process and challenges, even with imperfections, builds client trust and understanding, and allows for effective problem-solving.",
+                "type": "personal experience",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-story-4",
+                "title": "Ellie's Awkward Political Dinner",
+                "narrative": "Ellie describes her anxieties about an upcoming dinner meeting with a party leader and chairman at the East India Club in London. Despite her confidence in the powerful insights her knowledge graph will provide, she feels nervous about the social aspects, like knowing what to wear and navigating dinner etiquette, contrasting her excitement for the work with her personal discomfort.",
+                "hook": "next Wednesday, which I'm slightly nervous about. So this is ridiculous. But. So next Wednesday, I'm. I'm going to meet with the party leader and the party chairman in the East India Club on Pall Mall in London, which is about as ridiculous as it sounds.",
+                "lesson": "Even when confident in professional work, social anxieties can still arise in high-stakes personal interactions. It highlights the contrast between analytical confidence and social performance.",
+                "type": "personal experience",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-story-5",
+                "title": "Robert's Automated 'Dev Update' Skill",
+                "narrative": "Robert created an automated skill that, upon a simple voice command ('dev update'), reviews the project, documents the gap since the last update, generates a whiteboard image of the progress, and stores it in a specific, standardized location. This automation eliminated a previously painful and time-consuming manual client communication task, allowing him to focus on other problems.",
+                "hook": "I set up a skill that basically, when I say dev update, it'll go... It'll just go through the project and then look at the previous update and then document the gap. Create a whiteboard image and put it into a specific location every time, like in a very specific standard.",
+                "lesson": "Automating tedious but essential communication tasks can significantly reduce project pain points and free up mental resources for core problem-solving.",
+                "type": "client win",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-story-6",
+                "title": "Kitchen Cabinets vs. Invisible Code",
+                "narrative": "Ellie contrasts her partner's tangible accomplishment of building kitchen cabinets from scratch in a day with her own experience of spending ten hours working with chat windows, which results in 'lines of code somewhere' that are not immediately visible. This highlights the challenge of making abstract digital work manifest and its scale understandable.",
+                "hook": "So my other half, you know, on Friday, he built some kitchen cabinets from scratch. And like at the end of the day, there are some kitchen cabinets there, and I spent ten hours flitting between different chat windows. At the end of the day, you just go, There's a lot of stuff I can't see. It's great, but there's a lot of stuff that's just lines of code somewhere.",
+                "lesson": "The tangible nature of physical creation makes progress immediately visible, whereas digital work often requires deliberate methods (like whiteboards) to demonstrate scale and impact.",
+                "type": "analogy",
+                "confidence": "high"
+            },
+            {
+                "id": "6d1bc057-story-1",
+                "title": "Ray's Running Journey Interrupted by Neuropathy",
+                "narrative": "Ray attempted to take up running before being diagnosed with cancer. During his recovery, he tried running on a treadmill but fell off due to neuropathy in his feet, which prevents him from keeping a consistent rhythm as no two steps are exactly the same.",
+                "lesson": "Physical limitations and health challenges can significantly impact personal pursuits like running, even when motivated.",
+                "type": "personal experience",
+                "confidence": "high"
+            },
+            {
+                "id": "6d1bc057-story-2",
+                "title": "Demetrius's Wife's Pharmacy Business Struggles",
+                "narrative": "Demetrius's wife transitioned from secure employment to starting her own pharmacy business. She faced significant financial pressure and frustration, realizing the immense pain and effort required to build a business from scratch and engage with the market, something not evident as an employee.",
+                "hook": "The painful reality of starting a business after leaving secure employment.",
+                "lesson": "The transition from employment security to entrepreneurship can be financially and mentally challenging, requiring direct engagement with the market.",
+                "type": "personal experience",
+                "confidence": "high"
+            },
+            {
+                "id": "6d1bc057-story-3",
+                "title": "Demetrius's Risky Career Switch for Greater Horizon",
+                "narrative": "Demetrius, after working for about a year in make consulting and AirTable consulting, decided to switch to a totally different domain. This was a significant financial risk for his family, but he sought the security of a 'greater horizon' where he would have more freedom and fewer limits, leveraging his unique skills beyond just data structuring.",
+                "hook": "Taking a family financial risk for the promise of a greater professional horizon.",
+                "lesson": "Strategic career changes, though risky, can lead to greater freedom and opportunity when driven by a desire for a wider impact and leveraging unique skills.",
+                "type": "personal experience",
+                "confidence": "high"
+            },
+            {
+                "id": "6d1bc057-story-4",
+                "title": "Ellie's Wonder Woman Marathon",
+                "narrative": "Many years ago, Ellie ran a marathon sponsored by a 'skeey' CEO, wearing a Wonder Woman costume that was too tight. Around mile 19, she developed a terrible stitch and only found relief and could continue by adjusting the costume to allow more breathing room. Her motivation to finish was largely driven by the fear of how 'gutted' she would feel if she didn't complete it after all the effort.",
+                "hook": "The unexpected challenge of an ill-fitting costume during a marathon.",
+                "lesson": "Unexpected external factors can hinder performance, and self-awareness (physical pain) and a strong internal motivation (avoiding regret) are crucial for perseverance.",
+                "type": "personal experience",
+                "confidence": "high"
+            }
+        ],
+        "techniques": [
+            {
+                "id": "b7abed84-technique-1",
+                "name": "Decision Logging",
+                "description": "A personal or project management practice where every significant decision made is recorded to prevent forgetting, provide a historical record, and serve as a reference for future review or troubleshooting.",
+                "confidence": "high",
+                "sourceQuote": "The other thing I've got it start doing is noting every decision that I make. Because what I've found a lot of the time is that I forget what decisions I've made because you're making them so fast."
+            },
+            {
+                "id": "b7abed84-technique-2",
+                "name": "Transparent Process Communication",
+                "description": "A client communication strategy that involves openly discussing the project's approach, workflow, and even where it might fail or what's missing, rather than solely focusing on a perfectly completed end-product. This fosters trust and allows for collaborative problem-solving.",
+                "confidence": "high",
+                "sourceQuote": "But when I got in, I realized that a couple of data were missing. So wow, what happened here? Okay, but I focused my presentation for these couple of minutes. You saw how I worked on that. The process, the workflow, where it fails, and why it may fail."
+            },
+            {
+                "id": "b7abed84-technique-3",
+                "name": "Messy Middle Pain Point Optimization",
+                "description": "An approach to project management that involves identifying the most painful or inefficient aspects within the 'messy middle' phase of a project and actively seeking ways to streamline or automate them to reduce friction and improve overall efficiency.",
+                "confidence": "high",
+                "sourceQuote": "what is the messy middle part of the process that you're mentioning and can it just not be so painful anymore? Just in terms of, right like as a business right like or as a process for something that you're just trying to make more efficient."
+            },
+            {
+                "id": "b7abed84-technique-4",
+                "name": "Automated Client Communication (e.g., Email Summaries)",
+                "description": "The practice of setting up automated systems to handle routine client communications, such as sending meeting summaries, to ensure consistency, reduce manual effort, and free up mental capacity.",
+                "confidence": "high",
+                "sourceQuote": "Even just the thing that... Even just like an email, meeting summary that goes out automatically, for example, it's just like that. It's a small thing that's off my mind."
+            },
+            {
+                "id": "b7abed84-technique-5",
+                "name": "Automated Project Update Skill (Robert's Dev Update)",
+                "description": "A custom automation that responds to a verbal command (e.g., 'dev update') by reviewing project progress, documenting the gap since the last update, generating a visual representation (like a whiteboard image), and storing it in a standardized location for easy client communication without manual intervention.",
+                "confidence": "high",
+                "sourceQuote": "I set up a skill that basically, when I say dev update, it'll go... It'll just go through the project and then look at the previous update and then document the gap. Create a whiteboard image and put it into a specific location every time, like in a very specific standard."
+            },
+            {
+                "id": "b7abed84-technique-6",
+                "name": "Bespoke Frontend Creation",
+                "description": "The process of developing simple, customized user interfaces (frontends) for specific purposes, often to visualize and interact with complex backend data or systems, making them more accessible and understandable.",
+                "confidence": "high",
+                "sourceQuote": "I've found a lot of utility in creating, like Fronttent that are bespoke for, like, specific. It's, you know, cheaper than ever. It doesn't take too much to be able to create a front end, obviously. And like, that's another way to, you know, bring something to the front, right?"
+            },
+            {
+                "id": "b7abed84-technique-7",
+                "name": "Stakeholder 'Soul' Generation for Presentations",
+                "description": "A proposed method for preparing for presentations by creating virtual profiles ('souls') for key attendees. These 'souls' are built from available data (e.g., transcripts, backgrounds) and used to query a knowledge graph, generating personalized questions and follow-up questions tailored to each individual's interests, thereby focusing analysis and creating relevant reports.",
+                "confidence": "high",
+                "sourceQuote": "why not to... Because... Sorry, I'm just thinking right now, you already know the people. You want to go for the presentation... why not to create an empty file and technical terms. That is actually their soul instead of a skill. A soul. Finally, let those mental models in a very simple version ask the entire database for a couple of questions and not only get the questions, but get follow-up questions based on their interests."
+            },
+            {
+                "id": "b7abed84-technique-8",
+                "name": "Shortening the Project View (Shortened Swim)",
+                "description": "A project management strategy to combat the 'messy middle' by intentionally breaking down large, daunting tasks into much smaller, more manageable segments. This increases visibility, makes progress more apparent, and helps maintain motivation.",
+                "confidence": "high",
+                "sourceQuote": "One is to just shorten the view. Right? Shortened swim. We talk about shortened sharp like what are those bits in the middle."
+            },
+            {
+                "id": "b7abed84-technique-9",
+                "name": "AI-Powered Meeting Summaries and Feedback",
+                "description": "Utilizing AI tools (like Claude, Krisp, or MCD) to automatically generate summaries of conversations or provide feedback on specific engagements, aiding in information retention and documentation.",
+                "confidence": "high",
+                "sourceQuote": "I will fairly routinely now you know, pop open, you know, whatever. Claude right. Which has Krisp MCP as the most common MCD that I'm using right now to be able to get. Okay. What's what happened this week? What you know, have feedback to me."
+            },
+            {
+                "id": "b7abed84-technique-10",
+                "name": "Accountability Partner & Time-Boxed Tasks",
+                "description": "A project management approach involving regular check-ins with an accountability partner and breaking down tasks into small, estimated time increments (e.g., no more than an hour) to improve visibility, adherence, and manage the 'messy middle,' especially in new work domains.",
+                "confidence": "high",
+                "sourceQuote": "Every morning I meet with my accountability partner or whatever, and I'd say, I'm going to do these things, and I estimate how long I think something will take, and I try to break it down so that nothing takes more than an hour."
+            },
+            {
+                "id": "6d1bc057-tech-1",
+                "name": "Task Breakdown for Predictability",
+                "description": "A method to manage complex tasks by breaking them down into smaller, estimated segments, ideally none taking more than an hour, to improve visibility and avoid a 'messy middle' phase.",
+                "origin": "Ellie Rofe",
+                "confidence": "high",
+                "sourceQuote": "I'm going to do these things, and I estimate how long I think something will take, and I try to break it down so that nothing takes more than an hour."
+            },
+            {
+                "id": "6d1bc057-tech-2",
+                "name": "Multiple Choice AI Prompting",
+                "description": "A technique for interacting with AI models where the user asks the AI to offer multiple choice options in its response, which helps drive the conversation forward and clarify the user's preferences, even if none of the options are perfect.",
+                "origin": "Robert",
+                "confidence": "high",
+                "sourceQuote": "I try to tell them to, especially nowadays, like to offer me multiple choice when they come back to drive the conversation forward."
+            },
+            {
+                "id": "6d1bc057-tech-3",
+                "name": "Love the Ball Framework",
+                "description": "A simplified focus strategy, derived from 'The Inner Game of Tennis,' to be employed during moments of fatigue or mental exhaustion. Instead of overthinking mechanics, the practitioner focuses on a core, fundamental element ('loving the ball' in tennis), which instinctively guides attention and body movement for optimal performance.",
+                "origin": "The Inner Game of Tennis (Guy's tennis coach, referenced by Ray)",
+                "confidence": "high",
+                "sourceQuote": "So there's one thought that you can hold in your head. Let's love the ball because if you love the ball, you'll move towards it, and if you love the ball, you'll pay attention to it. If you're paying attention to it and you're moving towards it, you are far more likely to be successful than if you don't do those things."
+            }
+        ],
+        "contentAngles": [
+            {
+                "id": "b7abed84-contentAngle-1",
+                "angle": "When DMCA strikes: The unexpected proof of real value and impact.",
+                "format": "Article, Blog Post",
+                "audienceHint": "Creators, businesses, content strategists, legal professionals",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-contentAngle-2",
+                "angle": "Lessons from the Anthropic scandal: What the Claude source code leak teaches us about AI security and open source risks.",
+                "format": "Analysis, Whitepaper, Talk",
+                "audienceHint": "AI developers, cybersecurity experts, tech leaders, legal counsel",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-contentAngle-3",
+                "angle": "Navigating the 'Messy Middle': Strategies to push through project purgatory and maintain momentum.",
+                "format": "Blog Post, Workshop, Webinar",
+                "audienceHint": "Project managers, entrepreneurs, consultants, anyone leading complex projects",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-contentAngle-4",
+                "angle": "The hidden work of knowledge graphs: Making invisible data analysis tangible for high-stakes presentations.",
+                "format": "Case Study, Presentation Guide",
+                "audienceHint": "Data scientists, consultants, strategists, executive leaders",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-contentAngle-5",
+                "angle": "Beyond data points: Crafting 'stakeholder souls' for hyper-personalized presentations and impactful insights.",
+                "format": "Article, Guide, Workshop concept",
+                "audienceHint": "Data analysts, sales professionals, consultants, public speakers",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-contentAngle-6",
+                "angle": "The power of process over perfection: Why transparent communication about project challenges builds client trust.",
+                "format": "Blog post, LinkedIn series",
+                "audienceHint": "Consultants, freelancers, service providers, client success managers",
+                "confidence": "high"
+            },
+            {
+                "id": "b7abed84-contentAngle-7",
+                "angle": "Automate your way out of the 'messy middle': Small systems that deliver big consistency and reduce mental load.",
+                "format": "Blog post, Tool review, Automation guide",
+                "audienceHint": "Entrepreneurs, small business owners, productivity enthusiasts, tech-savvy professionals",
+                "confidence": "high"
+            },
+            {
+                "id": "6d1bc057-ca-1",
+                "angle": "Personal stories of navigating the 'messy middle' in professional or personal journeys can serve as valuable 'emotional side thought leadership content'.",
+                "format": "Post, article, talk",
+                "audienceHint": "Professionals, entrepreneurs, anyone facing long-term projects or life transitions.",
+                "confidence": "high"
+            },
+            {
+                "id": "6d1bc057-ca-2",
+                "angle": "The psychological impact of AI-driven context switching: a new cognitive muscle.",
+                "format": "Post, article",
+                "audienceHint": "Tech professionals, knowledge workers, AI users",
+                "confidence": "medium"
+            },
+            {
+                "id": "6d1bc057-ca-3",
+                "angle": "Beyond motivation: Why the 'view at the peak' (end goal) is more powerful than avoiding regret in long-term challenges.",
+                "format": "Post, article, talk",
+                "audienceHint": "Entrepreneurs, career changers, anyone pursuing ambitious goals",
+                "confidence": "high"
+            }
+        ]
+    }
+}

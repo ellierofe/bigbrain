@@ -3,7 +3,7 @@
 > Registry of all features. This is not a sprint plan — it's an inventory.
 > Each feature has dependencies, layer, and which core problem(s) it addresses.
 > Status: `planned` → `in-progress` → `done` | `parked` for future milestones
-> Last updated: 2026-03-28
+> Last updated: 2026-03-30
 
 ---
 
@@ -19,6 +19,16 @@
 
 ## INFRASTRUCTURE
 
+### INF-00: Brands and users root schema
+- **What:** `brands` table (root entity) and `brand_users` junction table (many-to-many between brands and users). Every DNA table carries a `brandId` FK. Enables multi-brand and multi-user architecture from day one.
+- **Layer:** infra / data
+- **Problems:** All (scoping foundation for everything)
+- **Size:** S
+- **Depends on:** INF-02 (Postgres), INF-05 (Auth.js creates the `users` table)
+- **Enables:** DNA-01 and all other data features (they all carry `brandId`)
+- **Status:** done
+- **Schema:** `01-design/schemas/brands.md`
+
 ### INF-01: App scaffold and project structure
 - **What:** Set up the app framework, folder structure, dev environment, deployment target
 - **Layer:** infra
@@ -26,7 +36,7 @@
 - **Size:** M
 - **Depends on:** Tech stack decision (ADR-001)
 - **Enables:** Everything
-- **Status:** planned
+- **Status:** done
 - **Note:** Vercel `rootDirectory` must be set to `02-app` (dashboard or vercel.json) since the Next.js app is nested, not at repo root. Do this during setup or first deploy will fail.
 
 ### INF-02: Database setup — Postgres
@@ -36,7 +46,8 @@
 - **Size:** M
 - **Depends on:** INF-01
 - **Enables:** DNA-01, SRC-01, REG-01, VEC-01
-- **Status:** planned
+- **Status:** done
+- **Known issue:** `drizzle-kit` has 4 moderate vulnerabilities in its `esbuild` dependency (dev-only, not runtime). Fix would require a breaking downgrade. Leave until upstream patch is released.
 
 ### INF-03: Database setup — Knowledge graph
 - **What:** Graph DB instance (likely FalkorDB), connection config, initial schema with node/relationship types
@@ -45,7 +56,7 @@
 - **Size:** M
 - **Depends on:** INF-01, graph schema decision (ADR-002)
 - **Enables:** KG-01, KG-02, INP-03
-- **Status:** planned
+- **Status:** done
 
 ### INF-04: File storage setup
 - **What:** Storage for original files, generated outputs, brand assets. Could be S3, local, or hybrid.
@@ -54,7 +65,8 @@
 - **Size:** S
 - **Depends on:** INF-01
 - **Enables:** INP-01, INP-02, INP-05, OUT-04
-- **Status:** planned
+- **Status:** done
+- **Implementation:** Vercel Blob. `lib/storage/blob.ts` — `uploadBlob`, `deleteBlob`, `listBlobs`, `getBlobMetadata`. `BLOB_READ_WRITE_TOKEN` env var required (auto-set by Vercel when Blob store is connected; copy from Vercel dashboard for local dev).
 
 ### INF-05: Auth and session management
 - **What:** Single-user auth. Simple but present — don't ship without it.
@@ -63,7 +75,8 @@
 - **Size:** S
 - **Depends on:** INF-01
 - **Enables:** All output features (gating)
-- **Status:** planned
+- **Status:** done
+- **Implementation:** Auth.js v5, email magic link via Resend. `lib/auth.ts` — config + `signIn`/`signOut`/`auth` exports. `lib/db/schema/auth.ts` — Drizzle adapter tables (`users`, `accounts`, `sessions`, `verificationTokens`). Route handler at `app/api/auth/[...nextauth]/route.ts`. Login page at `app/login/page.tsx`. Middleware gates all routes except `/login` and `/api/auth/*`. Access locked to `ALLOWED_EMAIL` env var. Requires: `AUTH_SECRET` (generate with `openssl rand -base64 32`), `RESEND_API_KEY`, `ALLOWED_EMAIL`, `RESEND_FROM_EMAIL`. Note: `brand_users.userId → users.id` FK not yet added — needs a migration after auth tables are created in Neon.
 
 ### INF-06: LLM integration layer
 - **What:** API connection to Claude (or other), shared config for model, system prompts, cost tracking. Central so every feature that uses LLM goes through one place.
@@ -72,20 +85,43 @@
 - **Size:** M
 - **Depends on:** INF-01
 - **Enables:** INP-03, INP-04, OUT-01, OUT-02, OUT-03
-- **Status:** planned
+- **Status:** done
+- **Implementation:** `lib/llm/client.ts` — `anthropic` client + `MODELS` constants (primary: `claude-sonnet-4-6`, fast: `claude-haiku-4-5-20251001`, powerful: `claude-opus-4-6`). `lib/llm/system-prompts.ts` — prompts for `chat`, `contentCreation`, `processing` contexts. Stub chat route at `app/api/chat/route.ts` using `streamText`. `ANTHROPIC_API_KEY` env var required.
 
 ---
 
 ## STORAGE — KNOWLEDGE GRAPH
 
 ### KG-01: Core graph schema
-- **What:** Define and implement node types (Idea, Topic, Person, Organisation, Concept, Framework, Methodology, Project, Source) and relationship types (RELATES_TO, DERIVED_FROM, USED_IN, INFORMS, etc.)
+- **What:** Define and implement node types and relationship types per ADR-002. Node types: Idea, Concept, CaseStudy, Vertical, Methodology, Person, Organisation, Event, SourceDocument, ContentItem, Project, FundingEvent, Policy, Country (seed), Date (seed). Relationship types: see ADR-002.
 - **Layer:** data
 - **Problems:** P3, P4
 - **Size:** M
-- **Depends on:** INF-03
+- **Depends on:** INF-03, ADR-002 (schema defined ✓)
 - **Enables:** KG-02, KG-03, INP-03
-- **Status:** planned
+- **Status:** done
+- **Schema:** `00-project-management/decisions/adr-002-graph-schema.md`
+- **Implementation:** Combined with KG-02. `NodeLabel` + `RelationshipType` union types enforce ADR-002 schema at compile time. See `lib/graph/types.ts`.
+
+### GRF-01: Graph seed data
+- **What:** Pre-seed the graph before any ingestion can run: (1) 249 Country nodes from ISO 3166-1 via `pycountry` or equivalent, (2) Date nodes day/month/year hierarchy 2010-01-01 to 2030-12-31, (3) Atomic Lounge Organisation node, (4) canonical register table in Neon for entity resolution. Nothing can be written to the graph without these in place.
+- **Layer:** infra / data
+- **Problems:** P3, P4
+- **Size:** S
+- **Depends on:** INF-03 (FalkorDB connection), INF-02 (Neon for canonical register)
+- **Enables:** KG-01, KG-02, INP-03 — all graph writes depend on seed data existing
+- **Status:** done
+- **Notes:** 247 Country nodes, 7,670 day nodes (+ 252 month + 21 year), Atomic Lounge + NicelyPut org nodes. canonical_register table in Neon. Scripts in `02-app/lib/graph/seed/`.
+
+### GRF-02: Graph index mirror in Neon
+- **What:** Flat index of all graph nodes and relationships mirrored in Postgres. Two tables: `graph_nodes` (id, label, name, description, source, file_ref, created_at, properties JSONB) and `graph_edges` (id, from_node_id, to_node_id, relationship_type, description, source, created_at, properties JSONB). Written to on every graph write. Enables fast filtering, joining with DNA/source tables, and reporting without graph traversal.
+- **Layer:** data
+- **Problems:** P3, P4 (also design rule 4: visibility — graph must be inspectable via flat queries)
+- **Size:** S
+- **Depends on:** INF-02 (Neon), INF-03 (FalkorDB) — mirror is written alongside every FalkorDB write
+- **Enables:** KG-02 (query API can use either layer), RET-01 (retrieval can query mirror for speed), PROV-01
+- **Status:** done
+- **Notes:** `graph_nodes` and `graph_edges` tables live in Neon with indexes and cascade deletes. Drizzle schema in `lib/db/schema/graph.ts`.
 
 ### KG-02: Graph query API
 - **What:** Backend functions for common graph operations: add node, link nodes, traverse, find connections, search by topic. Used by other features, not directly by the user.
@@ -94,7 +130,9 @@
 - **Size:** S
 - **Depends on:** KG-01
 - **Enables:** OUT-01, DASH-03, INP-03
-- **Status:** planned
+- **Status:** done (write API) — read/traversal/search deferred to KG-02b
+- **Implementation:** `lib/graph/write.ts` — `writeNode()`, `writeEdge()`, `writeBatch()`. `lib/graph/canonical.ts` — `resolveCanonical()`, `registerCanonical()`. `lib/graph/types.ts` — all types. `lib/graph/index.ts` — re-exports. Brief: `01-design/briefs/KG-01-02-graph-write-api.md`.
+- **Note:** Read/traversal/search functions (`findConnections`, `traverseFrom`, `searchByTopic`) explicitly deferred — build as KG-02b once INP-03 has populated the graph with real data.
 
 ### KG-03: Graph explorer UI
 - **What:** Visual or list-based browsing of the knowledge graph. See nodes, relationships, clusters. Click through to detail.
@@ -116,7 +154,9 @@
 - **Size:** M
 - **Depends on:** INF-02, INF-06
 - **Enables:** VEC-02
-- **Status:** planned
+- **Status:** done
+- **Brief:** `01-design/briefs/VEC-01-vector-store-setup.md` (approved 2026-04-01)
+- **Implementation:** OpenAI `text-embedding-3-small` (1536 dims). `embedding vector(1536)` columns on 10 tables (migration 0007). `lib/llm/embeddings.ts` — `generateEmbedding()`. `lib/retrieval/similarity.ts` — `findSimilar()`. `OPENAI_API_KEY` env var required.
 
 ### VEC-02: Semantic search API
 - **What:** "Find things similar to X" across all stored text. Returns ranked results with source references.
@@ -138,9 +178,11 @@
 - **Layer:** data
 - **Problems:** P2
 - **Size:** M
-- **Depends on:** INF-02, **completed schema definitions for all DNA types**
+- **Depends on:** INF-02, INF-00 (brands root schema), **completed schema definitions for all DNA types**
 - **Enables:** DNA-02, DNA-03, OUT-02
-- **Status:** planned
+- **Status:** done
+- **Schemas:** `01-design/schemas/` — all `dna-*.md` files now complete (draft)
+- **Implementation:** `lib/db/schema/dna/` — one file per type. Migration 0006 applied 2026-04-01. Tables: `dna_brand_intros`, `dna_tone_of_voice`, `dna_tov_samples`, `dna_tov_applications`, `dna_competitor_analyses`, `dna_competitors`, `dna_knowledge_assets`, `dna_offers`, `dna_entity_outcomes`, `dna_platforms`, `prompt_components` (plus earlier: `dna_business_overview`, `dna_brand_meaning`, `dna_value_proposition`, `dna_brand_identity`, `dna_audience_segments`).
 
 ### DNA-02: Singular DNA elements
 - **What:** UI to view and edit: vision, mission, purpose, values, value proposition, positioning, tone of voice. Rich text with version history.
@@ -158,7 +200,7 @@
 - **Size:** M
 - **Depends on:** DNA-01, DASH-01
 - **Enables:** OUT-02
-- **Status:** planned
+- **Status:** done
 
 ### DNA-04: Plural DNA elements — Offers
 - **What:** CRUD for offers. Each offer: name, description, target audience, key VOCs met, USP, features, outcomes, benefits, pricing, FAQs, bonuses, guarantee, positioning, strategy.
@@ -185,7 +227,8 @@
 - **Size:** M
 - **Depends on:** DNA-01, DASH-01
 - **Enables:** OUT-02
-- **Status:** planned
+- **Status:** parked
+- **Note:** Moved to P1 (post-M1). Too large and too interconnected with platforms and ToV to rush. Revisit before M4/M5.
 
 ### DNA-07: Plural DNA elements — Platforms
 - **What:** CRUD for platform strategies. Each: platform, content formats, constraints, posting strategy.
@@ -203,16 +246,27 @@
 - **Size:** S
 - **Depends on:** DNA-01, DASH-01
 - **Enables:** OUT-02
-- **Status:** planned
+- **Status:** parked
+- **Note:** Schema needs more thought before building. Deferred to post-M1. Revisit before M4/M5.
 
 ### DNA-09: Tone of voice system
 - **What:** Structured tone of voice: rules, parameters (formal↔casual spectrum, etc.), sample texts, contextual variations. Not just a text field — a system that the LLM can consume.
 - **Layer:** data + output
 - **Problems:** P2, P5
 - **Size:** L
-- **Depends on:** DNA-01, INF-06
+- **Depends on:** DNA-01, INF-06, GEN-PROMPTS-01
 - **Enables:** OUT-02, OUT-03
 - **Status:** planned
+
+### GEN-PROMPTS-01: Generation prompt design and review
+- **What:** Design, review, and refine the LLM prompts used to generate structured DNA records from raw inputs. We have legacy prompts to draw on but they need auditing and rewriting to: (a) produce structured JSON output matching current schemas, (b) work within the BigBrain context rather than the old standalone tool context, (c) handle the ToV generation case specifically — which must output dimension scores + descriptions + vocabulary lists, not just prose guidelines.
+- **Layer:** cross
+- **Problems:** P2, P5
+- **Size:** M
+- **Depends on:** INF-06, DNA-01
+- **Enables:** DNA-09, OUT-01, OUT-02, INP-03
+- **Status:** planned
+- **Priority note:** The ToV generation prompt is the most complex and highest priority within this — it must produce structured multi-field output. Review existing prompts in `04-documentation/reference/legacy_prompts/` as starting point. The intake/creation prompts for other DNA types (audience segments, offers, etc.) are also in scope here.
 
 ### DNA-10: Brand identity storage
 - **What:** Store visual identity parameters: colours (with values), fonts, motifs, core assets, logos. File references for assets.
@@ -236,7 +290,8 @@
 - **Size:** M
 - **Depends on:** INF-02, **completed schema definitions for all source knowledge types**
 - **Enables:** SRC-02, OUT-02
-- **Status:** planned
+- **Status:** done
+- **Implementation:** `lib/db/schema/source.ts`. Migration 0006 applied 2026-04-01. Tables: `src_source_documents`, `src_statistics`, `src_testimonials`, `src_stories`, `src_own_research`.
 
 ### SRC-02: Source knowledge library UI
 - **What:** Browse, search, filter source knowledge. See where each item has been used (usage tracking).
@@ -298,8 +353,15 @@
 - **Size:** XL
 - **Depends on:** INF-06, KG-01, VEC-01
 - **Enables:** Everything downstream — this is the core engine
-- **Status:** planned
-- **Notes:** This is the most critical feature. Without it, inputs are just files. With it, they become knowledge. Should be designed to handle different input types with type-specific extraction logic.
+- **Status:** done
+- **Brief:** `01-design/briefs/INP-03-input-processing-pipeline.md` (approved)
+- **Layout:** `01-design/wireframes/INP-03-layout.md` (approved)
+- **Notes:** Plain text v1. Two-phase extract/commit. 7 extraction types. Route: `/dashboard/inputs/process`. `extractFromText()` in `lib/processing/extract.ts`, `commitExtraction()` in `lib/processing/commit.ts`. Tags on source documents. Temporal edges always written (document date or commit date). Story subject editable pre-commit.
+- **Planned enhancement (A):** LLM-suggested title and tags — after text is pasted, run a fast pre-extraction pass to suggest a title and relevant tags. Pre-populate the metadata fields as editable defaults. Size: S. Depends on: nothing new.
+- **Planned enhancement (B):** Inline editing of extracted items before commit — allow text correction directly in the results panel (e.g. fixing "Falcore" → "FalkorDB"). Accept/reject only was a v1 deferral; first real extraction session confirmed this is needed earlier. Size: S–M.
+- **Planned enhancement (C):** Topic-clustered results panel — instead of type-first grouping (IDEAS / CONCEPTS / etc.), group by overarching topic first (e.g. "AI Security", "Knowledge Graph Project", "Messy Middle") with type as a secondary grouping within each cluster. One-click cluster deselect so irrelevant sections (e.g. a tangential chat that opened the call) can be excluded at once. Orphan cluster for items that don't fit a topic. Requires LLM to assign a topic label to each item during extraction. Size: M. Depends on: nothing new.
+- **Planned enhancement (D):** Extraction performance — time the full extraction request server-side and log it. If consistently >60s, evaluate: (1) parallel extraction by type (7 concurrent smaller requests vs one large structured one), (2) streaming the results panel open as types complete rather than waiting for all 7, (3) switching to a faster model for extraction. First step is instrumentation — measure before optimising.
+- **Planned enhancement (E):** Batched FalkorDB commit writes — replace per-node/per-edge queries with UNWIND batches (same pattern as seed scripts). Reduces ~280 sequential round trips to ~10 for a typical transcript. Also needs: commit resumability — if a commit is interrupted mid-way, record what was written so it can be retried without duplicating completed nodes. Size: M.
 
 ### INP-04: Quick idea capture
 - **What:** Minimal-friction input: text box, voice button, paste. Idea goes straight into the system. Triage happens later.
@@ -336,6 +398,16 @@
 - **Depends on:** INP-03, DASH-01
 - **Enables:** Prevents inbox overwhelm
 - **Status:** planned
+
+### INP-08: Krisp meeting auto-classification
+- **What:** Maintain a list of recurring meeting patterns (name, participants, schedule, tag conventions). When a Krisp transcript is ingested via INP-01, auto-match it against known patterns and pre-populate title and tags accordingly. Example: transcripts with Demetrius on Mondays → title "Mastermind hotseat — [date]", tags ["mastermind", "coaching"]. Patterns stored as a simple config (JSON or DB table). User can review/correct before processing.
+- **Layer:** input
+- **Problems:** P1, P3
+- **Size:** M
+- **Depends on:** INP-01, INP-03
+- **Enables:** Hands-off transcript classification; consistent tagging across a meeting series
+- **Status:** planned
+- **Notes:** Pairs with INP-03's planned title/tag suggestion enhancement. Pattern matching runs first (deterministic); LLM suggestion is the fallback for unrecognised meetings.
 
 ---
 
@@ -436,6 +508,16 @@
 - **Enables:** Visual content production
 - **Status:** parked
 
+### OUT-05: Strategy coherence check
+- **What:** On-demand (and optionally scheduled) analysis that loads related DNA records and surfaces disconnects and alignment opportunities across the strategy layer. Examples: value prop claims a differentiator not reflected in any offer descriptions; offer outcomes not captured in value prop; positioning claim matched by a competitor in the competitor analysis; content pillars not aligned with defined audience segments. Output: structured report with specific findings and suggested resolutions, surfaced in the dashboard.
+- **Layer:** output / cross
+- **Problems:** P2 (strategy drift — this is the mechanism that catches it)
+- **Size:** M
+- **Depends on:** DNA-01, OUT-03, DASH-01
+- **Enables:** Strategic confidence — a way to verify the DNA is internally consistent before generating content or updating strategy
+- **Status:** planned
+- **Note:** Fits naturally as a "Strategy health" view in the dashboard, triggerable on demand. Could also run on a schedule (AUTO pattern). LLM loads relevant DNA records and returns structured JSON findings — no new storage needed beyond what DNA-01 provides.
+
 ---
 
 ## DASHBOARD
@@ -461,6 +543,16 @@
 ---
 
 ## CROSS-CUTTING
+
+### INP-09: Context-aware extraction (business-grounded processing)
+- **What:** Before running extraction, inject Ellie's Brand DNA (business overview, knowledge assets, audience segments, content pillars) and a summary of previously extracted topics into the extraction system prompt. This lets the LLM make better signal/noise judgements — e.g. recognising that an AI security discussion at the start of a call is tangential to Ellie's work and flagging it as low-relevance rather than extracting it at full confidence. Over time, as more knowledge accumulates, extraction quality improves automatically. Also enables the LLM to merge new extractions with existing graph nodes rather than creating near-duplicates (e.g. recognising "the Messy Middle" has been extracted before).
+- **Layer:** input + cross
+- **Problems:** P1, P3, P4
+- **Size:** M
+- **Depends on:** INP-03 (done), RET-01 (for existing knowledge retrieval), DNA-01
+- **Enables:** Extraction that gets smarter over time; fewer irrelevant items; better dedup against existing graph; lower review burden
+- **Status:** planned
+- **Notes:** This is the "learning" behaviour — not ML, just progressively richer context injection. First version can inject DNA only (no retrieval needed). Second version adds a retrieval step to pull relevant existing nodes before extraction.
 
 ### RET-01: Unified retrieval layer
 - **What:** Single retrieval interface that combines: vector search (semantic), graph traversal (relational), Postgres queries (structured). Returns ranked, deduplicated results with source references. Used by chat, content creator, and anything that needs context.
@@ -518,7 +610,7 @@
 - **Size:** S (to write the skill file)
 - **Depends on:** Nothing — first skill to build
 - **Enables:** SKL-02, SKL-04 (nothing gets designed or built without a brief)
-- **Status:** planned
+- **Status:** done
 
 ### SKL-02: `layout-design`
 - **What:** Design UI/UX for a feature. First instance of a new pattern = full design. Subsequent instances = delta from established template. Output filed in `01-design/wireframes/`.
@@ -527,7 +619,7 @@
 - **Size:** S (to write the skill file)
 - **Depends on:** SKL-01, SKL-03
 - **Enables:** SKL-04 (nothing gets built without a layout spec)
-- **Status:** planned
+- **Status:** done
 
 ### SKL-03: `feature-template-check`
 - **What:** Before designing, check whether a pattern already exists in `01-design/wireframes/templates/`. Returns match or confirms new pattern needed. Called automatically by `layout-design`.
@@ -536,7 +628,7 @@
 - **Size:** S
 - **Depends on:** Nothing
 - **Enables:** SKL-02
-- **Status:** planned
+- **Status:** done
 
 ### SKL-04: `feature-build`
 - **What:** Implement a feature end-to-end. Reads brief + layout spec + ADRs + existing code, proposes implementation plan, waits for approval, then builds.
@@ -545,7 +637,7 @@
 - **Size:** S (to write the skill file — individual build sessions are sized per feature)
 - **Depends on:** SKL-01, SKL-02
 - **Enables:** All app features
-- **Status:** planned
+- **Status:** done
 
 ### SKL-05: `dna-item-build`
 - **What:** Specialised version of `feature-build` for plural DNA item types. Handles first-instance (builds the full pattern + template) vs subsequent instances (adapts template, only fields/labels change).
@@ -563,7 +655,7 @@
 - **Size:** S
 - **Depends on:** Schema definitions in `01-design/schemas/` (prerequisite)
 - **Enables:** DNA-01, SRC-01, and any other feature requiring DB tables
-- **Status:** planned
+- **Status:** done
 
 ### SKL-07: `feature-update`
 - **What:** Update an existing feature with full context loaded first — brief, layout spec, ADRs, session logs, current code. Prevents changes that violate earlier decisions. Hard gate before and after.
@@ -573,6 +665,7 @@
 - **Depends on:** SKL-01 (brief must exist for the feature being updated)
 - **Enables:** Safe iteration on anything already built
 - **Status:** planned
+- **Note:** Must include the component registry rule from `feature-build` (ADR-004) — check `components/registry.ts` before creating or modifying any shared component.
 
 ### SKL-08: `global-change`
 - **What:** Cross-cutting change affecting multiple features. Mandatory blast radius analysis before any execution. Works feature by feature in approved order.
@@ -590,7 +683,7 @@
 - **Size:** S
 - **Depends on:** SKL-06 (migration must be generated first)
 - **Enables:** Any DB change
-- **Status:** planned
+- **Status:** done
 
 ### SKL-10: `session-log`
 - **What:** Draft a session log at the end of a working session. Covers: what was built, decisions made, what's next, context for future sessions. Saved to `00-project-management/sessions/`.
@@ -599,7 +692,17 @@
 - **Size:** S
 - **Depends on:** Nothing
 - **Enables:** Continuity between sessions
-- **Status:** planned
+- **Status:** done
+
+### SKL-12: `kg-ingest-creator`
+- **What:** Skill for generating graph ingestion scripts. Adapted from the SDP project's ingestion skill creator (`04-documentation/reference/kg-ingest-creator/SKILL.md`). Conversational process: receives a data source brief, reviews the file, asks targeted questions, generates a Python ingestion script that writes to both FalkorDB and Neon mirror. Enforces all 12 ingestion rules (ADR-002 / `04-documentation/reference/kg-rules/`): MERGE not CREATE, canonical register lookup, source+file_ref on every node/edge, natural language descriptions, UNWIND batching, validation queries, ingestion log.
+- **Layer:** meta / process
+- **Gate type:** Human-in-the-loop at brief review and dry-run stages; autonomous for script generation
+- **Size:** M (adapting the SDP skill to BigBrain's schema and node types)
+- **Depends on:** GRF-01 (seed data must exist), GRF-02 (mirror tables must exist), ADR-002 (node/relationship types)
+- **Enables:** INP-03 and all input processing — nothing gets into the graph without an ingestion script
+- **Status:** done
+- **Notes:** Written from scratch for BigBrain (Node.js + falkordb npm, not Python + REST API). Incorporates FalkorDB Cloud gotchas (no TLS flag, `{ params: {...} }` syntax, UNWIND batching, reconnect pattern). Skill at `03-skills/kg-ingest-creator/SKILL.md`.
 
 ### SKL-11: `feature-request`
 - **What:** Structure an ad hoc idea into a proper backlog entry. Formats it, checks for conflicts, presents for confirmation, adds to backlog. The ADHD pressure valve — capture without derailing.
@@ -608,7 +711,7 @@
 - **Size:** S
 - **Depends on:** Nothing
 - **Enables:** Backlog stays accurate without interrupting flow
-- **Status:** planned
+- **Status:** done
 
 ---
 
@@ -617,19 +720,19 @@
 | Layer | Count | Planned | Parked |
 |---|---|---|---|
 | Infrastructure | 6 | 6 | 0 |
-| Data (KG) | 3 | 3 | 0 |
+| Data (KG) | 5 | 5 | 0 |
 | Data (Vector) | 2 | 2 | 0 |
 | Data (DNA) | 10 | 10 | 0 |
 | Data (Source) | 2 | 2 | 0 |
 | Data (Registry) | 2 | 2 | 0 |
 | Input | 7 | 7 | 0 |
 | Automation | 4 | 4 | 0 |
-| Output | 7 | 5 | 2 |
+| Output | 8 | 6 | 2 |
 | Dashboard | 2 | 2 | 0 |
 | Cross-cutting | 2 | 2 | 0 |
 | Client (future) | 2 | 0 | 2 |
-| Development skills | 11 | 11 | 0 |
-| **Total** | **60** | **56** | **4** |
+| Development skills | 12 | 12 | 0 |
+| **Total** | **64** | **60** | **4** |
 
 ---
 
@@ -641,10 +744,62 @@ The longest dependency chain (and therefore the thing that determines how quickl
 Tech stack decision (ADR-001)
   → INF-01 (scaffold)
     → INF-02 (Postgres) + INF-03 (graph) + INF-04 (files) + INF-06 (LLM)
-      → KG-01 (graph schema) + VEC-01 (vector setup) + DNA-01 (DNA schema)
-        → INP-03 (processing pipeline) + KG-02 (graph API) + VEC-02 (semantic search)
-          → RET-01 (unified retrieval)
-            → OUT-01 (chat)
+      → INF-00 (brands root schema) + INF-05 (auth/users)
+        → KG-01 (graph schema) + VEC-01 (vector setup) + DNA-01 (DNA schema)
+          → INP-03 (processing pipeline) + KG-02 (graph API) + VEC-02 (semantic search)
+            → RET-01 (unified retrieval)
+              → OUT-01 (chat)
 ```
 
 That's the thinnest vertical slice: infra → storage → processing → retrieval → chat. Everything else branches off from there.
+
+---
+
+## UX POLISH (raised during DNA-03 build)
+
+### UX-01: Dependency-aware empty states
+- **What:** Empty states that explain what the current DNA item unlocks and what depends on it. E.g. on audience segments empty state: "Create a segment to be able to create offers and generate targeted content." Contextual — also triggered when arriving at an empty DNA type from a dependent feature (e.g. "To create an offer, you need at least one audience segment — create one first").
+- **Layer:** output
+- **Problems:** P2, P5
+- **Size:** S
+- **Depends on:** DASH-01, DNA-01
+- **Enables:** Clearer onboarding flow; reduces confusion when DNA types have unfilled dependencies
+- **Status:** planned
+- **Priority:** P2 — nice to have once core DNA features are built
+
+### UX-02: Creation modal — document upload path
+- **What:** Second path in the DNA item creation modal — paste or upload a source document, system infers field values, asks for any missing required fields, then generates. Currently stubbed as "coming soon" in all DNA creation modals.
+- **Layer:** input + output
+- **Problems:** P1, P2
+- **Size:** M
+- **Depends on:** SRC-01 (source knowledge schema), INF-06 (LLM integration)
+- **Enables:** Faster DNA population from existing documents
+- **Status:** planned — blocked on SRC-01 + INF-06
+
+### UX-03: Generation progress UX in creation modal
+- **What:** When the LLM generation job is triggered from a DNA creation modal, the modal transitions to a "generating" state — spinner, "This takes about 30 seconds", "Don't close this tab", Cancel button. Currently stubbed.
+- **Layer:** output
+- **Problems:** P1
+- **Size:** S
+- **Depends on:** INF-06 (LLM integration)
+- **Enables:** Polished generation flow for all DNA types
+- **Status:** planned — blocked on INF-06
+
+### UX-04: Segment switcher — select dropdown fallback
+- **What:** The segment switcher in DNA plural item detail views is currently a pill strip. If segment names consistently overflow (>24 chars), replace with a `Select` dropdown. Watch item — implement only if the pill strip proves unworkable in practice.
+- **Layer:** output
+- **Problems:** —
+- **Size:** S
+- **Depends on:** DNA-03 (audience segments built)
+- **Enables:** Better UX with long item names
+- **Status:** watch — implement if needed
+
+### UX-05: Input processing panel — review UX
+- **What:** The extraction results panel (INP-03) is currently functional but time-consuming to process: items require hovering to evaluate, there's no quick way to scan the shape of what was found, and excluding irrelevant sections requires item-by-item deselection. Improvements needed: (1) topic-clustered layout (see INP-03 enhancement C), (2) better information density — show enough of each item to evaluate without hovering, (3) keyboard shortcuts for fast accept/reject, (4) a "relevance" summary at the top ("3 topics found — 1 may not be relevant to your work"). This is a UX design task before it's a build task — needs a brief and wireframe pass first.
+- **Layer:** output
+- **Problems:** P1, P3
+- **Size:** L
+- **Depends on:** INP-03 (done)
+- **Enables:** Processing transcripts in under 2 minutes rather than 10+; reduces cognitive load enough to make regular use realistic
+- **Status:** planned
+- **Priority:** High — the pipeline is only useful if reviewing extractions isn't painful. Current UX works for testing but not for regular use.
