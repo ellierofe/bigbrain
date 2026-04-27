@@ -15,6 +15,7 @@ export async function listSegments(brandId: string): Promise<AudienceSegmentSumm
       segmentName: dnaAudienceSegments.segmentName,
       personaName: dnaAudienceSegments.personaName,
       summary: dnaAudienceSegments.summary,
+      avatarUrl: dnaAudienceSegments.avatarUrl,
       status: dnaAudienceSegments.status,
     })
     .from(dnaAudienceSegments)
@@ -37,6 +38,7 @@ export async function listAllSegments(brandId: string): Promise<AudienceSegmentS
       segmentName: dnaAudienceSegments.segmentName,
       personaName: dnaAudienceSegments.personaName,
       summary: dnaAudienceSegments.summary,
+      avatarUrl: dnaAudienceSegments.avatarUrl,
       status: dnaAudienceSegments.status,
     })
     .from(dnaAudienceSegments)

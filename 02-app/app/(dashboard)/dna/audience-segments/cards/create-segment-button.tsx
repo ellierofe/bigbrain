@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ActionButton } from '@/components/action-button'
 import { CreateSegmentModal } from '@/components/create-segment-modal'
 
 export function CreateSegmentButton({ label }: { label?: string }) {
@@ -10,10 +10,9 @@ export function CreateSegmentButton({ label }: { label?: string }) {
 
   return (
     <>
-      <Button size="sm" onClick={() => setOpen(true)}>
-        <Plus className="h-4 w-4" />
-        <span className="ml-1.5">{label ?? 'New segment'}</span>
-      </Button>
+      <ActionButton icon={Plus} onClick={() => setOpen(true)}>
+        {label ?? 'New segment'}
+      </ActionButton>
       <CreateSegmentModal open={open} onOpenChange={setOpen} />
     </>
   )

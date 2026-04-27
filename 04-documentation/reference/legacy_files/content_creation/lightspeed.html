@@ -1,0 +1,1698 @@
+<!DOCTYPE html><!--  Last Published: Mon Jul 14 2025 15:33:48 GMT+0000 (Coordinated Universal Time)  -->
+<html data-wf-page="6677219563afbe994729bf07" data-wf-site="66646c59f1cba0de08fec466" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Lightspeed Creator - Select</title>
+  <meta content="Lightspeed Creator - Select" property="og:title">
+  <meta content="Lightspeed Creator - Select" property="twitter:title">
+  <meta content="width=device-width, initial-scale=1" name="viewport">
+  <link href="../css/normalize.css" rel="stylesheet" type="text/css">
+  <link href="../css/webflow.css" rel="stylesheet" type="text/css">
+  <link href="../css/moogul-app-lumos.webflow.css" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin="anonymous">
+  <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" type="text/javascript"></script>
+  <script type="text/javascript">WebFont.load({  google: {    families: ["Archivo:regular,600,800,italic,600italic,800italic"]  }});</script>
+  <script type="text/javascript">!function(o,c){var n=c.documentElement,t=" w-mod-";n.className+=t+"js",("ontouchstart"in o||o.DocumentTouch&&c instanceof DocumentTouch)&&(n.className+=t+"touch")}(window,document);</script>
+  <link href="../images/favicon.png" rel="shortcut icon" type="image/x-icon">
+  <link href="../images/webclip.png" rel="apple-touch-icon">
+  <script src="https://cdn.lrkt-in.com/LogRocket.min.js" crossorigin="anonymous"></script>
+  <script>window.LogRocket && window.LogRocket.init('jkmgio/mothership');</script>
+  <style>
+/* Formatting select fields cross-browser */
+.toast_notification_wrap {display: flex}
+  .preloader_wrap, .modal_loader_wrap, .empty_state_wrapper {
+    display: flex;
+  }
+.form_main_field_textarea.is-outline-array,
+.form_main_field_textarea {
+field-sizing: content;
+max-height: 20rem;
+min-height: 6rem;
+}
+   .preloader_wrap.off {
+    display: none;
+  }
+    .preloader_wrap.on {
+    display: flex;
+  }
+    [wized-cloak='hide'] {
+    display: none;
+  }
+  [wized-cloak='reveal'] {
+    opacity: 0;
+    transition-property: all;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(.215, .61, .355, 1);
+  }
+  .pfruits-button-popup {
+    top: 3.6rem !important;
+    right: 3rem !important;
+}
+ .choices {
+  border-radius: 0.5rem;
+  background-color: white;
+  min-width: 100%;
+}
+ .choices__item--choice {
+  color: #104551 !important;
+  font-size: 0.8rem !important; 
+}
+ .choices__input {
+  background: white !important;
+  margin-top: 1rem;
+}
+ .choices__list--multiple .choices__item {
+  background-color: #eaf6f1 !important;
+  color: #104551 !important;
+  border: 0.5px solid #8fe4c6 !important;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius--small);
+  word-break: break-word;
+}
+ .choices__button {
+  filter: invert(0.5);
+}
+ .choices__item--selectable {
+  color: #104551 !important;
+  font-size: 0.8rem !important;
+  padding-right: 10px !important;
+}
+.choices[data-type*=select-multiple] .choices__button, .choices[data-type*=text] .choices__button {
+border-left: none !important;
+}        
+.choices__inner {
+border: 1px solid #d1d1d1 !important;
+    font-size: 0.8rem !important;
+    border-radius: 0.5rem !important;
+    background: white !important;
+    padding: 0.75rem 1rem;
+       }
+.choices__list--dropdown .choices__item, .choices__list[aria-expanded] .choices__item {
+font-size: 0.8rem;
+    padding-right: 5px !important;
+    word-break: break-word;
+}
+.is-open .choices__list--dropdown, .is-open .choices__list[aria-expanded] {
+z-index: 2;}
+                    /* Custom AG Grid Styles */
+.ag-theme-custom .ag-cell, .ag-theme-custom .ag-header-group-text {
+            padding: 0.5rem;
+            line-height: 1.4rem;
+            word-break: break-word; /* Ensure wrapping by word */
+        }
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 0.25rem;
+  height: 0; /* for horizontal scrollbars */
+}
+::-webkit-scrollbar-track {
+  background: rgba(254, 254, 254, 0.99);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(254, 254, 254, 0.99);
+  border-color: rgb(254, 254, 254, 0.99);
+  border-radius: 1em;
+}
+/* Additional scrollbar styles for Firefox */
+scrollbar-color: white rgba(254, 254, 254, 0.99); /* Adjust the transparency as needed */
+scrollbar-width: thin; /* Optional: to control the width of the scrollbar in Firefox */
+</style>
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.4.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.4.2/uicons-brands/css/uicons-brands.css">
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.4.2/uicons-solid-rounded/css/uicons-solid-rounded.css">
+  <script async="" src="https://embed.wized.com/YKLoNbHWTFSmRLYYjSl9.js"></script>
+  <script async="" type="module" data-wized-id="YKLoNbHWTFSmRLYYjSl9" src="https://embed.wized.com/v2/index.js"></script>
+  <script type="text/javascript">
+    (function(w,d,u){
+        w.$productFruits = w.$productFruits || [];
+        w.productFruits=w.productFruits||{ };w.productFruits.scrV='2';
+        let a=d.getElementsByTagName('head')[0];let r=d.createElement('script');r.async=1;r.src=u;a.appendChild(r);
+    })(window,document,'https://app.productfruits.com/static/script.js');
+</script>
+  <script async="" src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+</head>
+<body>
+  <div data-theme="light" class="page_wrap">
+    <div wized="main_preloader" class="preloader_wrap">
+      <div class="page_loader">
+        <div data-w-id="fbca55e5-86c7-3a3f-8c10-a69a27f6ff37" data-animation-type="lottie" data-src="../documents/cow-loading.json" data-loop="1" data-direction="1" data-autoplay="1" data-is-ix2-target="0" data-renderer="svg" data-default-duration="1.98" data-duration="0"></div>
+      </div>
+      <div>Your data is being loaded...</div>
+    </div>
+    <div class="page_code_wrap">
+      <div class="page_code_base w-embed">
+        <style>
+/* variables */
+:root {
+	/* grid */
+	--column-count: 12;
+	--grid-main: repeat(var(--column-count), minmax(0, 1fr));
+	--grid-1: repeat(1, minmax(0, 1fr));
+	--grid-2: repeat(2, minmax(0, 1fr));
+	--grid-3: repeat(3, minmax(0, 1fr));
+	--grid-4: repeat(4, minmax(0, 1fr));
+	--grid-5: repeat(5, minmax(0, 1fr));
+	--grid-6: repeat(6, minmax(0, 1fr));
+	--grid-7: repeat(7, minmax(0, 1fr));
+	--grid-8: repeat(8, minmax(0, 1fr));
+	--grid-9: repeat(9, minmax(0, 1fr));
+	--grid-10: repeat(10, minmax(0, 1fr));
+	--grid-11: repeat(11, minmax(0, 1fr));
+	--grid-12: repeat(12, minmax(0, 1fr));
+	--breakout-gutter: minmax(calc(var(--padding-horizontal--main) - var(--grid-gap--main)), 1fr);
+	--breakout-remaining: calc(var(--max-width--main) - (var(--padding-horizontal--main) * 2));
+	--breakout-start: [full-start] var(--breakout-gutter) [content-start];
+	--breakout-end: [content-end] var(--breakout-gutter) [full-end];
+	--grid-breakout-single: var(--breakout-start) minmax(0, var(--breakout-remaining)) var(--breakout-end);
+	--grid-breakout: var(--breakout-start) repeat(var(--column-count), minmax(0, calc((var(--breakout-remaining) - (var(--grid-gap--main) * (var(--column-count) - 1))) / var(--column-count)))) var(--breakout-end);
+	/* others */
+	--font-weight--inherit: inherit;
+	--font-weight--100: 100;
+	--font-weight--200: 200;
+	--font-weight--300: 300;
+	--font-weight--400: 400;
+	--font-weight--500: 500;
+	--font-weight--600: 600;
+	--font-weight--700: 700;
+	--font-weight--800: 800;
+	--font-weight--900: 900;
+	--text-transform--none: none;
+	--text-transform--uppercase: uppercase;
+	--text-transform--capitalize: capitalize;
+	--text-transform--lowercase: lowercase;
+	--text-transform--inherit: inherit;
+	--max-width--none: none;
+}
+/* default styles */
+body {
+	font-weight: var(--text-main--font-weight);
+	text-transform: var(--text-main--text-transform);
+	font-smoothing: antialiased;
+	-webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, h5, h6, blockquote {
+	font-size: inherit;
+	line-height: inherit;
+	font-weight: inherit;
+}
+h1, h2, h3, h4, h5, h6, p, label, blockquote {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+button {
+	background-color: unset;
+	padding: unset;
+	text-align: inherit;
+	cursor: pointer;
+}
+img::selection {
+	background: transparent;
+}
+:is(h1, h2, h3, h4, h5, h6, p) a {
+	text-decoration: underline;
+}
+.u-rich-text > *:first-child {
+	margin-top: 0;
+}
+.u-rich-text > *:last-child {
+	margin-bottom: 0;
+}
+video {
+	width: 100%;
+	object-fit: cover;
+}
+video.wf-empty {
+	padding: 0;
+}
+svg {
+	display: block;
+}
+section, header, footer {
+	position: relative;
+}
+/* line clamp */
+.u-line-clamp-1, .u-line-clamp-2, .u-line-clamp-3, .u-line-clamp-4 {
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-line-clamp: 1;
+	-webkit-box-orient: vertical;
+}
+.u-line-clamp-2 { -webkit-line-clamp: 2; }
+.u-line-clamp-3 { -webkit-line-clamp: 3; }
+.u-line-clamp-4 { -webkit-line-clamp: 4; }
+/* component attributes */
+/* section padding */
+[data-padding-top="none"] { padding-top: var(--padding-vertical--none); }
+[data-padding-bottom="none"] { padding-bottom: var(--padding-vertical--none); }
+[data-padding-top="small"] { padding-top: var(--padding-vertical--small); }
+[data-padding-bottom="small"] { padding-bottom: var(--padding-vertical--small); }
+[data-padding-top="main"] { padding-top: var(--padding-vertical--main); }
+[data-padding-bottom="main"] { padding-bottom: var(--padding-vertical--main); }
+[data-padding-top="large"] { padding-top: var(--padding-vertical--large); }
+[data-padding-bottom="large"] { padding-bottom: var(--padding-vertical--large); }
+/* hide section if it has no cms items */
+[data-cms-check="true"]:not(:has(.w-dyn-item)) {
+	display: none;
+}
+</style>
+      </div>
+      <div class="page_code_color w-embed">
+        <style>
+/* theme light */
+:root,
+[data-theme="light"],
+[data-theme="dark"] [data-theme="invert"] {
+	--theme--background: var(--swatch--light);
+	--theme--text: var(--swatch--dark);
+	--theme--border: var(--swatch--light-grey);
+  --theme--inactive: var(--swatch--mid-grey);
+  --theme--disabled: var(--swatch--disabled);
+  --theme--error-background: var(--swatch--error-background);
+  --theme--error-border: var(--swatch--error-main);
+  --theme--error-text: var(--swatch--error-main);
+  --theme--success-background: var(--swatch--success-background);
+  --theme--success-border: var(--swatch--success-main);
+  --theme--success-text: var(--swatch--dark);
+  --theme--shadow: var(--swatch--light-grey);
+  --theme--tinted-background: var(--swatch--nearly-white);
+  /* button primary */
+	--button--background: var(--swatch--brand);
+	--button--text: var(--swatch--dark);
+	--button--border: var(--swatch--brand);
+	--button--background-hover: var(--swatch--brand-hover);
+	--button--text-hover: var(--swatch--dark);
+	--button--border-hover: var(--swatch--brand-hover);
+	/* button secondary */
+	--button-secondary--background: var(--theme--background);
+	--button-secondary--text: var(--swatch--dark);
+	--button-secondary--border: var(--swatch--light-grey);
+	--button-secondary--background-hover: var(--swatch--brand);
+	--button-secondary--text-hover: var(--swatch--dark);
+	--button-secondary--border-hover: var(--swatch--brand-hover);
+  	/* button moogul */
+	--button-moogul--background: var(--swatch--moogul);
+	--button-moogul--text: var(--swatch--light);
+	--button-moogul--border: var(--swatch--light);
+	--button-moogul--background-hover: var(--swatch--moogul-hover);
+	--button-moogul--text-hover: var(--swatch--light);
+	--button-moogul--border-hover: var(--swatch--light);
+  	/* button delete */
+	--button-delete--background: var(--swatch--light);
+	--button-delete--text: var(--swatch--dark);
+	--button-delete--border: var(--swatch--light-grey);
+	--button-delete--background-hover: var(--swatch--error-main);
+	--button-delete--text-hover: var(--swatch--light);
+	--button-delete--border-hover: var(--swatch--error-main);
+}
+/* theme dark */
+[data-theme="dark"],
+[data-theme="invert"],
+[data-theme="light"] [data-theme="invert"] {
+	--theme--background: var(--swatch--dark);
+	--theme--text: var(--swatch--light);
+	--theme--border: var(--swatch--light-secondary);
+  --theme--inactive: var(--swatch--mid-grey);
+  --theme--disabled: var(--swatch--light-grey);
+  --theme--tinted-background: var(--swatch-light-secondary);
+  --theme--error-background: var(--swatch--error-background);
+  --theme--error-border: var(--swatch--error-main);
+  --theme--error-text: var(--swatch--error-main);
+  --theme--success-background: var(--swatch--success-background);
+  --theme--success-border: var(--swatch--brand);
+  --theme--success-text: var(--swatch--dark);
+  --theme--shadow: color-mix(in srgb, var(--theme--background) 60%, transparent);
+	/* button primary */
+	--button--background: var(--swatch--brand);
+	--button--text: var(--swatch--brand-text);
+	--button--border: var(--swatch--brand);
+	--button--background-hover: var(--swatch--brand-hover);
+	--button--text-hover: var(--swatch--dark);
+	--button--border-hover: var(--swatch--light);
+	/* button secondary */
+	--button-secondary--background: var(--swatch--transparent);
+	--button-secondary--text: var(--swatch--light);
+	--button-secondary--border: var(--swatch--dark-grey);
+	--button-secondary--background-hover: var(--swatch--brand);
+	--button-secondary--text-hover: var(--swatch--brand-text);
+	--button-secondary--border-hover: var(--swatch--brand);
+  	/* button moogul */
+	--button-moogul--background: var(--swatch--moogul);
+	--button-moogul--text: var(--swatch--light);
+	--button-moogul--border: var(--swatch--light);
+	--button-moogul--background-hover: var(--swatch--moogul-hover);
+	--button-moogul--text-hover: var(--swatch--brand-text);
+	--button-moogul--border-hover: var(--swatch--light);
+  	/* button delete */
+	--button-delete--background: var(--swatch--error-background);
+	--button-delete--text: var(--swatch--dark);
+	--button-delete--border: var(--swatch--light-grey);
+	--button-delete--background-hover: var(--swatch--error-main);
+	--button-delete--text-hover: var(--swatch--light);
+	--button-delete--border-hover: var(--swatch--light);
+}
+/* button secondary */
+[data-button-style="secondary"] {
+	--button--background: var(--button-secondary--background);
+	--button--text: var(--button-secondary--text);
+	--button--border: var(--button-secondary--border);
+	--button--background-hover: var(--button-secondary--background-hover);
+	--button--text-hover: var(--button-secondary--text-hover);
+	--button--border-hover: var(--button-secondary--border-hover);
+}
+/* button moogul */
+[data-button-style="moogul"] {
+	--button--background: var(--button-moogul--background);
+	--button--text: var(--button-moogul--text);
+	--button--border: var(--button-moogul--border);
+	--button--background-hover: var(--button-moogul--background-hover);
+	--button--text-hover: var(--button-moogul--text-hover);
+	--button--border-hover: var(--button-moogul--border-hover);
+}
+/* button delete */
+[data-button-style="delete"] {
+	--button--background: var(--button-delete--background);
+	--button--text: var(--button-delete--text);
+	--button--border: var(--button-delete--border);
+	--button--background-hover: var(--button-delete--background-hover);
+	--button--text-hover: var(--button-delete--text-hover);
+	--button--border-hover: var(--button-delete--border-hover);
+}
+}
+/* apply colors */
+:is(c, :where([data-theme]:not([data-theme="inherit"]))) {
+	background-color: var(--theme--background);
+	color: var(--theme--text);
+}
+</style>
+      </div>
+      <div class="page_code_responsive w-embed">
+        <style>
+/* desktop */
+:root {
+	/* custom */
+}
+/* tablet */
+@media screen and (max-width: 991px) {
+	:root {
+		/* custom */
+		--padding-horizontal--main: 2rem;
+		/* adaptive sizes */
+		--size--2rem: 1.75rem;
+		--size--2-5rem: 2.18rem;
+		--size--3rem: 2.52rem;
+		--size--3-5rem: 2.73rem;
+		--size--4rem: 3rem;
+		--size--4-5rem: 3.375rem;
+		--size--5rem: 3.75rem;
+		--size--5-5rem: 4.125rem;
+		--size--6rem: 4.5rem;
+		--size--6-5rem: 4.875rem;
+		--size--7rem: 5.25rem;
+		--size--7-5rem: 5.625rem;
+		--size--8rem: 6rem;
+		--size--8-5rem: 6.375rem;
+		--size--9rem: 6.75rem;
+		--size--9-5rem: 7.125rem;
+		--size--10rem: 7.5rem;
+		--size--11rem: 8.25rem;
+		--size--12rem: 9rem;
+		--size--13rem: 9.75rem;
+		--size--14rem: 10.5rem;
+		--size--15rem: 11.25rem;
+		--size--16rem: 12rem;
+	}
+}
+/* landscape */
+@media screen and (max-width: 767px) {
+	:root {
+		/* custom */
+		--padding-horizontal--main: 1rem;
+		/* adaptive sizes */
+		--size--2-5rem: 2rem;
+		--size--3rem: 2.25rem;
+		--size--3-5rem: 2.375rem;
+		--size--4rem: 2.5rem;
+		--size--4-5rem: 2.75rem;
+		--size--5rem: 3rem;
+		--size--5-5rem: 3.25rem;
+		--size--6rem: 3.5rem;
+		--size--6-5rem: 3.75rem;
+		--size--7rem: 4rem;
+		--size--7-5rem: 4.25rem;
+		--size--8rem: 4.5rem;
+		--size--8-5rem: 4.75rem;
+		--size--9rem: 5rem;
+		--size--9-5rem: 5.25rem;
+		--size--10rem: 5.5rem;
+		--size--11rem: 5.75rem;
+		--size--12rem: 6rem;
+		--size--13rem: 6.5rem;
+		--size--14rem: 7rem;
+		--size--15rem: 7.5rem;
+		--size--16rem: 8rem;
+	}
+}
+/* portrait */
+@media screen and (max-width: 479px) {
+	:root {
+		/* custom */
+	}
+}
+@media (min-width: 80rem) {
+  .chat_content_wrap_modal {
+    grid-template-columns: minmax(13rem, 20rem) minmax(50rem, 1fr) minmax(13rem, 20rem);
+  }
+}
+</style>
+      </div>
+      <div class="page_code_custom w-embed">
+        <style>
+/* SET U-DISABLED VALUES AS !IMPORTANT */
+.u-disabled {
+  border-top-style: solid !important;
+  border-top-color: var(--theme--disabled) !important;
+  border-right-style: solid !important;
+  border-right-color: var(--theme--disabled) !important;
+  border-bottom-style: solid !important;
+  border-bottom-color: var(--theme--disabled) !important;
+  border-left-style: solid !important;
+  border-left-color: var(--theme--disabled) !important;
+  background-color: var(--theme--disabled) !important;
+  color: var(--theme--inactive) !important;
+  font-weight: 400 !important;
+  cursor: not-allowed !important;
+  border-top-width: inherit;
+  border-right-width: inherit;
+  border-bottom-width: inherit;
+  border-left-width: inherit;
+}
+.u-disabled:hover {
+  background-color: var(--theme--disabled) !important;
+  color: var(--theme--inactive) !important;
+  font-weight: 400 !important;
+}
+.spinner_loader{transform-origin:center;animation:spinner_AtaB 1.5s infinite linear}@keyframes spinner_AtaB{100%{transform:rotate(360deg)}}
+/* button size - small */
+[data-button-size="small"] {
+  --button--padding-top-bottom: var(--button-small--padding-top-bottom);
+  --button--height: var(--button-small--min-height);
+  --button--padding-left-right: var(--button-small--padding-left-right);
+  --button--font-size: var(--button-small--font-size);
+}
+/* button size - regular */
+[data-button-size="regular"] {
+  --button--height: var(--button-regular--min-height);
+  --button--padding-top-bottom: var(--button-regular--padding-top-bottom);
+  --button--padding-left-right: var(--button-regular--padding-left-right);
+  --button--font-size: var(--button-regular--font-size);
+}
+/* apply styles */
+.btn_main_wrap {
+  padding: var(--button--padding-top-bottom) var(--button--padding-left-right);
+  font-size: var(--button--font-size);
+  min-height: var(--button--height);
+}
+/*Shimmer Loader - Tables & Cards*/
+.shimmer_loader_table_line *,
+.shimmer_loader_cards_line * {
+  animation-duration: 2s;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+  animation-name: shimmer;
+  animation-timing-function: linear;
+  background-size: 200% 100%;
+  border-radius: 0.25rem;
+}
+.shimmer_loader_table_line * {
+  background-image: linear-gradient(
+    90deg,
+    rgba(227, 227, 227, 0.5) 0%,
+    rgba(227, 227, 227, 0.7) 50%,
+    rgba(227, 227, 227, 0.5) 100%
+  );
+}
+.shimmer_loader_cards_line * {
+  background-image: linear-gradient(
+    90deg,
+    rgba(227, 227, 227, 0.5) 0%,
+    rgba(227, 227, 227, 0.7) 50%,
+    rgba(227, 227, 227, 0.5) 100%
+  );
+}
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+/* TOOLTIP ANCHORING CSS STARTS HERE */
+.tooltip_popover_wrap {
+  bottom: anchor(bottom);
+  left: anchor(center);
+  transform: translate(-50% 0);
+}
+/*SPLIDE.JS CUSTOM CSS STARTS HERE */
+.custom-pagination {
+  position: absolute;
+}
+.custom-page {
+  height: 1rem;
+  width: 1rem;
+  border-radius: var(--radius--round);
+  background-color: var(--swatch--brand-background);	
+}
+.custom-page.is-active {
+  background-color: var(--swatch--moogul);
+  color: white;
+}
+.splide-arrows-custom {
+}
+.splide-arrow-custom {
+	background-color: var(--swatch--brand-background);
+}
+.splide-arrow-prev {
+}
+.splide-arrow-next {
+}
+/* full size grids in library */
+[data-close-size="small"] {
+height: 1.2rem;
+width: 1.2rem;
+font-size: 1.2rem;
+top: 0.75rem;
+right: 0.75rem;
+}
+/* full size grids in library */
+[data-close-size="medium"] {
+height: 1.5rem;
+width: 1.5rem;
+font-size: 1.5rem}
+/* full size grids in library */
+[data-close-size="large"] {
+height: 1.8rem;
+width: 1.8rem;
+font-size: 1.8rem;
+position: static;}
+/* full size grids in library */
+[data-grid-size="library"] {
+height: calc(100vh - 18.5rem);
+width: 100%;}
+/* full size grids in library */
+[data-grid-size="library_notabs"] {
+height: calc(100vh - 15rem);
+width: 100%;}
+/* button secondary */
+[data-grid-size="dna_filters"] {
+height: calc(100svh - 23rem);
+width: 100%;
+}
+[data-grid-size="review_modal"] {
+height: calc(100svh - 30rem);
+width: 100%;
+}
+[data-grid-size="dna_list"] {
+height: calc(100svh - 22rem);
+width: 100%;
+}
+[data-grid-size="dna_scroll"] {
+height: calc(100svh - 22rem);
+width: 100%;
+}
+[data-grid-size="dna_scroll_modal"] {
+height: calc(100svh - 34rem);
+width: 100%;
+}
+[data-grid-size="dashboard"] {
+height: 19rem;
+width: 100%;
+}
+[data-above-grid="standard"] {
+height: 5rem;
+}
+[data-above-grid="question"] {
+height: 7rem;
+}
+.chat_output_item_container:hover .content_output_buttons_wrap {
+  opacity: 1;
+  visibility: visible;
+}
+.branch_counter::after {
+  content: '';
+  position: absolute;
+  bottom: -8px; /* Matches your margin-top */
+  left: 0;
+  width: 100%;
+  height: 8px; /* Height of gap */
+  background: transparent;
+}
+/* Modified hover states to include the bridge */
+.branch_counter:hover ~ .branch-preview-wrapper,
+.branch_counter:hover::after,
+.branch-preview-wrapper:hover {
+  opacity: 1;
+  visibility: visible;
+  cursor: pointer;
+}
+.branch-preview-wrapper::before {
+  content: '';
+  position: absolute;
+  top: -8px; /* Match margin-top */
+  left: 0;
+  right: 0;
+  height: 8px;
+}
+/* First, hide the dropdown by default */
+.model_dropdown_wrapper {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none; /* Prevents interaction when hidden */
+  transition: opacity 0.2s, visibility 0.2s;
+  position: absolute;
+  /* Adjust positioning as needed */
+  top: 100%;
+  right: 0;
+  z-index: 1000;
+}
+/* Create the hover bridge */
+.regen_icon::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background: transparent;
+  display: block;
+}
+/* Show dropdown when hovering the icon or the dropdown itself */
+.regen_dropdown_wrapper:hover .model_dropdown_wrapper,
+.model_dropdown_wrapper:hover {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+/* Add this to prevent hover from parent containers */
+.content_output_buttons_wrap > *:not(.icon_button_holder) {
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
+/* Try increasing specificity */
+.branch-preview-wrapper .branch-preview-item {
+  cursor: pointer !important;
+}
+/* Make sure it's applied to all elements inside */
+.branch-preview-item,
+.branch-preview-item * {
+  cursor: pointer;
+}
+/* If there's a parent with pointer-events: none */
+.branch-preview-item {
+  pointer-events: auto;
+  cursor: pointer;
+}
+.message-fade {
+  transition: opacity 300ms ease;
+}
+.message-fade-out {
+  opacity: 0;
+}
+.message-fade-in {
+  opacity: 1;
+}
+</style>
+      </div>
+      <div class="page_code_forms w-embed">
+        <style>
+/* FORM FLOATING LABEL INPUT CSS STARTS HERE */
+.form_main_label {
+	pointer-events: none;
+}
+.form_main_field_icon {
+	pointer-events: none;
+}
+.form_main_label.float {
+transform: translate(-2rem, -1.5rem);
+transition-property: all;
+transition-duration: 150ms;
+transition-timing-function: ease-in-out;
+color: var(--swatch--brand-hover);
+background: var(--theme--background);
+font-size: 0.75rem;
+font-weight: 600;
+padding-left: 0.25rem;
+padding-right: 0.25rem;
+z-index: 1;
+}
+.form_main_label.active {
+transform: translate(-2rem, -1.5rem);
+transition-property: all;
+transition-duration: 150ms;
+transition-timing-function: ease-in-out;
+color: var(--swatch--moogul-hover);
+background: var(--theme--background);
+font-size: 0.75rem;
+font-weight: 500;
+padding-left: 0.25rem;
+padding-right: 0.25rem;
+z-index: 1;
+}
+.form_main_field_icon.float {
+color: var(--swatch--brand-hover);
+}
+.form_main_field_icon.active {
+color: var(--swatch--moogul-hover);
+}
+/* FORM FLOATING LABEL INPUT CSS ENDS HERE */
+/* FORM SELECT OPTIONS START HERE */
+.form_main_field_select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: #ffffff; 
+    background-image: url(https://uploads-ssl.webflow.com/64a6e98ac29cad9c1667428e/64a6e98ac29cad9c16674309_icon_chevron.svg);
+    background-position: calc(100% - 10px) center; /* Adjust the horizontal position as needed */
+    background-repeat: no-repeat;
+    background-size: 1rem;
+    padding-right: 30px; 
+    color: #104551; 
+}
+/* Style for the select when no actual option is selected (showing placeholder) */
+.form_main_field_select:not(:focus):invalid {
+  color: #999;
+}
+.form_main_field_select option {
+  color: #104551;
+}
+/* Style for the disabled first option */
+.form_main_field_select option:first-child {
+  color: #999;}
+.form_main_field_select.placeholder {
+    color: #999;
+}
+.form_main_field_select:disabled,
+.form_main_field_input:disabled,
+.form_nain_field_textarea:disabled {
+  background-color: #ffffff !important; 
+  color: #999 !important;}
+.form_main_field_select:disabled:hover,
+.form_main_field_input:disabled:hover,
+.form_nain_field_textarea:disabled:hover {
+  cursor: not-allowed; 
+  background-color: #ffffff !important; 
+  color: var(--swatch--dark) !important;
+}
+.form_main_field_select option {
+    padding: 8px;
+    background: #fff;
+    color: #104551;
+}
+/* Style for the placeholder option */
+.form_main_field_select option:first-child {
+    color: #999;
+}
+.form_main_field_select option:not(.placeholder-option) {
+  color: #104551;
+}
+/* Hide dropdown arrow for Webkit browsers (like Safari and Chrome) */
+select {
+  -webkit-appearance: none;
+  appearance: none;
+}
+/* Hide dropdown arrow for Firefox */
+select::-ms-expand {
+  display: none;
+}
+/* Style for the select when no option is selected (showing placeholder) */
+.form_main_field_select:invalid {
+    color: #999;
+}
+select:invalid:hover {
+  color: #104551;
+}
+option {
+  color: #104551; /* or any color other than transparent */
+}
+.form_main_field_select option:first-child:disabled {
+  display: block !important;
+  color: #999;
+}
+/* FORM SELECT OPTIONS END HERE */
+/* FILTER CHECKBOX FORMATTING STARTS HERE */
+/* Styles to apply when the radio button is checked */
+.form_filter_radio:checked {
+    background-color: var(--swatch--brand); /* Background color when selected */
+    color: var(--swatch--dark); /* Text color when selected */
+    border-color: var(--swatch--light);
+}
+.form_main_field_radio:checked {
+    background-color: var(--swatch--brand); /* Background color when selected */
+    border-color: var(--swatch--brand-hover);
+}
+.form_filter_radio_fields:checked {
+    background-color: color-mix(in srgb, var(--swatch--brand) 60%, transparent); /* Background color when selected */
+    border-color: var(--swatch--brand);
+		font-weight: bold;
+}
+/* FILTER CHECKBOX FORMATTING ENDS HERE */
+/* For Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+/* HIDE FORM SPINNER BUTTON STARTS HERE */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* HIDE FORM SPINNER BUTTON ENDS HERE */
+.hidden {
+display: none;
+}
+.form-field_input.dom-input {
+cursor: not-allowed;
+pointer-events: none;
+}
+  /* This CSS ensures that the color of the text in the dropdown is #212529 */
+  select {
+    color: #104551;
+  }
+  /* This CSS is for browsers that do not support the above method */
+  option {
+    color: #104551; /* Default color for the options */
+  }
+  /* Fix for Windows High Contrast Mode */
+  @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+    select {
+      background-color: #ffffff; /* Or any other color you want */
+      color: #104551;
+    }
+  }
+.form_main_field_checkbox {
+    border-color: var(--swatch--brand-hover); 
+}
+.form_main_field_checkbox::checked {
+   color: var(--swatch--brand);
+}
+.switch-field-select {
+    -webkit-appearance: none;
+  -moz-appearance: none;
+    appearance: none;
+    background: url(https://uploads-ssl.webflow.com/64a6e98ac29cad9c1667428e/64a6e98ac29cad9c16674309_icon_chevron.svg) 96% / 1rem no-repeat;
+}
+.form_main_field_date {
+   -moz-appearance: textfield;
+}
+/* WebKit Browsers (Chrome, Safari, Edge) */
+.form_main_field_date::-webkit-calendar-picker-indicator {
+    display: none;
+}
+/* Edge (Old Version) */
+.form_main_field_date::-ms-clear {
+    display: none;
+}
+  .sr-only:checked + .checkbox-label {
+    background-color: var(--swatch--success-background); /* Background color when selected */
+    color: #104551; /* Text color when selected */
+border: solid;
+border-color: var(--swatch--brand-hover);
+border-width: var(--border-width--forms);
+    font-weight: 600;
+    font-size: var(--text-small--font-size);
+  }
+.radio_corner,
+.form_radio_corner {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  transition: all 0.3s ease;
+}
+.radio_corner:checked,
+.form_radio_corner:checked{
+  background-color: var(--swatch--brand);
+  border-color: var(--swatch--brand-hover);
+}
+.radio_corner:checked::after 
+.form_radio_corner:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0.6rem;
+  height: 0.6rem;
+  background-color: white;
+  border-radius: 50%;
+}
+/* Hover state for the card */
+.checkbox_card:hover,
+.radio_card:hover {
+  background-color: color-mix(in srgb, var(--swatch--brand) 10%, transparent);
+}
+/* Checked state for the card */
+.radio_corner:checked + .checkbox_card,
+.form_radio_corner:checked + .radio_card {
+  background-color: color-mix(in srgb, var(--swatch--brand) 15%, transparent);
+  border-color: var(--swatch--brand);
+  border-width: var(--border-width--main);
+}
+/*RANGE SLIDER FORMATTING */
+/* Base styles for the range input */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2px;
+  background: var(--swatch--brand-background);
+  border: 1px solid var(--theme--border);
+  border-radius: 4px;
+  outline: none;
+}
+/* Filled range track */
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--swatch--moogul);
+  border-radius: 4px;
+}
+input[type="range"]::-moz-range-track {
+  height: 2px;
+  background: var(--swatch--brand-background);
+  border-radius: 4px;
+}
+/* Handle styles */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--swatch--moogul);
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -7px; /* To vertically center the handle */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--swatch--moogul);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease;
+}
+/* Handle hover state */
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+input[type="range"]::-moz-range-thumb:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+/* Focus state */
+input[type="range"]:focus {
+  outline: none;
+}
+/* RANGE SLIDER FORMATTING ENDS*/
+</style>
+      </div>
+    </div>
+    <div class="status_bar_wrap u-hflex-right-center u-gap-medium">
+      <div class="credits_wrapper u-hflex-left-center u-gap-xsmall">
+        <div class="icon_0-9rem w-richtext">
+          <div class="w-embed"><i class="fi fi-rr-magic-wand"></i></div>
+        </div>
+        <div wized="credits_count" class="u-weight-medium u-text-small">2000</div>
+      </div>
+      <div class="brand_switcher u-hflex-left-center">
+        <div data-hover="false" data-delay="300" data-w-id="5a3d21f8-a72c-7034-e2be-12836769eb94" class="w-dropdown">
+          <div class="brand_switcher_toggle u-hflex-right-center w-dropdown-toggle">
+            <div wized="brand_name_status" class="u-text-small u-weight-medium">Brand</div><img src="https://d3e54v103j8qbb.cloudfront.net/plugins/Basic/assets/placeholder.60f9b1840c.svg" loading="lazy" wized="statusbar_brand_logo" alt="" class="brand_switcher_logo">
+            <div wized="brand_switch_dropdown" class="icon_0-9rem w-embed"><i class="fi fi-rr-angle-small-down"></i></div>
+          </div>
+          <nav class="brand_switch_dropdown_wrap w-dropdown-list">
+            <a wized="brand_switch_options" href="#" class="brand_switch_dropdown_item w-dropdown-link">Link 1</a>
+          </nav>
+        </div>
+      </div>
+      <div class="help_wrapper u-hflex-right-center u-gap-micro">
+        <div data-modal-trigger="notifications" wized="modal_trigger" class="idea_icon_wrap u-vflex-center-center">
+          <div class="icon_1rem w-richtext">
+            <div class="w-embed"><i class="fi fi-rr-bell"></i></div>
+          </div>
+          <div data-modal-key="notifications" wized="modal_wrapper" class="notification_wrap u-vflex-stretch-top u-gap-none u-shaded-container">
+            <div wized="render_notifications" class="notification_item_wrap u-grid-custom is-read">
+              <div id="w-node-e3b5a7b3-76b3-d73f-1793-cff6cbd4154c-6769eb8d">
+                <div data-noification-type="audience" wized="notification_icon" class="icon_1-25rem is-notification w-embed"><i class="fi fi-rr-target-audience"></i></div>
+                <div data-noification-type="offer" wized="notification_icon" class="icon_1-25rem is-notification w-embed"><i class="fi fi-rr-sack-dollar"></i></div>
+                <div data-noification-type="method" wized="notification_icon" class="icon_1-25rem is-notification w-embed"><i class="fi fi-rr-gem"></i></div>
+                <div data-noification-type="platform" wized="notification_icon" class="icon_1-25rem is-notification w-embed"><i class="fi fi-rr-megaphone-announcement-leader"></i></div>
+                <div data-noification-type="core" wized="notification_icon" class="icon_1-25rem is-notification w-embed"><i class="fi fi-rr-bullseye"></i></div>
+                <div data-noification-type="tov" wized="notification_icon" class="icon_1-25rem is-notification w-embed"><i class="fi fi-rr-waveform-path"></i></div>
+                <div data-noification-type="pillar" wized="notification_icon" class="icon_1-25rem is-notification w-embed"><i class="fi fi-rr-message-quote"></i></div>
+                <div data-noification-type="source" wized="notification_icon" class="icon_1-25rem is-notification w-embed"><i class="fi fi-rr-features"></i></div>
+                <div data-noification-type="proof" wized="notification_icon" class="icon_1-25rem is-notification w-embed"><i class="fi fi-rr-shield-check"></i></div>
+                <div data-noification-type="content" wized="notification_icon" class="icon_1-25rem is-notification w-embed"><i class="fi fi-rr-journal-alt"></i></div>
+              </div>
+              <div id="w-node-_4a0d7ab8-d1a2-1642-36ef-ad6d158b9e12-6769eb8d" class="notification_text_wrap u-vflex-left-top">
+                <div class="name_link_wrap u-gap-xsmall">
+                  <div wized="notification_action" class="u-weight-medium">Generated new offer</div>
+                  <div wized="notification_link" class="open_link_icon w-embed"><i class="fi fi-rr-arrow-up-right-from-square"></i></div>
+                </div>
+                <div wized="notification_name" class="u-text-italic">&quot;Big Sale Day Bonanza&quot;</div>
+              </div>
+              <div class="notifcation_time_wrap u-vflex-center-top u-gap-micro">
+                <div wized="notification_unread" class="warning_notification is-notification"></div>
+                <div wized="notification_time" class="notification-date">7 hours ago</div>
+              </div>
+            </div>
+          </div>
+          <div wized-cloak="" wized="notifications_dot" class="warning_notification is-notification is-top"></div>
+        </div>
+        <div wized="modal_trigger" data-modal-trigger="ideas" class="idea_icon_wrap u-vflex-center-center">
+          <div class="icon_1rem w-richtext">
+            <div class="w-embed"><i class="fi fi-rr-bulb"></i></div>
+          </div>
+          <div data-modal-key="ideas" wized="modal_wrapper" class="ideas_container is-ideas-dropdown u-vflex-stretch-top">
+            <div class="w-form">
+              <form id="submit-ideas-form" name="email-form-2" data-name="Email Form 2" method="get" wized="idea_submit_form" class="ideas_callout u-vflex-stretch-top u-gap-small" data-wf-page-id="6677219563afbe994729bf07" data-wf-element-id="959985cf-7c96-1cba-1ed4-8674ebfa6152">
+                <div wized="close_delete_modal" data-w-id="959985cf-7c96-1cba-1ed4-8674ebfa6153" class="modal_close_button is-tiny">
+                  <div class="icon_1-4rem w-richtext">
+                    <div class="w-embed"><i class="fi fi-rr-cross-circle"></i></div>
+                  </div>
+                </div>
+                <div class="form_main_field_wrap u-vflex-stretch-top u-gap-micro"><label for="full-name" class="form_main_label">Idea text</label><textarea autocomplete="false" autofocus="false" id="" name="idea" type="text" rows="6" required="" wized="add_idea_form_text " class="form_main_field_textarea"></textarea>
+                  <div error="add_idea_form_text" class="form_error_text">This field is required and can&#x27;t be empty</div><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="form_main_field_icon iconify iconify--ph" width="100%" preserveaspectratio="xMidYMid meet" viewbox="0 0 256 256">
+                    <path fill="currentColor" d="M176 232a8 8 0 0 1-8 8H88a8 8 0 0 1 0-16h80a8 8 0 0 1 8 8m40-128a87.55 87.55 0 0 1-33.64 69.21A16.24 16.24 0 0 0 176 186v6a16 16 0 0 1-16 16H96a16 16 0 0 1-16-16v-6a16 16 0 0 0-6.23-12.66A87.59 87.59 0 0 1 40 104.49C39.74 56.83 78.26 17.14 125.88 16A88 88 0 0 1 216 104m-16 0a72 72 0 0 0-73.74-72c-39 .92-70.47 33.39-70.26 72.39a71.65 71.65 0 0 0 27.64 56.3A32 32 0 0 1 96 186v6h64v-6a32.15 32.15 0 0 1 12.47-25.35A71.65 71.65 0 0 0 200 104m-16.11-9.34a57.6 57.6 0 0 0-46.56-46.55a8 8 0 0 0-2.66 15.78c16.57 2.79 30.63 16.85 33.44 33.45A8 8 0 0 0 176 104a9 9 0 0 0 1.35-.11a8 8 0 0 0 6.54-9.23"></path>
+                  </svg>
+                </div>
+                <div wized="option_block_ID" class="form_main_field_wrap u-vflex-stretch-top u-gap-micro"><label for="full-name" class="form_main_label">Title (for your reference)</label><input autocomplete="false" autofocus="false" id="[id]" name="title" type="text" required="" wized="add_idea_form_title" class="form_main_field_input"><svg xmlns="http://www.w3.org/2000/svg" clip-rule="evenodd" fill-rule="evenodd" image-rendering="optimizeQuality" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" viewbox="0 0 43.3492 43.3492" width="100%" id="fi_9298945" fill="currentColor" class="form_main_field_icon">
+                    <path id="_334068072" d="m39.3542 39.0174h-35.3593c-2.201 0-3.993-1.792-3.993-3.9967v-10.653c0-2.2011 1.792-3.993 3.993-3.993h35.3557c2.2012 0 3.9967 1.792 3.9967 3.993v10.653c0 2.2047-1.7919 3.9967-3.9931 3.9967zm-35.3593-16.9531c-1.2699 0-2.2999 1.0335-2.2999 2.2999l.0001 10.6565c0 1.2699 1.0335 2.2999 2.2999 2.2999h35.3556c1.27 0 2.3-1.0335 2.3-2.2999v-10.653c0-1.2699-1.0335-2.2999-2.3-2.2999l-35.3557.0001z"></path>
+                    <path id="_334067664" d="m6.6617 39.0174h-2.6631c-2.2047 0-3.9967-1.792-3.9967-3.9967v-10.653c0-2.2011 1.792-3.993 3.993-3.993h2.6633c.4691 0 .8466.3774.8466.8465v16.953c.0036.4621-.3775.8432-.8431.8432zm-2.6668-16.9531c-1.2699 0-2.2999 1.0335-2.2999 2.2999l.0001 10.6565c0 1.2699 1.0335 2.2999 2.2999 2.2999h1.8167v-15.2563z"></path>
+                    <path id="_334067928" d="m34.2676 22.0643c-.2152 0-.4339-.0812-.5996-.2469l-10.152-10.152c-.3316-.3316-.3316-.8678 0-1.1958.3316-.3316.8678-.3316 1.1957 0l10.1521 10.152c.3316.3316.3316.8678 0 1.1958-.1623.1658-.381.2469-.5962.2469zm-25.186 0c-.2152 0-.4339-.0812-.5997-.2469-.3316-.3316-.3316-.8678 0-1.1958l10.152-10.152c.3316-.3316.8678-.3316 1.1958 0 .3316.3316.3316.8678 0 1.1958l-10.1485 10.152c-.1658.1658-.3809.2469-.5996.2469z"></path>
+                    <path id="_334068000" d="m21.6746 12.9247c-2.3704 0-4.2964-1.926-4.2964-4.2964s1.926-4.2965 4.2964-4.2965c2.3705 0 4.2965 1.9261 4.2965 4.2965s-1.926 4.2964-4.2965 4.2964zm0-6.9033c-1.4356 0-2.6033 1.1677-2.6033 2.6034 0 1.4356 1.1677 2.6033 2.6033 2.6033 1.4357 0 2.6034-1.1677 2.6034-2.6033 0-1.4357-1.1677-2.6034-2.6034-2.6034z"></path>
+                    <path id="_334067256" d="m39.3542 39.0174h-2.6667c-.4691 0-.8466-.381-.8466-.8466l-.0001-16.9531c0-.4691.381-.8465.8466-.8465h2.6632c2.2012 0 3.9967 1.792 3.9967 3.993v10.6565c0 2.2047-1.7919 3.9967-3.9931 3.9967zm-1.8202-1.6932h1.8166c1.27 0 2.3-1.0336 2.3-2.3v-10.6565c0-1.2699-1.0335-2.2999-2.3-2.2999l-1.8166.0001z"></path>
+                  </svg>
+                  <div error="add_idea_form_title" class="form_error_text">This field is required and can&#x27;t be empty</div>
+                </div>
+                <div wized="option_block_ID" class="form_main_field_wrap u-vflex-stretch-top u-gap-micro"><label for="full-name" class="form_main_label">Topic tags (optional)</label><input autocomplete="false" autofocus="false" id="[id]" name="topic" type="text" required="" wized="add_idea_form_topic" class="form_main_field_input"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" width="100%" id="fi_7325493" class="form_main_field_icon">
+                    <path d="m16.377 10.373a2.749 2.749 0 0 1 -1.944-4.694 2.814 2.814 0 0 1 3.888 0 2.747 2.747 0 0 1 0 3.888 2.729 2.729 0 0 1 -1.944.806zm0-4a1.25 1.25 0 0 0 -.884 2.134 1.281 1.281 0 0 0 1.768 0 1.25 1.25 0 0 0 -.884-2.134z" fill="currentColor"></path>
+                    <path d="m10.72 22.685a3.742 3.742 0 0 1 -2.652-1.1l-5.656-5.653a3.755 3.755 0 0 1 0-5.3l8.216-8.216a3.73 3.73 0 0 1 2.94-1.087l5.252.4a3.73 3.73 0 0 1 3.451 3.451l.4 5.252a3.74 3.74 0 0 1 -1.087 2.94l-8.216 8.216a3.739 3.739 0 0 1 -2.648 1.097zm2.559-19.872a2.247 2.247 0 0 0 -1.59.659l-8.217 8.217a2.253 2.253 0 0 0 0 3.182l5.657 5.657a2.253 2.253 0 0 0 3.182 0l8.217-8.217a2.249 2.249 0 0 0 .652-1.764l-.4-5.252a2.239 2.239 0 0 0 -2.08-2.071l-5.252-.4c-.048-.009-.112-.011-.169-.011z" fill="currentColor"></path>
+                  </svg>
+                  <div error="add_idea_form_topic" class="form_error_text">This field is required and can&#x27;t be empty</div>
+                </div>
+                <div class="button_right_align"><button data-w-id="05e090bd-84ad-502b-8388-96cc760cb81d" type="submit" wized="submit_button_attribute" aria-label="Save idea to library" data-button-style="primary" data-grid-name="" class="form_submit_button-wrap">
+                    <div data-button-style="primary" class="form_submit_button"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewbox="0 0 404 283" fill="none" class="form_submit_icon">
+                        <path d="M389 15L135.619 268L15 147.562" stroke="currentColor" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"></path>
+                      </svg></div>
+                  </button></div>
+              </form>
+              <div class="w-form-done">
+                <div>Thank you! Your submission has been received!</div>
+              </div>
+              <div class="w-form-fail">
+                <div>Oops! Something went wrong while submitting the form.</div>
+              </div>
+            </div>
+          </div>
+        </div><button id="customLifeRingLauncher" class="help_icon_wrap u-vflex-center-center"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewbox="0 0 295 294" fill="none" class="icon_1-25rem">
+            <path d="M103.7 92.5C89.95 104.04 80.79 120.88 79.39 139.88L20.33 134.51C23.85 99.26 41.81 68.26 68.21 47.51L103.7 92.5Z" fill="currentColor" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M140.71 213.15L135.2 273.5C98.45 270.28 66.21 251.36 45.2 223.5L93.51 186.91C104.7 201.35 121.54 211.2 140.71 213.15Z" fill="currentColor" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M79.2 145C79.2 160.79 84.54 175.33 93.51 186.91L45.2 223.5C29.19 202.28 19.7 175.87 19.7 147.25C19.7 142.95 19.91 138.7 20.33 134.51L79.39 139.88C79.26 141.57 79.2 143.28 79.2 145Z" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M272.79 157.46C269.9 193.7 251.77 225.65 224.81 246.87L188.36 200.13C188.41 200.09 188.47 200.05 188.52 200.01C203.48 188.9 213.75 171.81 215.82 152.28L272.79 157.46Z" fill="currentColor" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M224.81 246.87C203.25 263.86 176.03 274 146.45 274C142.66 274 138.91 273.83 135.2 273.5L140.71 213.15C143 213.38 145.34 213.5 147.7 213.5C162.93 213.5 176.99 208.54 188.36 200.13L224.81 246.87Z" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M188.36 200.13L186.7 198" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M225.7 248L224.81 246.87" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M68.21 47.51L68.2 47.5" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M202.72 104.19C191.26 88.76 173.45 78.32 153.16 76.72C151.36 76.57 149.54 76.5 147.7 76.5C130.95 76.5 115.6 82.51 103.7 92.5C89.95 104.04 80.79 120.88 79.39 139.88C79.26 141.57 79.2 143.28 79.2 145C79.2 160.79 84.54 175.33 93.51 186.91C104.7 201.35 121.54 211.2 140.71 213.15C143 213.38 145.34 213.5 147.7 213.5C163 213.5 177.12 208.49 188.52 200.01C203.48 188.9 213.75 171.81 215.82 152.28C216.07 149.89 216.2 147.46 216.2 145C216.2 129.71 211.19 115.59 202.72 104.19Z" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M247.11 70.2201L202.72 104.19C191.26 88.7601 173.45 78.3201 153.16 76.7201L158.5 21.0601C194.57 24.4701 226.24 42.9901 247.11 70.2201Z" fill="currentColor" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M146.45 20.5C150.51 20.5 154.53 20.69 158.5 21.06L153.16 76.72C151.36 76.57 149.54 76.5 147.7 76.5C130.95 76.5 115.6 82.51 103.7 92.5L68.21 47.51C89.76 30.6 116.93 20.5 146.45 20.5Z" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M273.2 147.25C273.2 150.69 273.06 154.09 272.79 157.46L215.82 152.28C216.07 149.89 216.2 147.46 216.2 145C216.2 129.71 211.19 115.59 202.72 104.19L247.11 70.22C263.47 91.57 273.2 118.27 273.2 147.25Z" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M248.7 69L247.11 70.22" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M20.33 134.51L20.2 134.5" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M273.2 157.5L272.79 157.46" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M126.2 266.5C139.8 286.64 165.08 295.59 188.2 288.5C210.98 281.51 226.81 260.44 227.2 236.5" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M164.2 26.91C150.6 6.77001 125.32 -2.17999 102.2 4.91001C79.4199 11.9 63.59 32.97 63.2 56.91" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M267.5 166.2C287.64 152.6 296.59 127.32 289.5 104.2C282.51 81.42 261.44 65.59 237.5 65.2" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+            <path d="M26.91 128.2C6.77001 141.8 -2.17999 167.08 4.91001 190.2C11.9 212.98 32.97 228.81 56.91 229.2" stroke="currentColor" stroke-width="5" stroke-miterlimit="10"></path>
+          </svg></button>
+      </div>
+    </div>
+    <div data-theme="dark" class="breakpoint_overlay_wrap u-vflex-center-center u-gap-xlarge">
+      <div class="breakpoint_text u-weight-medium">Your browser is too small. Increase it to at least 990px to continue working</div>
+      <div class="breakpoint_icon w-embed">
+        <?xml version="1.0" encoding="UTF-8"?>
+        <svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 324.55 324.55">
+          <defs>
+            <style>
+      .cls-1 {
+        fill:currentColor;
+        stroke-width: 0px;
+      }
+    </style>
+          </defs>
+          <g id="svg1191">
+            <g>
+              <path class="cls-1" d="m286.12,0H38.43C17.24,0,0,17.24,0,38.43v247.68c0,21.19,17.24,38.43,38.43,38.43h247.68c21.19,0,38.43-17.24,38.43-38.43V38.43c0-21.19-17.24-38.43-38.43-38.43ZM38.43,18h247.68c11.27,0,20.43,9.17,20.43,20.43v42.99H18v-42.99c0-11.27,9.17-20.43,20.43-20.43Zm247.68,288.55H38.43c-11.27,0-20.43-9.17-20.43-20.43V99.42h288.55v186.7c0,11.27-9.17,20.43-20.43,20.43Z"></path>
+              <path class="cls-1" d="m116.44,36.28c-7.48,0-13.57,6.09-13.57,13.57s6.09,13.57,13.57,13.57,13.57-6.09,13.57-13.57-6.09-13.57-13.57-13.57Z"></path>
+              <path class="cls-1" d="m82.3,36.28c-7.48,0-13.57,6.09-13.57,13.57s6.09,13.57,13.57,13.57,13.57-6.09,13.57-13.57-6.09-13.57-13.57-13.57Z"></path>
+              <path class="cls-1" d="m48.16,36.28c-7.48,0-13.57,6.09-13.57,13.57s6.09,13.57,13.57,13.57,13.57-6.09,13.57-13.57-6.09-13.57-13.57-13.57Z"></path>
+              <path class="cls-1" d="m271.32,134.04c-1.25-1.92-3.35-2.99-5.65-2.87l-35.62,1.91c-2.29.12-4.27,1.41-5.31,3.46s-.91,4.41.34,6.33l4.7,7.22-143.35,86.28-4.57-7.91c-1.15-1.98-3.2-3.17-5.49-3.17h0c-2.29,0-4.34,1.18-5.49,3.17l-17.84,30.89c-1.15,1.98-1.15,4.35,0,6.34s3.2,3.17,5.49,3.17h35.67c2.29,0,4.34-1.18,5.49-3.17s1.15-4.35,0-6.34l-4.27-7.39,144.18-86.78,4.94,7.58c1.19,1.82,3.15,2.88,5.3,2.88.12,0,.24,0,.35,0,2.29-.12,4.27-1.42,5.31-3.46l16.16-31.8c1.04-2.04.91-4.41-.34-6.33Z"></path>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div data-theme="invert" data-w-id="2c447384-dab1-d580-aebf-474374332e6f" class="sidebar_wrap u-vflex-stretch-between">
+      <div class="sidebar_top u-vflex-left-top">
+        <a data-app-nav="home" wized="nav_link" aria-label="Navigate to Dashboard" href="#" class="sidebar_logo_link_wrap u-vflex-stretch-center w-inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewbox="0 0 148 82" fill="none" class="sidebar_logo_icon">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M64.59 1.18042C85.59 -2.51958 105.99 9.58042 114.19 29.1804C130.26 29.9804 142.15 33.4704 146.07 39.1504C132.96 38.6704 104.91 41.6904 72.75 47.3604C41.11 52.9404 14.09 59.5804 1.64 64.4904C1.38 64.5904 1.13 64.6904 0.880005 64.7904C2.68 58.0904 12.58 50.7904 27.48 44.4904C28.58 23.2904 43.58 4.89042 64.58 1.19042L64.59 1.18042Z" fill="currentColor" class="path-4"></path>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M86.29 23.0804C87.29 22.5804 89.99 21.8804 93.49 23.6804C96.99 25.4804 100.89 25.5804 102.39 25.4804C102.39 25.8404 102.31 26.3104 102.11 26.8604C101.88 27.5204 101.49 28.3004 100.89 29.1804C99.69 30.9804 97.59 33.1804 94.29 35.4804C94.78 37.0504 94.6 40.3704 93.92 43.9104C87.16 44.9104 80.06 46.0704 72.75 47.3604C65.37 48.6604 58.23 50.0204 51.48 51.4004C49.64 48.2604 48.38 45.2504 48.29 43.5804C44.39 42.5804 41.69 41.1804 39.99 39.8804C38.39 38.7804 37.59 37.6804 37.29 36.9804C38.79 36.5804 42.39 35.1804 44.99 32.2804C47.69 29.4804 50.49 29.0804 51.59 29.2804C51.59 28.6804 52.69 27.2804 53.19 26.6804C48.49 16.2804 52.69 12.5804 55.39 11.9804C56.89 22.5804 63.49 23.0804 68.29 22.3804C72.99 21.3804 79.09 18.5804 76.79 8.08036C79.59 7.78036 84.79 9.88036 83.89 21.1804C84.36 21.4504 85.14 21.9404 85.7 22.4204C85.97 22.6504 86.19 22.8804 86.29 23.0804Z" fill="currentColor" class="logo_highlight"></path>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M2.10999 71.3104C9.23999 81.3904 41.22 84.4804 78.19 77.9904C115.19 71.4904 144.19 57.5904 147.39 45.6904C146.95 45.8704 146.49 46.0504 146.01 46.2304C133.3 51.1104 106.65 57.6304 75.53 63.1104C43.28 68.8004 15.17 71.8104 2.10999 71.3104Z" fill="currentColor" class="path-5"></path>
+          </svg><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewbox="0 0 502 91" fill="none" class="moogul_logo_sidebar">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M64.59 2.18042C85.59 -1.51958 105.99 10.5804 114.19 30.1804C130.26 30.9804 142.15 34.4704 146.07 40.1504C132.96 39.6704 104.91 42.6904 72.75 48.3604C41.11 53.9404 14.09 60.5804 1.64 65.4904C1.38 65.5904 1.13 65.6904 0.880005 65.7904C2.68 59.0904 12.58 51.7904 27.48 45.4904C28.58 24.2904 43.58 5.89042 64.58 2.19042L64.59 2.18042Z" fill="currentColor" class="logo_brand"></path>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M86.29 24.0804C87.29 23.5804 89.99 22.8804 93.49 24.6804C96.99 26.4804 100.89 26.5804 102.39 26.4804C102.39 26.8404 102.31 27.3104 102.11 27.8604C101.88 28.5204 101.49 29.3004 100.89 30.1804C99.69 31.9804 97.59 34.1804 94.29 36.4804C94.78 38.0504 94.6 41.3704 93.92 44.9104C87.16 45.9104 80.06 47.0704 72.75 48.3604C65.37 49.6604 58.23 51.0204 51.48 52.4004C49.64 49.2604 48.38 46.2504 48.29 44.5804C44.39 43.5804 41.69 42.1804 39.99 40.8804C38.39 39.7804 37.59 38.6804 37.29 37.9804C38.79 37.5804 42.39 36.1804 44.99 33.2804C47.69 30.4804 50.49 30.0804 51.59 30.2804C51.59 29.6804 52.69 28.2804 53.19 27.6804C48.49 17.2804 52.69 13.5804 55.39 12.9804C56.89 23.5804 63.49 24.0804 68.29 23.3804C72.99 22.3804 79.09 19.5804 76.79 9.08036C79.59 8.78036 84.79 10.8804 83.89 22.1804C84.36 22.4504 85.14 22.9404 85.7 23.4204C85.97 23.6504 86.19 23.8804 86.29 24.0804Z" fill="currentColor" class="logo_highlight"></path>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M2.10999 72.3104C9.23999 82.3904 41.22 85.4804 78.19 78.9904C115.19 72.4904 144.19 58.5904 147.39 46.6904C146.95 46.8704 146.49 47.0504 146.01 47.2304C133.3 52.1104 106.65 58.6304 75.53 64.1104C43.28 69.8004 15.17 72.8104 2.10999 72.3104Z" fill="currentColor" class="logo_brand"></path>
+            <path d="M175.24 63.4197C175.24 60.6197 176.29 57.9997 180.4 56.0797C183.02 54.7697 182.76 53.1897 182.85 49.6097C183.29 31.8597 183.2 37.4597 183.2 29.3197C183.2 26.1697 183.2 24.1597 180.4 22.6797C177.25 21.0197 175.85 19.3597 175.85 15.0697C175.85 6.67967 180.66 7.80968 194.21 7.80968C206.01 7.80968 210.38 6.75967 212.57 15.5897C213.71 20.2197 214.93 25.9097 216.24 31.2397C217.73 37.4497 217.2 39.9797 219.3 39.9797C221.22 39.9797 220.79 36.3097 222.27 31.5897C223.23 28.3497 224.98 20.1397 226.47 14.6297C228.74 6.75968 230.84 7.80968 242.82 7.80968C254.8 7.80968 259.17 6.75968 259.17 16.2897C259.17 19.2597 257.86 21.1897 255.24 22.7597C252.35 24.3297 252.18 27.0397 252.27 31.1497L252.36 49.6897C252.36 54.4997 254.02 55.0197 255.68 56.2497C257.69 57.7397 259 59.2197 259 63.6797C259 70.7597 252.88 70.2397 242.3 70.2397C234.17 70.2397 230.15 69.7997 230.15 62.8997C230.15 60.5397 230.59 58.6197 232.34 57.0397C234 55.6397 235.05 54.5897 235.23 51.4397C235.4 47.1597 235.23 39.3697 235.14 32.8197C234.97 28.5397 235.32 26.7897 233.48 26.7897C231.82 26.7897 231.73 29.2397 230.77 33.4297C228.5 43.4897 225.96 52.5797 224.39 59.3997C222.38 69.5397 222.73 70.0697 214.42 70.0697C209.17 70.0697 207.34 68.1497 206.2 63.9497C204.36 57.3897 199.73 37.9797 198.68 32.5597C197.98 28.9697 197.63 26.4397 196.06 26.4397C194.22 26.4397 194.31 28.2797 194.31 32.2097V52.4097C194.31 55.4697 194.57 56.2597 196.58 57.8297C199.73 60.2797 199.82 61.9397 199.82 64.6497C199.82 70.0697 195.54 70.1597 186 70.1597C178.22 70.1597 175.25 69.5497 175.25 63.4297L175.24 63.4197Z" fill="currentColor" class="logo_white"></path>
+            <path d="M261.27 45.67C261.27 31.24 269.49 19.7 286.28 19.88C302.63 20.05 310.5 31.07 310.5 45.67C310.5 60.27 302.19 71.11 285.84 71.11C269.49 71.11 261.27 60.27 261.27 45.67ZM293.88 44.71C291.78 36.23 288.9 32.64 283.48 33.69C278.58 34.65 276.4 39.64 278.32 47.42C280.07 54.59 283.57 58 288.64 56.95C293.71 55.9 295.64 51.88 293.89 44.71H293.88Z" fill="currentColor" class="logo_white"></path>
+            <path d="M313.64 45.67C313.64 31.24 321.86 19.7 338.65 19.88C355 20.05 362.87 31.07 362.87 45.67C362.87 60.27 354.56 71.11 338.21 71.11C321.86 71.11 313.64 60.27 313.64 45.67ZM346.25 44.71C344.15 36.23 341.27 32.64 335.85 33.69C330.95 34.65 328.77 39.64 330.69 47.42C332.44 54.59 335.94 58 341.01 56.95C346.08 55.9 348.01 51.88 346.26 44.71H346.25Z" fill="currentColor" class="logo_white"></path>
+            <path d="M364.61 80.8195C364.61 77.3195 366.53 75.0495 369.86 73.3895C371.78 72.3394 373.36 72.1694 373.36 71.0294C373.36 69.8895 372.57 69.7195 370.82 68.4895C368.28 66.8295 367.41 65.5195 367.41 62.7195C367.41 59.9195 369.51 57.4695 372.57 56.6895C375.37 55.8095 376.07 55.8095 375.98 54.4995C375.89 53.2795 375.11 53.0995 373.44 52.1395C368.63 49.4295 366.36 44.6194 366.36 39.0195C366.36 26.2495 375.02 19.7795 387.52 19.7795C390.67 19.7795 392.07 20.1295 392.94 20.2195C394.16 20.3895 394.78 20.3095 394.86 18.6495C394.95 17.0795 394.77 15.2395 394.77 13.7495C394.77 9.37945 398.09 5.43945 403.95 5.43945C410.6 5.43945 416.28 9.98945 416.28 16.8895C416.28 20.1195 415.06 22.3095 411.65 22.3095C410.25 22.3095 408.85 21.9595 407.54 21.6095C405.97 21.2595 404.57 20.8195 403.43 20.8195C402.38 20.8195 401.94 21.5195 401.94 22.5695C401.94 23.2695 402.64 24.0595 403.95 25.0195C408.5 28.3395 410.6 33.3295 410.6 38.4895C410.6 47.1495 405.27 54.3995 392.33 55.7995C386.47 56.4095 384.9 56.4995 384.9 58.9495C384.9 62.4495 388.05 60.5195 397.58 60.5195C409.12 60.4295 415.5 64.3695 415.24 76.5195C415.06 85.4395 404.49 90.0695 386.47 90.0695C372.48 90.0695 364.61 86.7495 364.61 80.7995V80.8195ZM399.32 76.8895C399.32 73.9194 396.35 73.3094 390.49 73.2195C382.62 73.1295 381.05 72.6095 381.05 75.7595C381.05 78.9095 383.24 80.0395 388.13 80.1295C397.66 80.2195 399.32 79.7794 399.32 76.8895ZM395.12 40.1695C395.12 35.4495 392.15 30.4595 387.34 30.4595C383.67 30.4595 381.04 32.9995 381.13 36.4895C381.22 41.0395 384.89 45.7595 389.17 45.7595C392.75 45.7595 395.12 43.4895 395.12 40.1595V40.1695Z" fill="currentColor" class="logo_white"></path>
+            <path d="M421.26 56.8691C421.26 49.5291 422.57 43.5791 422.57 40.0791C422.57 37.6291 422.22 36.4991 420.12 36.4991C417.32 36.4991 415.05 36.0591 415.05 33.1791C415.05 29.7691 417.32 26.3591 420.82 23.9091C423.71 21.8991 427.46 20.3291 431.4 20.3291C436.73 20.3291 439.71 22.8691 439.71 27.9391C439.71 35.1091 438.22 41.9291 438.22 52.3291C438.22 55.2991 440.06 56.4391 442.77 56.4391C448.02 56.4391 450.11 51.2791 450.38 46.2091C450.47 44.5491 450.64 40.3491 450.64 38.5191C450.64 36.6891 450.03 35.6291 448.45 35.6291C446 35.6291 443.99 35.0191 443.99 32.4791C443.99 29.1591 446.35 25.7491 449.85 23.3891C452.56 21.6391 455.97 20.3291 460.08 20.3291C465.06 20.3291 467.95 22.4291 467.95 27.3291C467.95 33.3591 466.2 43.8491 466.2 52.5991C466.2 54.1691 466.9 55.3991 468.3 55.3991C469.26 55.3991 469.87 55.2191 470.92 55.2191C472.32 55.2191 473.54 56.5291 473.54 58.9791C473.54 65.4491 468.64 70.6091 461.91 70.6091C455.53 70.6091 454.13 68.0691 453.43 64.2291C453.17 62.5691 452.73 61.9591 452.12 61.9591C450.81 61.9591 450.46 63.0091 448.89 65.4591C447.23 67.9091 443.47 70.7091 436.56 70.7091C426.94 70.7091 421.26 65.7291 421.26 56.8991V56.8691Z" fill="currentColor" class="logo_white"></path>
+            <path d="M474.5 62.8996C474.5 60.5396 474.59 58.6196 477.3 56.4296C479.31 54.8596 479.66 53.1096 479.92 48.8196C480.09 45.8496 480.09 41.2096 480.09 37.2796C480.09 32.9996 480 23.9896 479.92 20.4096C479.83 17.6996 479.39 17.2596 476.95 17.2596C474.06 17.2596 471.97 16.3896 471.97 13.6696C471.97 10.9496 473.37 8.50957 475.73 5.88957C478.27 2.99957 482.64 0.55957 487.18 0.55957C492.95 0.55957 497.41 3.87957 497.41 10.5296C497.41 12.7996 497.23 16.8196 496.71 23.9896C496.36 30.8096 495.4 44.3596 495.92 50.9196C496.1 53.4596 496.36 54.4996 498.28 56.0796C500.29 57.5696 501.25 59.2296 501.25 62.2896C501.25 67.3596 498.98 69.9796 487.87 69.9796C477.99 69.9796 474.49 69.3696 474.49 62.8996H474.5Z" fill="currentColor" class="logo_white"></path>
+          </svg></a>
+        <a data-app-nav="lightspeed" wized="nav_link" aria-label="Navigate to Lightspeed Creator" feature_access="lightspeed" href="#" class="sidebar_item_link w-inline-block">
+          <div class="icon_1-4rem w-embed"><i class="fi fi-rr-magic-wand"></i></div>
+          <div class="nav_text">Express Creator</div>
+        </a>
+        <a data-app-nav="chat" wized="nav_link" aria-label="Navigate to Ask Moogul" feature_access="chat" href="#" class="sidebar_item_link w-inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewbox="0 0 279 303" fill="none" class="icon_1-4rem">
+            <path d="M165.168 61.5185C202.898 71.1976 230.407 102.2 230.407 148.23C230.407 166.077 216.905 211.088 211.5 227.281M66.0005 227.281C60.5964 211.088 47.5938 166.077 47.5938 148.23C47.5938 102.201 75.1012 71.1999 112.828 61.5196" stroke="currentColor" stroke-width="23" stroke-miterlimit="22.926" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M99.5605 65.6731C79.195 50.3086 63.2153 33.852 61.362 19.551C60.2581 11.0344 49.7482 8.58462 44.2023 18.1893C34.5607 34.8891 31.7909 71.751 61.0023 97.6799" stroke="currentColor" stroke-width="23" stroke-miterlimit="22.926" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M48.2681 83.2813C32.0191 88.858 19.357 96.9812 12 117.692C12 117.692 28.5935 123.589 49 117.585" stroke="currentColor" stroke-width="23" stroke-miterlimit="22.926" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M178.178 65.8688C198.667 50.4487 214.775 33.913 216.637 19.5511C217.741 11.0339 228.251 8.58407 233.797 18.1893C243.394 34.8136 246.183 71.4177 217.392 97.3267" stroke="currentColor" stroke-width="23" stroke-miterlimit="22.926" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M230.52 83.2813C246.86 88.8624 259.595 97.0022 267 117.689C267 117.689 250.436 123.531 230 117.675" stroke="currentColor" stroke-width="23" stroke-miterlimit="22.926" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M114 61.2813C124 58.2812 153 57.7812 163.5 61.2813" stroke="currentColor" stroke-width="23"></path>
+            <path d="M159 257.281H159.004" stroke="currentColor" stroke-width="23" stroke-miterlimit="22.926" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M121.418 257.281H121.422" stroke="currentColor" stroke-width="23" stroke-miterlimit="22.926" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M170.871 203.366C165.465 203.237 160.275 204.084 155.463 205.74C144.767 209.421 133.233 209.421 122.537 205.74C117.724 204.084 112.535 203.237 107.129 203.366C83.7618 203.924 64.72 222.952 64.1493 246.32C63.5416 271.162 83.4993 291.492 108.205 291.492C113.342 291.492 118.273 290.612 122.857 288.995C133.279 285.317 144.722 285.317 155.144 288.995C159.727 290.612 164.658 291.492 169.796 291.492C194.501 291.492 214.459 271.162 213.851 246.319C213.28 222.952 194.238 203.924 170.871 203.366Z" stroke="currentColor" stroke-width="23" stroke-miterlimit="10"></path>
+            <path d="M122 150.281C122 138.131 111.926 128.281 99.5 128.281C87.0736 128.281 77 138.131 77 150.281" stroke="currentColor" stroke-width="23" stroke-linecap="round"></path>
+            <path d="M200 150.281C200 138.131 189.926 128.281 177.5 128.281C165.074 128.281 155 138.131 155 150.281" stroke="currentColor" stroke-width="23" stroke-linecap="round"></path>
+          </svg>
+          <div class="nav_text">Ask Moogul</div>
+        </a>
+        <div data-w-id="2c447384-dab1-d580-aebf-474374332e95" class="sidebar_accordion u-vflex-left-top">
+          <a wized="nav_dna" feature_access="dna" href="#" class="sidebar_item_link w-inline-block">
+            <div class="icon_1-4rem w-embed"><i class="fi fi-rr-floor"></i></div>
+            <div class="nav_text">Strategy Blueprint</div>
+          </a>
+          <div class="sidebar_accordion_list u-vflex-center-top">
+            <a data-app-nav="audiences" wized="nav_link" aria-label="Navigate to Audiences" feature_access="dna" href="#" class="sidebar_subitem_link w-inline-block">
+              <div class="icon_1rem w-embed"><i class="fi fi-rr-target-audience"></i></div>
+              <div class="nav_text is-sub">Audiences</div>
+            </a>
+            <a data-app-nav="offers" wized="nav_link" aria-label="Navigate to Offers" feature_access="dna" href="#" class="sidebar_subitem_link w-inline-block">
+              <div class="icon_1rem w-embed"><i class="fi fi-rr-sack-dollar"></i></div>
+              <div class="nav_text is-sub">Offers</div>
+            </a>
+            <a data-app-nav="magnets" wized="nav_link" aria-label="Navigate to Lead Magnets" feature_access="dna" href="#" class="sidebar_subitem_link u-display-none w-inline-block">
+              <div class="icon_1rem w-embed"><i class="fi fi-rr-magnet-user"></i></div>
+              <div class="nav_text is-sub">Lead Magnets</div>
+            </a>
+            <a data-app-nav="methods" wized="nav_link" aria-label="Navigate to IP" feature_access="dna" href="#" class="sidebar_subitem_link w-inline-block">
+              <div class="icon_1rem w-embed"><i class="fi fi-rr-fingerprint"></i></div>
+              <div class="nav_text is-sub">IP</div>
+            </a>
+            <div class="horizontal_rule"></div>
+            <a data-app-nav="platforms" wized="nav_link" aria-label="Navigate to Content Platforms" feature_access="dna" href="#" class="sidebar_subitem_link w-inline-block">
+              <div class="icon_1rem w-embed"><i class="fi fi-rr-megaphone-announcement-leader"></i></div>
+              <div class="nav_text is-sub">Content Platforms</div>
+            </a>
+            <a data-app-nav="pillars" wized="nav_link" aria-label="Navigate to Pillars" feature_access="dna" href="#" class="sidebar_subitem_link u-display-none w-inline-block">
+              <div class="icon_1rem w-embed"><i class="fi fi-rr-message-quote"></i></div>
+              <div class="nav_text is-sub">Pillars</div>
+            </a>
+            <div class="horizontal_rule"></div>
+            <a data-app-nav="tov" wized="nav_link" aria-label="Navigate to Tone of Voice" feature_access="dna" href="#" class="sidebar_subitem_link w-inline-block">
+              <div class="icon_1rem w-embed"><i class="fi fi-rr-waveform-path"></i></div>
+              <div class="nav_text is-sub">Tone of voice</div>
+            </a>
+            <a data-app-nav="valueprop" wized="nav_link" aria-label="Navigate to Value Proposition" feature_access="dna" href="#" class="sidebar_subitem_link w-inline-block">
+              <div class="icon_1rem w-embed"><i class="fi fi-rr-gem"></i></div>
+              <div class="nav_text is-sub">Value proposition</div>
+            </a>
+            <a data-app-nav="meaning" wized="nav_link" aria-label="Navigate to Brand Meaning" feature_access="dna" href="#" class="sidebar_subitem_link w-inline-block">
+              <div class="icon_1rem w-embed"><i class="fi fi-rr-heart"></i></div>
+              <div class="nav_text is-sub">Meaning</div>
+            </a>
+            <a data-app-nav="bios" wized="nav_link" aria-label="Navigate to Bios &amp; Intros" feature_access="dna" href="#" class="sidebar_subitem_link u-display-none w-inline-block">
+              <div class="icon_1rem w-embed"><i class="fi fi-rr-hand-wave"></i></div>
+              <div class="nav_text is-sub">Brand intros</div>
+            </a>
+          </div>
+        </div>
+        <div data-w-id="481c700f-76a0-9f7a-38ee-1a1e4c1e4634" class="sidebar_accordion u-vflex-left-top">
+          <a wized="nav_library_menu" feature_access="library" href="#" class="sidebar_item_link w-inline-block">
+            <div class="icon_1-4rem w-embed"><i class="fi fi-rr-graduation-cap"></i></div>
+            <div class="nav_text">Knowledge Hub</div>
+          </a>
+          <div class="sidebar_accordion_list u-vflex-center-top">
+            <a data-app-nav="content" wized="nav_link" aria-label="Navigate to Content Library" feature_access="library" href="#" class="sidebar_subitem_link w-inline-block">
+              <div class="icon_1rem w-embed"><i class="fi fi-rr-journal-alt"></i></div>
+              <div class="nav_text is-sub">Content</div>
+            </a>
+            <a data-app-nav="campaigns" wized="nav_link" aria-label="Navigate to Campaigns" feature_access="library" href="#" class="sidebar_subitem_link u-display-none w-inline-block">
+              <div class="icon_1rem w-embed"><i class="fi fi-rr-megaphone"></i></div>
+              <div class="nav_text is-sub">Campaigns</div>
+            </a>
+            <a data-app-nav="chat" wized="nav_link" aria-label="Navigate to Chats" feature_access="chat" href="#" class="sidebar_subitem_link u-display-none w-inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewbox="0 0 279 303" fill="none" class="icon_1rem">
+                <path d="M165.168 61.5185C202.898 71.1976 230.407 102.2 230.407 148.23C230.407 166.077 216.905 211.088 211.5 227.281M66.0005 227.281C60.5964 211.088 47.5938 166.077 47.5938 148.23C47.5938 102.201 75.1012 71.1999 112.828 61.5196" stroke="currentColor" stroke-width="23" stroke-miterlimit="22.926" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M99.5605 65.6731C79.195 50.3086 63.2153 33.852 61.362 19.551C60.2581 11.0344 49.7482 8.58462 44.2023 18.1893C34.5607 34.8891 31.7909 71.751 61.0023 97.6799" stroke="currentColor" stroke-width="23" stroke-miterlimit="22.926" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M48.2681 83.2813C32.0191 88.858 19.357 96.9812 12 117.692C12 117.692 28.5935 123.589 49 117.585" stroke="currentColor" stroke-width="23" stroke-miterlimit="22.926" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M178.178 65.8688C198.667 50.4487 214.775 33.913 216.637 19.5511C217.741 11.0339 228.251 8.58407 233.797 18.1893C243.394 34.8136 246.183 71.4177 217.392 97.3267" stroke="currentColor" stroke-width="23" stroke-miterlimit="22.926" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M230.52 83.2813C246.86 88.8624 259.595 97.0022 267 117.689C267 117.689 250.436 123.531 230 117.675" stroke="currentColor" stroke-width="23" stroke-miterlimit="22.926" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M114 61.2813C124 58.2812 153 57.7812 163.5 61.2813" stroke="currentColor" stroke-width="23"></path>
+                <path d="M159 257.281H159.004" stroke="currentColor" stroke-width="23" stroke-miterlimit="22.926" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M121.418 257.281H121.422" stroke="currentColor" stroke-width="23" stroke-miterlimit="22.926" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M170.871 203.366C165.465 203.237 160.275 204.084 155.463 205.74C144.767 209.421 133.233 209.421 122.537 205.74C117.724 204.084 112.535 203.237 107.129 203.366C83.7618 203.924 64.72 222.952 64.1493 246.32C63.5416 271.162 83.4993 291.492 108.205 291.492C113.342 291.492 118.273 290.612 122.857 288.995C133.279 285.317 144.722 285.317 155.144 288.995C159.727 290.612 164.658 291.492 169.796 291.492C194.501 291.492 214.459 271.162 213.851 246.319C213.28 222.952 194.238 203.924 170.871 203.366Z" stroke="currentColor" stroke-width="23" stroke-miterlimit="10"></path>
+                <path d="M122 150.281C122 138.131 111.926 128.281 99.5 128.281C87.0736 128.281 77 138.131 77 150.281" stroke="currentColor" stroke-width="23" stroke-linecap="round"></path>
+                <path d="M200 150.281C200 138.131 189.926 128.281 177.5 128.281C165.074 128.281 155 138.131 155 150.281" stroke="currentColor" stroke-width="23" stroke-linecap="round"></path>
+              </svg>
+              <div class="nav_text is-sub">Chats</div>
+            </a>
+            <a data-app-nav="sources" wized="nav_link" aria-label="Navigate to Source Materials" feature_access="library" href="#" class="sidebar_subitem_link w-inline-block">
+              <div class="icon_1rem w-embed"><i class="fi fi-rr-features"></i></div>
+              <div class="nav_text is-sub">Source materials</div>
+            </a>
+            <a data-app-nav="proof" wized="nav_link" aria-label="Navigate to Brand Proof" feature_access="library" href="#" class="sidebar_subitem_link w-inline-block">
+              <div class="icon_1rem w-embed"><i class="fi fi-rr-shield-check"></i></div>
+              <div class="nav_text is-sub">Brand Proof</div>
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar_bottom u-vflex-left-top">
+        <div class="horizontal_rule"></div>
+        <a data-app-nav="settings" wized="nav_link" aria-label="Navigate to Settings" href="#" class="sidebar_item_link w-inline-block">
+          <div class="icon_1-4rem w-embed"><i class="fi fi-rr-settings"></i></div>
+          <div class="nav_text">Settings</div>
+        </a>
+        <div class="horizontal_rule"></div>
+        <a wized="nav_logout" aria-label="Log out of Moogul" href="#" class="sidebar_item_link is-logout w-inline-block">
+          <div class="icon_1-4rem w-embed"><i class="fi fi-rr-exit"></i></div>
+          <div class="nav_text">Log out</div>
+        </a>
+      </div>
+    </div>
+    <main class="selector_page_structure u-grid-custom">
+      <div id="w-node-_88a3ef16-16d0-0fbe-6aca-3d467e65238a-4729bf07" class="main-page-header-container u-vflex-left-top u-gap-xsmall">
+        <div class="dna-header-wrapper u-hflex-left-center u-gap-small">
+          <h1 class="u-text-h1">What would you like to create?</h1>
+        </div>
+      </div>
+      <div class="selector_filters_wrapper u-vflex-stretch-top u-gap-xlarge">
+        <div class="filter_block u-vflex-left-top u-gap-large">
+          <div wized="field_block_name" class="form_main_field_wrap u-hflex-between-center u-gap-small">
+            <div class="form_toggle_label_wrap u-hflex-left-center u-gap-xsmall">
+              <div class="icon_1rem w-richtext">
+                <div class="w-embed"><i class="fi fi-rr-lock-open-alt"></i></div>
+              </div><label class="form_main_label_toggle">Available to me</label>
+            </div>
+            <div class="form-block-4 w-form">
+              <form method="get" name="email-form-3" data-name="Email Form 3" class="toggle_form_wrap" data-wf-page-id="6677219563afbe994729bf07" data-wf-element-id="dc05275a-eab7-2cd9-2e91-678d0ff83173"><label class="w-checkbox form_main_toggle_button_wrap">
+                  <div wized="unlocked_button_circle" class="toggle-button-circle"></div><input type="checkbox" aria-label="Toggle locked/unlocked content" name="Checkbox" data-name="Checkbox" wized="content_unlocked" class="w-checkbox-input form_main_field_toggle">
+                  <div wized="unlocked_button_mask" class="toggle-button-mask"></div><span class="checkbox-label-2 w-form-label" for="Checkbox">Available to me</span>
+                </label></form>
+              <div class="w-form-done">
+                <div>Thank you! Your submission has been received!</div>
+              </div>
+              <div class="w-form-fail">
+                <div>Oops! Something went wrong while submitting the form.</div>
+              </div>
+            </div>
+          </div>
+          <div wized="field_block_name" class="form_main_field_wrap u-hflex-between-center u-gap-small">
+            <div class="form_toggle_label_wrap u-hflex-left-center u-gap-xsmall">
+              <div class="icon_1rem w-richtext">
+                <div class="w-embed"><i class="fi fi-rr-star"></i></div>
+              </div><label class="form_main_label_toggle">My favourites</label>
+            </div>
+            <div class="form-block-4 w-form">
+              <form method="get" name="email-form-3" data-name="Email Form 3" class="toggle_form_wrap" data-wf-page-id="6677219563afbe994729bf07" data-wf-element-id="dc05275a-eab7-2cd9-2e91-678d0ff83173"><label class="w-checkbox form_main_toggle_button_wrap">
+                  <div wized="favourites_button_circle" class="toggle-button-circle"></div><input type="checkbox" aria-label="Toggle favourites on/off" name="Checkbox" data-name="Checkbox" wized="content_favourites" class="w-checkbox-input form_main_field_toggle">
+                  <div wized="favourites_button_mask" class="toggle-button-mask"></div><span class="checkbox-label-2 w-form-label" for="Checkbox">Available to me</span>
+                </label></form>
+              <div class="w-form-done">
+                <div>Thank you! Your submission has been received!</div>
+              </div>
+              <div class="w-form-fail">
+                <div>Oops! Something went wrong while submitting the form.</div>
+              </div>
+            </div>
+          </div>
+          <div class="form_main_field_wrap u-vflex-left-center"><input autofocus="false" type="text" wized="content_creation_search_input" placeholder="enter search keyword(s)" arial-label="Search for [items]" class="form_main_field_input is-search">
+            <div class="form_main_field_icon search w-embed"><i class="fi fi-rr-search"></i></div>
+          </div>
+        </div>
+        <div class="filter_block u-vflex-left-top u-gap-large">
+          <div class="filter_block_wrapper u-vflex-stretch-top u-gap-medium">
+            <h2 class="u-text-h3">Filter by type</h2>
+            <div class="form-block-3 w-form">
+              <form id="wf-form-Content-Type-Filter" name="wf-form-Content-Type-Filter" data-name="Content Type Filter" method="get" class="form_main_filter_wrap u-vflex-stretch-top u-gap-small" data-wf-page-id="6677219563afbe994729bf07" data-wf-element-id="d9caaa5e-1f60-9974-5d4a-93b5f3ff482b"><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input wized="input_content_filter" name="content_type_filter" data-name="content_type_filter" type="radio" id="radio" style="opacity:0;position:absolute;z-index:-1" checked="" value=""><span class="form_filter_label no-icon w-form-label" for="radio">Show all content types</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall u-display-none w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_type_filter" id="Bios-pitches" data-name="content_type_filter" wized="input_content_filter" style="opacity:0;position:absolute;z-index:-1" value="Bios &amp; pitches">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-rr-hand-wave"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="Bios-pitches">Bios &amp; pitches</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_type_filter" id="content_type_brainstorming" data-name="content_type_filter" wized="input_content_filter" style="opacity:0;position:absolute;z-index:-1" value="Brainstorming">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-rr-bulb"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="content_type_brainstorming">Brainstorming</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_type_filter" id="Content-platform" data-name="content_type_filter" wized="input_content_filter" style="opacity:0;position:absolute;z-index:-1" value="Content platform">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-rr-megaphone-announcement-leader"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="Content-platform">Content platform</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_type_filter" id="Email-marketing" data-name="content_type_filter" wized="input_content_filter" style="opacity:0;position:absolute;z-index:-1" value="Email marketing">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-rr-at"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="Email-marketing">Email marketing</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_type_filter" id="Sales" data-name="content_type_filter" wized="input_content_filter" style="opacity:0;position:absolute;z-index:-1" value="Sales">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-rr-usd-circle"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="Sales">Sales</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_type_filter" id="Social-media" data-name="content_type_filter" wized="input_content_filter" style="opacity:0;position:absolute;z-index:-1" value="Social media">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-rr-group-community-social-media"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="Social-media">Social media</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_type_filter" id="Slide-deck-outlines" data-name="content_type_filter" wized="input_content_filter" style="opacity:0;position:absolute;z-index:-1" value="Slide deck outlines">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-rr-presentation"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="Slide-deck-outlines">Slide deck outlines</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_type_filter" id="Website" data-name="content_type_filter" wized="input_content_filter" style="opacity:0;position:absolute;z-index:-1" value="Website">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-rr-site-alt"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="Website">Website</span>
+                </label></form>
+              <div class="w-form-done">
+                <div>Thank you! Your submission has been received!</div>
+              </div>
+              <div class="w-form-fail">
+                <div>Oops! Something went wrong while submitting the form.</div>
+              </div>
+            </div>
+          </div>
+          <div class="filter_block_wrapper u-vflex-stretch-top u-gap-medium">
+            <h2 class="u-text-h3">Filter by platform</h2>
+            <div class="form-block-3 w-form">
+              <form id="wf-form-Content-Type-Filter" name="wf-form-Content-Type-Filter" data-name="Content Type Filter" method="get" class="form_main_filter_wrap u-vflex-stretch-top u-gap-small" data-wf-page-id="6677219563afbe994729bf07" data-wf-element-id="9f647506-5b09-2555-08b4-3a6536c09255"><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input wized="input_platform_filter" name="content_platform_filter" data-name="content_platform_filter" type="radio" id="radio" style="opacity:0;position:absolute;z-index:-1" checked="" value=""><span class="form_filter_label no-icon w-form-label" for="radio">Show all platforms</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_platform_filter" id="Instagram" data-name="content_platform_filter" wized="input_platform_filter" style="opacity:0;position:absolute;z-index:-1" value="Instagram">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-brands-instagram"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="Instagram">Instagram</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_platform_filter" id="Facebook" data-name="content_platform_filter" wized="input_platform_filter" style="opacity:0;position:absolute;z-index:-1" value="Facebook">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-brands-facebook"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="Facebook">Facebook</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_platform_filter" id="LinkedIn" data-name="content_platform_filter" wized="input_platform_filter" style="opacity:0;position:absolute;z-index:-1" value="LinkedIn">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-brands-linkedin"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="LinkedIn">LinkedIn</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_platform_filter" id="YouTube" data-name="content_platform_filter" wized="input_platform_filter" style="opacity:0;position:absolute;z-index:-1" value="YouTube">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-brands-youtube"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="YouTube">YouTube</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_platform_filter" id="TikTok" data-name="content_platform_filter" wized="input_platform_filter" style="opacity:0;position:absolute;z-index:-1" value="TikTok">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-brands-tik-tok"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="TikTok">TikTok</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_platform_filter" id="X-Twitter" data-name="content_platform_filter" wized="input_platform_filter" style="opacity:0;position:absolute;z-index:-1" value="X (Twitter)">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-brands-twitter-alt"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="X-Twitter">X (Twitter)</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_platform_filter" id="Podcast" data-name="content_platform_filter" wized="input_platform_filter" style="opacity:0;position:absolute;z-index:-1" value="Podcast">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-rr-podcast"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="Podcast">Podcast</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_platform_filter" id="Blog" data-name="content_platform_filter" wized="input_platform_filter" style="opacity:0;position:absolute;z-index:-1" value="Blog">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-rr-blog-pencil"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="Blog">Blog</span>
+                </label><label class="form_filter_radio_wrap u-hflex-left-center u-gap-xsmall w-radio">
+                  <div class="w-form-formradioinput w-form-formradioinput--inputType-custom form_filter_radio w-radio-input"></div><input type="radio" name="content_platform_filter" id="Newsletter" data-name="content_platform_filter" wized="input_platform_filter" style="opacity:0;position:absolute;z-index:-1" value="Newsletter">
+                  <div class="form_filter_icon w-richtext">
+                    <div class="w-embed"><i class="fi fi-rr-newsletter-subscribe"></i></div>
+                  </div><span class="form_filter_label w-form-label" for="Newsletter">Newsletter</span>
+                </label></form>
+              <div class="w-form-done">
+                <div>Thank you! Your submission has been received!</div>
+              </div>
+              <div class="w-form-fail">
+                <div>Oops! Something went wrong while submitting the form.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="w-node-e36cbcea-d93f-7c53-7e0e-d318acbb9c5f-4729bf07" class="selector_content_cards_wrapper u-grid-autofit">
+        <div wized="content_card_all" class="content_card_wrap">
+          <div wized="onclick_goto_content" class="content_card_unlocked">
+            <div class="content_card_content u-vflex-left-top u-gap-small">
+              <div class="icon_text_wrap u-hflex-between-top">
+                <div wized="content_title" class="u-text-h3">{{content title}}</div><img src="https://d3e54v103j8qbb.cloudfront.net/plugins/Basic/assets/placeholder.60f9b1840c.svg" loading="lazy" wized="content_icon" alt="" class="icon_1-4rem">
+              </div>
+              <p wized="content_desc">{{content description}}</p>
+              <div wized="content_category" class="category_tag_text">{{content category}}</div>
+            </div>
+          </div>
+          <div wized="content_locked" class="content_card_locked">
+            <div class="content_card_content u-vflex-left-top u-gap-small">
+              <div class="icon_text_wrap u-hflex-between-top">
+                <div wized="content_title" class="u-text-h3">{{content title}}</div>
+                <div class="icon_1-4rem w-embed"><i class="fi fi-rr-lock"></i></div>
+              </div>
+              <p>Add DNA to unlock this content type</p>
+              <div wized="missing_prereqs_array" class="missing_dna_items_array u-vflex-stretch-top u-gap-micro">
+                <p wized="missing_eng_items" class="locked_content_link u-weight-medium">{{DNA item}}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div data-empty-state="lightspeed" wized="empty_state_wrapper" class="empty_state_wrapper u-vflex-center-center">
+          <div data-theme="light" class="g_visual_overlay is-cowprint"></div>
+          <div class="empty_state_content u-vflex-center-center u-gap-xlarge">
+            <div class="empty_state_title_wrap u-vflex-center-top u-gap-small">
+              <div class="icon_2rem w-embed"><i class="fi fi-rr-search-alt"></i></div>
+              <div class="u-text-h2">Looks like there are no options here!</div>
+            </div>
+            <div class="empty_state_para">Clear some filters to see more.</div>
+            <div class="empty_state_para"> </div>
+          </div>
+        </div>
+        <div data-request-type="fixed" wized="shimmer_loader" data-loader-request="Get_Content_Options" class="shimmer_loader_wrap is-overview u-grid-custom">
+          <div class="shimmer_loader_cards_line u-hflex-left-top u-gap-large">
+            <div class="shimmer-loader-card_item"></div>
+            <div class="shimmer-loader-card_item"></div>
+            <div class="shimmer-loader-card_item"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=66646c59f1cba0de08fec466" type="text/javascript" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+  <script src="../js/webflow.js" type="text/javascript"></script>
+  <link rel="stylesheet" href="https://xe8j-x4pk-chc3.n7c.xano.io/vault/c6CBcqPY/BIRyMWJ0dvsOngJVaX-u-7OXyB4/3rMr3A../moogul-ag-grid.css">
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.0.3/dist/ag-grid-community.min.js"></script>
+  <script src="https://xe8j-x4pk-chc3.n7c.xano.io/vault/c6CBcqPY/MXn_seYOGKX5bgpbaFj80MRzbyg/IbmH8w../mooul-ag-grid-config-tooltips.js"></script>
+  <script>
+window.Wized = window.Wized || [];
+window.Wized.push((Wized) => {
+  const initializeSelects = () => {
+    const selectElements = document.querySelectorAll('.form_main_field_select');
+    selectElements.forEach(select => {
+      if (select.options.length > 0) {
+        select.options[0].disabled = true;
+      }
+      updateSelectState(select);
+      select.addEventListener('change', function() {
+        updateSelectState(this);
+      });
+    });
+  };
+  function updateSelectState(select) {
+    if (select.selectedIndex === 0) {
+      select.classList.add('placeholder');
+    } else {
+      select.classList.remove('placeholder');
+    }
+  }
+  initializeSelects();
+});
+document.addEventListener("DOMContentLoaded", function () {
+  const inputSelector = ".form_main_field_input, .form_main_field_textarea, .form_main_field_select, .form_main_field_date, .choices__inner";
+  const wrapperSelector = ".form_main_field_wrap";
+  const labelSelector = ".form_main_label";
+  const iconSelector = ".form_main_field_icon";
+  const floatClass = "float";
+  const activeClass = "active";
+  function initializeField(input) {
+    if (input.dataset.initialized) {
+      return;
+    }
+    const closestWrapper = input.closest(wrapperSelector);
+    if (!closestWrapper) return;
+    const closestLabel = closestWrapper.querySelector(labelSelector);
+    const closestIcon = closestWrapper.querySelector(iconSelector);
+    if (
+      input.value !== "" ||
+      (input.tagName === "SELECT" && input.selectedIndex !== 0) ||
+      (input.classList.contains('choices__inner') && input.closest('.choices').querySelector('.choices__item--selectable'))
+    ) {
+      if (closestLabel) closestLabel.classList.add(activeClass);
+      if (closestIcon) closestIcon.classList.add(activeClass);
+    }
+    input.dataset.initialized = 'true';
+    // Add event listeners
+    input.addEventListener('change', () => handleInputChange(input));
+    input.addEventListener('focus', handleInputFocus);
+    input.addEventListener('blur', handleInputBlur);
+  }
+  function handleInputChange(input) {
+    const closestWrapper = input.closest(wrapperSelector);
+    if (!closestWrapper) return;
+    const closestLabel = closestWrapper.querySelector(labelSelector);
+    const closestIcon = closestWrapper.querySelector(iconSelector);
+    if (
+      input.value !== "" ||
+      (input.tagName === "SELECT" && input.selectedIndex !== 0) ||
+      (input.classList.contains('choices__inner') && input.closest('.choices').querySelector('.choices__item--selectable'))
+    ) {
+      if (closestLabel) closestLabel.classList.add(activeClass);
+      if (closestIcon) closestIcon.classList.add(activeClass);
+    } else {
+      if (closestLabel) closestLabel.classList.remove(activeClass);
+      if (closestIcon) closestIcon.classList.remove(activeClass);
+    }
+    if (!input.matches(':focus')) {
+      if (closestLabel) closestLabel.classList.remove(floatClass);
+      if (closestIcon) closestIcon.classList.remove(floatClass);
+    }
+  }
+  function handleInputFocus() {
+    const closestWrapper = this.closest(wrapperSelector);
+    if (!closestWrapper) return;
+    const closestLabel = closestWrapper.querySelector(labelSelector);
+    const closestIcon = closestWrapper.querySelector(iconSelector);
+    if (closestLabel) closestLabel.classList.add(floatClass);
+    if (closestIcon) closestIcon.classList.add(floatClass);
+  }
+  function handleInputBlur() {
+    handleInputChange(this);
+  }
+  function initializeAllFields() {
+    document.querySelectorAll(inputSelector).forEach(initializeField);
+  }
+  // Initialize fields on load
+  initializeAllFields();
+  // Set up the MutationObserver
+  const observer = new MutationObserver((mutations) => {
+    let shouldInitialize = false;
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList' || (mutation.type === 'attributes' && mutation.attributeName === 'class')) {
+        shouldInitialize = true;
+      }
+    });
+    if (shouldInitialize) {
+      initializeAllFields();
+    }
+  });
+  const targetNode = document.querySelector(".dna-form-block, .main-page-content-container, .save-to-library-form, .library_form_block, .generation_page_form_block");
+  if (targetNode) {
+    const config = { 
+      childList: true, 
+      subtree: true, 
+      attributes: true, 
+      attributeFilter: ['class']
+    };
+    observer.observe(targetNode, config);
+  }
+});
+</script>
+  <script>
+// SCROLLING FUNCTION
+// Event listener for menu item clicks
+document.addEventListener('click', (event) => {
+  const clickedElement = event.target;
+  const clickedMenuItem = clickedElement.closest('.scrollbox_menu_item'); 
+  if (clickedMenuItem) { 
+    const scrollTrigger = clickedMenuItem.dataset.scrollTrigger;
+    const scrollContainerId = clickedMenuItem.dataset.scrollboxId;
+    const scrollContainer = document.querySelector(`.scrollbox_content_wrap_main[data-scrollbox-id="${scrollContainerId}"], .scrollbox_content_wrap_modal[data-scrollbox-id="${scrollContainerId}"]`);
+    if (scrollContainer) {
+      const scrollbox = scrollContainer.querySelector(`[data-scroll-to="${scrollTrigger}"]`);
+      if (scrollbox) {
+        const offset = 1.5 * parseFloat(getComputedStyle(document.documentElement).fontSize); // 2rem to px
+        const topPosition = scrollbox.offsetTop - scrollContainer.offsetTop - offset;
+        scrollContainer.scrollTo({
+          top: topPosition,
+          behavior: "smooth",
+        });
+        // Update 'current' class on click
+        updateCurrentClass(scrollContainer, scrollTrigger);
+      }
+    }
+  }
+});
+// Function to update the 'current' class based on manual scrolling
+function updateCurrentClass(scrollContainer, scrollTriggerFromClick = null) {
+  // Select all menu items in the document
+  const scrollboxMenuItems = document.querySelectorAll(".scrollbox_menu_item");
+  // Remove 'current' class from all menu items first
+  scrollboxMenuItems.forEach(item => item.classList.remove("current")); 
+  scrollboxMenuItems.forEach((menuItem) => {
+    const scrollTrigger = menuItem.dataset.scrollTrigger;
+    // Find scrollbox within the document
+    const scrollbox = document.querySelector(`[data-scroll-to="${scrollTrigger}"]`);
+    if (scrollbox) {
+      const scrollboxRect = scrollbox.getBoundingClientRect();
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const isVisible = (
+        scrollboxRect.top < containerRect.bottom && 
+        scrollboxRect.bottom > containerRect.top &&
+        scrollboxRect.top >= containerRect.top
+      );
+      if (isVisible || scrollTrigger === scrollTriggerFromClick) {
+        menuItem.classList.add("current");
+      } 
+    }
+  });
+}
+// Attach scroll listener after DOM is fully loaded
+document.addEventListener('DOMContentLoaded', () => {
+  const scrollContainers = document.querySelectorAll(".scrollbox_content_wrap_main, .scrollbox_content_wrap_modal");
+  scrollContainers.forEach((container) => {
+    container.addEventListener("scroll", () => {
+      updateCurrentClass(container);
+    });
+    updateCurrentClass(container); // Set initial state on load
+  });
+});
+</script>
+</body>
+</html>

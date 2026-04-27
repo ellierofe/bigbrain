@@ -2,8 +2,8 @@
 status: draft
 table: dna_lead_magnets
 type: plural
-related_features: DNA-01, DNA-08, OUT-02
-last_updated: 2026-03-29
+related_features: DNA-01, DNA-08, DNA-07b, OUT-02
+last_updated: 2026-04-27
 ---
 
 # Schema: dna_lead_magnets
@@ -17,7 +17,7 @@ Plural. One row per lead magnet. Free-value offers used for lead capture — the
 | `id` | uuid | PK, defaultRandom | |
 | `brandId` | uuid | not null, FK → `brands.id` | Owning brand |
 | `name` | varchar(200) | not null | Lead magnet name |
-| `kind` | varchar(100) | not null | `guide \| checklist \| template \| quiz \| video_series \| email_course \| workshop \| tool \| assessment \| other` |
+| `kind` | varchar(100) | not null | Canonical lead magnet vocabulary. See `04-documentation/reference/channel-taxonomy.md` ("Lead magnet types"). Values: `guide \| ebook \| checklist \| template \| worksheet \| swipe_file \| quiz \| assessment \| calculator \| tool \| webinar \| workshop \| masterclass \| video_series \| mini_course \| email_course \| report \| whitepaper \| case_study \| free_consult \| audit \| free_chapter \| challenge \| community_access \| other`. Gated by `content_types.prerequisites.lead_magnets`. |
 | `status` | varchar(50) | not null, default 'active' | `draft \| active \| retired` |
 | `summary` | text | nullable | Brief description of what this lead magnet is and what value it delivers. Used in copy and prompt injection. |
 | `valuePromise` | text | nullable | The specific outcome or result the subscriber gets — what does this leave them with? |
@@ -50,3 +50,4 @@ Plural. One row per lead magnet. Free-value offers used for lead capture — the
 - `conversionPath` is strategic, not technical — it describes the logical narrative bridge between "I got this free thing" and "I should buy this offer". It's the copy brief for the nurture sequence.
 - `valuePromise` should be written as a clear, specific outcome statement — not "learn about positioning" but "leave with a one-sentence positioning statement you can use immediately"
 - `kind` captures the format; `contentSummary` captures the substance — both are needed for content generation about the lead magnet
+- **Lead magnets are not channels.** They're kinds of asset that get *delivered* via channels (a webinar runs on `hosted_event`, an ebook is sent via `newsletter`) and *promoted* via channels (`linkedin`, `newsletter`, etc.). `kind` and `dna_platforms.channel` are deliberately separate dimensions in `content_types.prerequisites`.

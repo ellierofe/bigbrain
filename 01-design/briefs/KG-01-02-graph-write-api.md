@@ -54,7 +54,7 @@ interface EdgeInput {
 
 ### `NodeLabel` union type
 All 14 labels from ADR-002:
-`Idea` | `Concept` | `CaseStudy` | `Vertical` | `Methodology` | `Person` | `Organisation` | `Event` | `SourceDocument` | `ContentItem` | `Project` | `FundingEvent` | `Policy` | `Country` | `Date`
+`Idea` | `Concept` | `Mission` | `Vertical` | `Methodology` | `Person` | `Organisation` | `Event` | `SourceDocument` | `ContentItem` | `Project` | `FundingEvent` | `Policy` | `Country` | `Date`
 
 ### `RelationshipType` union type
 All relationship types from ADR-002:

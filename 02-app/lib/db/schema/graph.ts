@@ -7,6 +7,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core"
+import { vector } from './types'
 
 // Flat mirror of all FalkorDB nodes — fast lookup and joining with DNA/source tables.
 // FalkorDB is authoritative for relationships and traversal; this is the fast query layer.
@@ -20,11 +21,13 @@ export const graphNodes = pgTable(
     source: varchar("source", { length: 100 }),                // e.g. SEED_ISO3166, AL_TRANSCRIPT
     fileRef: varchar("file_ref", { length: 500 }),
     properties: jsonb("properties"),                           // label-specific fields
+    embedding: vector('embedding', { dimensions: 1536 }),      // semantic search vector
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("graph_nodes_label_idx").on(table.label),
     index("graph_nodes_name_idx").on(table.name),
+    index("graph_nodes_embedding_idx").using('hnsw', table.embedding.op('vector_cosine_ops')),
   ]
 )
 

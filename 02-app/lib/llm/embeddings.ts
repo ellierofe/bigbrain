@@ -7,9 +7,7 @@ const google = createGoogleGenerativeAI({
 
 // gemini-embedding-2-preview supports Matryoshka truncation.
 // We truncate to 1536 to match existing pgvector column dimensions.
-const EMBEDDING_MODEL = google.textEmbeddingModel('gemini-embedding-2-preview', {
-  outputDimensionality: 1536,
-})
+const EMBEDDING_MODEL = google.textEmbeddingModel('gemini-embedding-2-preview')
 
 // Max ~8000 tokens. Using char count approximation (1 token ≈ 4 chars).
 const MAX_CHARS = 32_000

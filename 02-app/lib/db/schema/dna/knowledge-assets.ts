@@ -35,6 +35,10 @@ export const dnaKnowledgeAssets = pgTable('dna_knowledge_assets', {
   visualPrompt: text('visual_prompt'),
   /** Array of { question, answer, type } */
   faqs: jsonb('faqs').notNull().default([]),
+  /** VOC mapping — { audienceSegmentId, problems: [idx], desires: [idx], objections: [idx], beliefs: [idx] } */
+  vocMapping: jsonb('voc_mapping'),
+  /** Soft refs: uuid[] → src_source_documents.id */
+  sourceDocumentIds: uuid('source_document_ids').array(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-display);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -24,7 +24,32 @@
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
+  --color-field-active: var(--field-active);
   --color-input: var(--input);
+
+  /* State tokens (DS-02) */
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-error: var(--error);
+  --color-error-bg: var(--error-bg);
+  --color-error-foreground: var(--error-foreground);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  --color-info-foreground: var(--info-foreground);
+
+  /* Tag tokens (DS-02) */
+  --color-tag-1: var(--tag-1);
+  --color-tag-2: var(--tag-2);
+  --color-tag-3: var(--tag-3);
+  --color-tag-4: var(--tag-4);
+  --color-tag-5: var(--tag-5);
+  --color-tag-6: var(--tag-6);
+  --color-tag-7: var(--tag-7);
+  --color-tag-8: var(--tag-8);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
@@ -49,72 +74,121 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* NicelyPut brand colours — forest green palette */
+  --color-forest-deep:   #242B27;   /* sidebar, darkest surface */
+  --color-forest-mid:    #2C3630;   /* sidebar accent, elevated dark */
+  --color-sage:          #A5C4B2;   /* primary — muted sage green */
+  --color-sage-light:    #EDF1EF;   /* muted fill, secondary */
+  --color-sage-border:   #DCE2DF;   /* borders, inputs */
+  --color-ink:           #1A1F1C;   /* foreground — near-black with green tint */
+  --color-ink-mid:       #5C6660;   /* muted foreground */
+  --color-paper:         #F8FAF9;   /* background — near-white with green tint */
+  --color-white:         #FFFFFF;   /* card surfaces */
+  --color-field-active:  #4A8B9C;   /* field focus label/icon — warm teal */
+
+  /* Semantic tokens */
+  --background:          #F8FAF9;
+  --foreground:          #1A1F1C;
+  --card:                #FFFFFF;
+  --card-foreground:     #1A1F1C;
+  --popover:             #FFFFFF;
+  --popover-foreground:  #1A1F1C;
+  --primary:             #A5C4B2;
+  --primary-foreground:  #1A1F1C;
+  --secondary:           #EDF1EF;
+  --secondary-foreground:#1A1F1C;
+  --muted:               #EDF1EF;
+  --muted-foreground:    #5C6660;
+  --accent:              #EDF1EF;
+  --accent-foreground:   #1A1F1C;
+  --destructive:         oklch(0.577 0.245 27.325);
+  --border:              #DCE2DF;
+  --input:               #DCE2DF;
+  --ring:                #A5C4B2;
+  --field-active:        #4A8B9C;
+
+  /* ===== State tokens (DS-02) ===== */
+  /* Used for status, save feedback, confidence, warnings. */
+  --success:             #047857;
+  --success-bg:          #D1FAE5;
+  --success-foreground:  #064E3B;
+  --warning:             #B45309;
+  --warning-bg:          #FEF3C7;
+  --warning-foreground:  #78350F;
+  --error:               var(--destructive);
+  --error-bg:            #FEE2E2;
+  --error-foreground:    #7F1D1D;
+  --info:                #1D4ED8;
+  --info-bg:             #DBEAFE;
+  --info-foreground:     #1E3A8A;
+
+  /* ===== Tag tokens (DS-02) ===== */
+  /* Decorative category differentiation. Single-role backgrounds. */
+  /* Pill text uses --foreground (existing). Indexed naming for future-proofing. */
+  --tag-1:               #A1BED6;   /* dusty blue */
+  --tag-2:               #C4A5B7;   /* dusty lilac */
+  --tag-3:               #E5E0A3;   /* custard */
+  --tag-4:               #A5A8C4;   /* dusty lavender */
+  --tag-5:               #CE998B;   /* terracotta */
+  --tag-6:               #748B7E;   /* olive */
+  --tag-7:               #84D2D6;   /* cool teal */
+  --tag-8:               #D68497;   /* dusty rose */
+
+  --chart-1:             #A5C4B2;
+  --chart-2:             #5C6660;
+  --chart-3:             #242B27;
+  --chart-4:             #EDF1EF;
+  --chart-5:             #DCE2DF;
+  --radius:              0.625rem;
+
+  /* Sidebar — forest deep */
+  --sidebar:                    #242B27;
+  --sidebar-foreground:         #F8FAF9;
+  --sidebar-primary:            #A5C4B2;
+  --sidebar-primary-foreground: #1A1F1C;
+  --sidebar-accent:             #2C3630;
+  --sidebar-accent-foreground:  #F8FAF9;
+  --sidebar-border:             #2C3630;
+  --sidebar-ring:               #A5C4B2;
+
+  /* Elevation */
+  --shadow-pane:    0 1px 4px rgba(26,31,28,0.08), 0 4px 14px rgba(26,31,28,0.07);
+  --shadow-raised:  0 4px 16px rgba(26,31,28,0.10);
+  --shadow-overlay: 0 8px 32px rgba(26,31,28,0.16);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background:          #1A1F1C;
+  --foreground:          #F8FAF9;
+  --card:                #242B27;
+  --card-foreground:     #F8FAF9;
+  --popover:             #242B27;
+  --popover-foreground:  #F8FAF9;
+  --primary:             #A5C4B2;
+  --primary-foreground:  #1A1F1C;
+  --secondary:           #2C3630;
+  --secondary-foreground:#F8FAF9;
+  --muted:               #2C3630;
+  --muted-foreground:    #A5C4B2;
+  --accent:              #2C3630;
+  --accent-foreground:   #F8FAF9;
+  --destructive:         oklch(0.704 0.191 22.216);
+  --border:              #2C3630;
+  --input:               #2C3630;
+  --ring:                #A5C4B2;
+  --chart-1:             #A5C4B2;
+  --chart-2:             #5C6660;
+  --chart-3:             #F8FAF9;
+  --chart-4:             #2C3630;
+  --chart-5:             #242B27;
+  --sidebar:                    #1A1F1C;
+  --sidebar-foreground:         #F8FAF9;
+  --sidebar-primary:            #A5C4B2;
+  --sidebar-primary-foreground: #1A1F1C;
+  --sidebar-accent:             #242B27;
+  --sidebar-accent-foreground:  #F8FAF9;
+  --sidebar-border:             #2C3630;
+  --sidebar-ring:               #A5C4B2;
 }
 
 @layer base {
@@ -126,5 +200,35 @@
   }
   html {
     @apply font-sans;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+}
+
+@layer components {
+  /*
+   * Sidebar hover-to-expand:
+   * When collapsed (icon-only), hovering the sidebar container temporarily
+   * expands it to full width so labels and sub-items are visible.
+   * Cmd+B (or the SidebarTrigger) persists the open state via cookie.
+   */
+  [data-slot="sidebar-container"]:has([data-sidebar="sidebar"]:hover) {
+    width: var(--sidebar-width) !important;
+  }
+  [data-slot="sidebar-container"]:has([data-sidebar="sidebar"]:hover)
+    [data-slot="sidebar-group-label"] {
+    margin-top: 0 !important;
+    opacity: 1 !important;
+  }
+  [data-slot="sidebar-container"]:has([data-sidebar="sidebar"]:hover)
+    [data-sidebar="menu-sub"] {
+    display: flex !important;
+  }
+  [data-slot="sidebar-container"]:has([data-sidebar="sidebar"]:hover)
+    [data-sidebar="menu-sub-button"],
+  [data-slot="sidebar-container"]:has([data-sidebar="sidebar"]:hover)
+    [data-sidebar="menu-sub-item"] {
+    display: flex !important;
   }
 }

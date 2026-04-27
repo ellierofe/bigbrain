@@ -3,7 +3,7 @@
 > Registry of all features. This is not a sprint plan — it's an inventory.
 > Each feature has dependencies, layer, and which core problem(s) it addresses.
 > Status: `planned` → `in-progress` → `done` | `parked` for future milestones
-> Last updated: 2026-03-30
+> Last updated: 2026-04-27 (KG-04 politics graph port + KG-05 external data sources working list added per ADR-007)
 
 ---
 
@@ -93,7 +93,7 @@
 ## STORAGE — KNOWLEDGE GRAPH
 
 ### KG-01: Core graph schema
-- **What:** Define and implement node types and relationship types per ADR-002. Node types: Idea, Concept, CaseStudy, Vertical, Methodology, Person, Organisation, Event, SourceDocument, ContentItem, Project, FundingEvent, Policy, Country (seed), Date (seed). Relationship types: see ADR-002.
+- **What:** Define and implement node types and relationship types per ADR-002. Node types: Idea, Concept, Mission, Vertical, Methodology, Person, Organisation, Event, SourceDocument, ContentItem, Project, FundingEvent, Policy, Country (seed), Date (seed). Relationship types: see ADR-002.
 - **Layer:** data
 - **Problems:** P3, P4
 - **Size:** M
@@ -143,6 +143,27 @@
 - **Enables:** User trust in the system
 - **Status:** planned
 
+### KG-04: UK politics graph port
+- **What:** Audit, clean, and port the existing UK politics knowledge graph (~75K nodes, ~347K edges across 20 node types and 44 edge types) into BigBrain's FalkorDB + Neon mirror. Reconcile the politics schema with ADR-002: direct merges for Person, Organisation, Country, Event; new label additions for PolicyPosition, Constituency, Poll, PollWave, Election, RegisteredInterest, DonationTransaction, LoanTransaction (or an agreed subset). Add high-value edge types (DONATION_TO, STOOD_IN, HOLDS_POSITION, SIGNED) to ADR-002; map the long tail to RELATES_TO with a `rel_subtype` property. All ingestion runs through canonical register so MPs/donors who reappear in Atomic Lounge research land on the same node.
+- **Layer:** data
+- **Problems:** P3, P4
+- **Size:** L
+- **Depends on:** KG-01, KG-02, GRF-01, GRF-02, SKL-09 (ingestion skill)
+- **Enables:** KG-05 (politics graph is the spine the wider ecosystem hangs off), Atomic Lounge three-body analysis
+- **Status:** in-progress (audit phase — schema and content review before port)
+- **Notes:** External data sources strategy is captured in ADR-007. ADR-002 schema additions for new label/edge types to be drafted as a separate ADR amendment once audit completes. Companies House integration already exists in the source graph and ports with it.
+
+### KG-05: External data sources working list
+- **What:** Living document at `04-documentation/reference/external-data-sources.md` capturing the named data sources per category and jurisdiction, with ingestion priority, access method (free / paid / scraped), and current status. Categories per ADR-007: capital flows, regulatory and policy, people and influence, media and narrative, procurement and demand, technical and IP. Jurisdictions: UK, US, EU, Israel (Phase 2). Each source becomes its own ingestion script via SKL-09 when it reaches the front of the queue.
+- **Layer:** data / docs
+- **Problems:** P3, P4
+- **Size:** S (initial document) + ongoing
+- **Depends on:** ADR-007 (strategy ✓), KG-04 (politics port establishes the patterns)
+- **Enables:** All future external ingestion work — each source is a child task off this list
+- **Status:** planned
+- **Strategy:** `00-project-management/decisions/adr-007-external-data-sources.md`
+- **Notes:** Reports (Goldman, McKinsey, NAO, GAO, etc.) are ingested *on demand only* per ADR-007 §4 — not added to this list as scheduled ingestions. The list tracks structured/repeated sources.
+
 ---
 
 ## STORAGE — VECTOR SEARCH
@@ -166,6 +187,17 @@
 - **Depends on:** VEC-01
 - **Enables:** OUT-01, OUT-02, RET-01
 - **Status:** planned
+
+### VEC-03: FalkorDB native vector search
+- **What:** Store embedding vectors as properties on FalkorDB graph nodes alongside the Neon mirror. Create HNSW vector indexes in FalkorDB. Enables combined semantic + structural Cypher queries — e.g. "find nodes semantically similar to X within 2 hops of node Y" in a single query, which pgvector can't do (requires two separate calls). Every node already has a `description` property; embeddings generated from `name + description` enrich the graph data and make it more meaningful and queryable.
+- **Layer:** data
+- **Problems:** P3, P4
+- **Size:** M
+- **Depends on:** VEC-01 (embedding pipeline), KG-02 (graph write API), RET-01 (retrieval layer — validates the two-step pattern before deciding if native search is needed)
+- **Enables:** Combined semantic+structural graph queries, faster retrieval at 30k+ nodes, richer graph data
+- **Status:** planned
+- **Priority:** v2 — evaluate after RET-01 v1 is running. If the two-step pattern (pgvector search → FalkorDB traversal) causes latency issues at scale, this becomes high priority.
+- **Reference:** [FalkorDB skills library](https://github.com/FalkorDB/skills) — documents HNSW vector index creation and querying in Cypher.
 
 ---
 
@@ -191,7 +223,8 @@
 - **Size:** M
 - **Depends on:** DNA-01, DASH-01
 - **Enables:** OUT-02, OUT-03
-- **Status:** planned
+- **Status:** in-progress
+- **Implementation:** Auto-saving edit views for business overview (two-column with summary card), brand meaning (featured statement blocks with accent border), value proposition (featured statements + SectionCard grouping). Query layer: `lib/db/queries/dna-singular.ts`. Server actions: `app/actions/dna-singular.ts`. Remaining: AI-driven generate/refresh flows (see `01-design/briefs/DNA-02-singular-dna-intake.md` — generation pattern being established on DNA-03 first).
 
 ### DNA-03: Plural DNA elements — Audience segments
 - **What:** CRUD for audience segments. Each segment: name, demographics, psychographics, voice-of-customer statements across problems, desires, objections, beliefs (VOCs), notes, overview, avatar.
@@ -201,24 +234,26 @@
 - **Depends on:** DNA-01, DASH-01
 - **Enables:** OUT-02
 - **Status:** done
+- **Note:** Status badge needs moving from left panel to header area (template-level change from DNA-05 layout design, 2026-04-23). Small refactor — next time this page is touched.
 
 ### DNA-04: Plural DNA elements — Offers
-- **What:** CRUD for offers. Each offer: name, description, target audience, key VOCs met, USP, features, outcomes, benefits, pricing, FAQs, bonuses, guarantee, positioning, strategy.
+- **What:** CRUD for offers. Each offer: name, description, target audience, key VOCs met, USP, features, outcomes, benefits, pricing, FAQs, bonuses, guarantee, positioning, strategy. Three-phase creation: quick form → VOC mapping → interlocutor generation. Knowledge asset linking in scope.
 - **Layer:** output
 - **Problems:** P2, P5
 - **Size:** M
 - **Depends on:** DNA-01, DASH-01
 - **Enables:** OUT-02
-- **Status:** planned
+- **Status:** in-progress
+- **Brief:** `01-design/briefs/DNA-04-offers.md` (approved 2026-04-23)
 
-### DNA-05: Plural DNA elements — Methodologies
-- **What:** CRUD for methodology summaries. Name, type, description, origin, target audience segment(s), key VOCs met, process, competitors etc. Links to detailed methodology nodes in the knowledge graph.
+### DNA-05: Plural DNA elements — Knowledge Assets
+- **What:** Full CRUD for knowledge assets (methodologies, frameworks, processes, tools, templates). Source-doc-driven creation with VOC mapping and interlocutor generation. Entity outcomes (value gen). Manual graph linking for methodology kind. Brief: `01-design/briefs/DNA-05-knowledge-assets.md`.
 - **Layer:** output
 - **Problems:** P2, P4
 - **Size:** M
 - **Depends on:** DNA-01, KG-02, DASH-01
-- **Enables:** OUT-02, CLIENT-01
-- **Status:** planned
+- **Enables:** OUT-02, CLIENT-01, DNA-04
+- **Status:** in-progress
 
 ### DNA-06: Plural DNA elements — Content pillars
 - **What:** CRUD for content pillars. Each: topic, framing, formats, media types, angles, approach, how-you're-different.
@@ -237,7 +272,32 @@
 - **Size:** S
 - **Depends on:** DNA-01, DASH-01
 - **Enables:** OUT-02
+- **Status:** done
+- **Brief:** `01-design/briefs/DNA-07-platforms.md` (approved 2026-04-23)
+- **Implementation:** Five-tab detail view (Strategy, Formats & Output, Ideas, Performance, Sources, Related Content stub). Generation via Gemini Pro with Claude Sonnet fallback when capacity errors hit. Two-path creation modal: "Answer questions" or "Generate from source documents" (follows DNA-05 pattern, uses `SourceDocPicker` + `SourceMaterialsTable` molecules). Three new molecules built: `ExpandableCardList` (JSONB array editor), `StringListEditor` (string list with click-to-edit), `KeyValueEditor` (key-value object editor). Platform switcher pills + archive flow follow dna-plural-item template. Source doc support: new `source_document_ids` column (migration 0020), source doc text injected into generation prompt as primary authority.
+
+### DNA-07b: Channel / ToV / content-type taxonomy consolidation
+- **What:** Resolve the four overlapping format taxonomies that currently make channel-specific behaviour fragile: `dna_platforms.platform_type` (medium-grouped: `social`/`owned_content`/`email`/`video`/`audio`/`other`), `dna_tov_applications.format_type`, `dna_tov_samples.format_type`, and (incoming via OUT-02) `content_types.format_type`. Define a canonical three-level taxonomy — `category` → `channel` → `format (format_type + subtype)` — that handles publishing platforms, paid channels, earned channels, in-person, and relationship-based channels under one roof. Enables channel-specific prerequisite checks for content types — so "Podcast episode brainstorm" can require an actual configured podcast channel with strategy/audience/episode catalogue, not just any audio platform. Includes: schema refinement to `dna_platforms` (`category` + `channel` columns; `platform_type` deprecated), backfill of existing rows, alignment of ToV applications/samples format_type vocabulary, alignment of `dna_lead_magnets.kind` vocabulary, and documentation of the canonical vocabulary at `04-documentation/reference/channel-taxonomy.md`. Affects four OUT-02 callsites: picker locks (`prerequisites.channels` + `prerequisites.lead_magnets`), ToV cascade, Topic Engine "platform" category (now "channel"), and content-type prerequisite checks.
+- **Layer:** data + cross
+- **Problems:** P2, P5
+- **Size:** M
+- **Depends on:** DNA-07 (done), DNA-09 (done)
+- **Enables:** OUT-02 (Phase 1 unblocked — `content_types.prerequisites.channels` can now gate against `dna_platforms.channel`), OUT-02a (long-form, heavily channel-specific), DNA-08 (lead magnet `kind` vocabulary aligned in same pass; UI build still parked)
+- **Status:** done — closed 2026-04-27
+- **Brief:** `01-design/briefs/DNA-07b-channel-taxonomy.md` (approved 2026-04-27)
+- **Layout:** `01-design/wireframes/DNA-07b-layout.md` (approved 2026-04-27)
+- **Reference:** `04-documentation/reference/channel-taxonomy.md` (canonical vocabulary — three-level model: `category` → `channel` → `format`)
+- **Implementation:** Migration 0022 applied 2026-04-27 (added `dna_platforms.category` + `.channel` NOT NULL, made `platform_type` nullable; backfilled 2 Atomic Lounge rows + 6 ToV samples + 1 ToV application from `social` → `social_short`). TypeScript source-of-truth in `02-app/lib/types/channels.ts` (`Category`, `Channel`, `CATEGORY_HUES`, `CHANNELS_BY_CATEGORY`, `categoryHasField`, `validateCategoryChannelPair`). DS-02 tag tokens extended 6 → 8 (`--color-tag-7: #84D2D6` cool teal for `relationships`, `--color-tag-8: #D68497` dusty rose for `other`); `TypeBadge` hue range widened `1..6` → `1..8`. `ItemSwitcher` extended with optional `getGroup` + `getGroupLabel` props for category-grouped dropdowns (backwards-compatible). New `ChangeCategoryChannelModal` molecule for post-creation category/channel edits. `CreatePlatformModal` reworked: identity step now shows 4×2 grid of category cards on top, with channel select + name + handle revealed inline once a category is chosen. Cards page `/dna/platforms/cards` now category-grouped (canonical category order, empty categories omitted). Detail view: stacked category + channel badges in left panel, "Change category / channel" link, conditional field hiding via `categoryHasField()`, conditional tab visibility via `categoryHasIdeasTab()` / `categoryHasFormatsTab()`, per-category label tweaks (`postingFrequency` → "Cadence" for non-publishing categories, `engagementApproach` → "Follow-up approach" for `relationships`). Sidebar nav label "Platforms" → "Channels" (route stays `/dna/platforms`). Generation prompts updated to use `category` + `channel`. Tangential improvement: `SelectField` now renders option labels (not raw values) in the trigger — benefits every existing usage. **Decisions (2026-04-27):** `dna_platforms` table name intentionally kept (not renamed `dna_channels`) — column-driven semantics; table-name/concept gap is an accepted cost. Validation of `(category, channel)` is app-layer only, not DB-layer. `platform_type` column kept nullable for backwards compat — drop scheduled in DNA-07c follow-up.
+
+### DNA-07c: Drop deprecated `platform_type` column
+- **What:** Drop the now-unused `dna_platforms.platform_type` column (deprecated in DNA-07b but kept nullable as an additive-only escape hatch). Removes the legacy taxonomy from the schema entirely. Includes: confirming no app code reads `platform_type` (already true post-DNA-07b), Drizzle schema update to remove the field, migration with `ALTER TABLE ... DROP COLUMN`. Small follow-up housekeeping job — only touch when DNA-07b has baked.
+- **Layer:** data
+- **Problems:** P2
+- **Size:** XS
+- **Depends on:** DNA-07b (done), confirmation that DNA-07b has been live without regressions for at least one usage cycle
+- **Enables:** Cleaner schema. No downstream features blocked on this.
 - **Status:** planned
+- **Note:** Intentionally not bundled into DNA-07b. Reasoning: DNA-07b is additive (new columns, new vocab); dropping the old column is the only destructive part of the change. Keeping them in separate migrations means a regression in the new code can be rolled back without losing the deprecated column's data. Once we're confident nothing reads `platform_type` anymore (search the codebase + production logs), this becomes a one-statement migration.
 
 ### DNA-08: Plural DNA elements — Lead magnets
 - **What:** CRUD for lead magnets. Each: content summary, structure, strategy, conversion path.
@@ -256,17 +316,45 @@
 - **Size:** L
 - **Depends on:** DNA-01, INF-06, GEN-PROMPTS-01
 - **Enables:** OUT-02, OUT-03
-- **Status:** planned
+- **Status:** done — closed 2026-04-27
+- **Implementation:** 3-table schema (base record, samples library, per-format applications) — tables exist since M1. Generation prompt built and tested (Gemini Flash, structured JSON output). 14 writing samples seeded (8 blog, 6 social). Base ToV record generated with dimensions, summary, linguistic notes, emotional resonance, vocabulary. Review/edit UI at `/dna/tone-of-voice` — two-column layout with left summary panel + tabbed right content (linguistics, dimensions, vocabulary, samples, applications). Applications tab built 2026-04-27 (manual create + edit, archive, dimension delta sliders with base→effective readout, do-not-use list). Establishes `tab-master-detail` pattern. **Closed 2026-04-27:** sample add UI shipped (two-step `AddSamplesModal` reusing `SourceDocPicker` for browse/upload then a per-source format/subtype categorise step; pulls `extractedText` into the sample row), and regeneration flow shipped (`Regenerate from samples` button next to Active pill — generates a fresh draft via `generateObject` against the current samples, inserts as `status='draft'` alongside the active row; `Approve draft` promotes draft → active and archives the previous active; `Discard draft` deletes the draft). Generate-from-samples for applications tracked separately as GEN-02.
+- **Deferred from DNA-09 scope:** `tonalTags` editing UI on samples and applications, and sample `embedding` generation. Schema fields exist but no UI or write path. Both are used at generation time (per schema: filter samples by `formatType` then `tonalTags` overlap; `embedding` is fallback when tag filtering leaves too many candidates). Revisit when OUT-02 retrieval is wired — decide then whether to add editing UI here, AI-suggest at sample intake, or leave as seed-only curation.
 
 ### GEN-PROMPTS-01: Generation prompt design and review
-- **What:** Design, review, and refine the LLM prompts used to generate structured DNA records from raw inputs. We have legacy prompts to draw on but they need auditing and rewriting to: (a) produce structured JSON output matching current schemas, (b) work within the BigBrain context rather than the old standalone tool context, (c) handle the ToV generation case specifically — which must output dimension scores + descriptions + vocabulary lists, not just prose guidelines.
+- **What:** Design, review, and refine the LLM prompts used to generate structured DNA records from raw inputs.
 - **Layer:** cross
 - **Problems:** P2, P5
 - **Size:** M
 - **Depends on:** INF-06, DNA-01
-- **Enables:** DNA-09, OUT-01, OUT-02, INP-03
+- **Status:** superseded — closed 2026-04-26
+- **Resolution:** DNA generation prompts shipped during DNA-03 / DNA-04 / DNA-05 / DNA-07 / DNA-09 builds (live at `02-app/lib/llm/prompts/`). Output-direction prompt architecture is now scoped under OUT-02 with the eight-layer prompt model — see `01-design/content-creation-architecture.md`.
+
+### GEN-01: Audience segment generation
+- **What:** LLM-powered generation flow in the audience segment creation modal. User provides role context + optional biggest problem/desire through a guided conversation; system injects business context (DNA, existing segments), generates full segment profile (psychographics, VOC statements, demographics, summary, avatar), saves directly to detail view. Avatar image generated in parallel. Establishes the generation pattern for all future DNA types.
+- **Layer:** output + cross
+- **Problems:** P2, P5
+- **Size:** M
+- **Depends on:** DNA-03 (done), DNA-01 (done), INF-06 (done), INF-04 (done)
+- **Enables:** GEN-PROMPTS-01 (first implementation), all future DNA generation features (pattern)
+- **Status:** done
+- **Brief:** `01-design/briefs/GEN-01-audience-segment-generation.md` (approved 2026-04-20, complete 2026-04-23)
+- **Models:** Gemini Pro 3.1 (profile generation), Gemini 3.1 Flash Image Preview (avatar generation)
+- **Planned companion:** UC-3 refresh/evolve existing segment — separate brief when ready
+
+### GEN-02: Tone of voice application generation from samples
+- **What:** From the Samples tab on the ToV page, select 1+ writing samples and generate a `dna_tov_applications` record from them. LLM compares the samples against the base ToV record (dimensions, summary, linguistic notes) and produces label suggestion + dimensionDeltas + notes + structuralGuidance + doNotUse list as a draft. User reviews and edits in the existing Applications detail pane. Coexists with manual creation — manual = full control, generate = fast first draft.
+- **Layer:** output + cross
+- **Problems:** P2, P5
+- **Size:** M
+- **Depends on:** DNA-09 (Applications manual UI — done 2026-04-27), GEN-PROMPTS-01 (in-progress — application-generation prompt pattern should be defined here), INF-06
+- **Enables:** Realistic adoption of the Applications feature for non-experts; faster onboarding of per-format voice rules
 - **Status:** planned
-- **Priority note:** The ToV generation prompt is the most complex and highest priority within this — it must produce structured multi-field output. Review existing prompts in `04-documentation/reference/legacy_prompts/` as starting point. The intake/creation prompts for other DNA types (audience segments, offers, etc.) are also in scope here.
+- **UX direction (needs proper layout pass at brief stage):**
+  - Samples tab gains multi-select (checkboxes per row)
+  - "Generate application" button appears in tab toolbar when 1+ selected
+  - Modal: confirm label (auto-suggested from common subtype/formatType), confirm formatType (auto-suggested), run generation
+  - On success, navigate to Applications tab with new draft selected
+- **Note:** Sibling to GEN-01 (audience segment generation) — same generate-then-review pattern, different content type. The `tonalTags` + `embedding` fields currently deferred from DNA-09 scope become relevant here at generation time. Address when this is built, not before.
 
 ### DNA-10: Brand identity storage
 - **What:** Store visual identity parameters: colours (with values), fonts, motifs, core assets, logos. File references for assets.
@@ -329,13 +417,18 @@
 ## INPUTS
 
 ### INP-01: Krisp transcript ingestion
-- **What:** Import Krisp transcripts (file upload or folder watch). Store original, extract metadata (date, participants if detectable).
+- **What:** Fetches new meetings via Krisp MCP (`search_meetings` + `get_multiple_documents`), resolves participants against `contacts` table, auto-tags via `meeting_types`, and stores transcripts in `src_source_documents` with `inbox_status = 'new'`. No auto-extraction — processing is user-triggered via INP-11.
 - **Layer:** input
 - **Problems:** P1, P3
 - **Size:** M
-- **Depends on:** INF-04
-- **Enables:** INP-03
-- **Status:** planned
+- **Depends on:** INF-02, INF-06, SRC-01
+- **Enables:** INP-11 (multi-modal processing), INP-08 (meeting classification)
+- **Status:** done
+- **Brief:** `01-design/briefs/INP-01-krisp-ingestion.md` (approved 2026-04-08, updated 2026-04-18 for INP-11)
+- **Tables:** `contacts` (canonical people registry with dedup), `meeting_types` (pattern-matched recurring call types), `pending_inputs` (legacy — new flow uses `processing_runs`)
+- **Contact dedup:** no emails available from Krisp MCP (names/usernames only); pg_trgm fuzzy name search
+- **Trigger:** Claude Code skill `/krisp-ingest` (SKL-10) — runs locally with Krisp MCP auth. Supports daily mode and `backfill N` mode.
+- **Data:** 58 transcripts ingested 2026-04-18, spanning 2026-03-03 to 2026-04-17.
 
 ### INP-02: Voice note capture
 - **What:** Record or upload voice notes. Transcribe (Whisper API or similar). Store original audio + transcript.
@@ -370,7 +463,8 @@
 - **Size:** M
 - **Depends on:** INP-03 (lightweight version), DASH-01
 - **Enables:** Reduced ADHD friction
-- **Status:** planned
+- **Status:** superseded by IDEA-01
+- **Note:** IDEA-01 covers the text capture path. IDEA-02 covers voice. This entry kept for reference.
 
 ### INP-05: Research document ingestion
 - **What:** Upload PDFs, CSVs, JSON, markdown. Type-specific extraction (PDF text extraction, CSV parsing, etc.). Feeds into INP-03 for processing.
@@ -397,7 +491,30 @@
 - **Size:** M
 - **Depends on:** INP-03, DASH-01
 - **Enables:** Prevents inbox overwhelm
+- **Status:** done
+- **Notes:** Built 2026-04-14. Queue list with review panel (reuses ResultsPanel from INP-03). Delete support added 2026-04-15. Dedup detection backlogged as INP-10.
+
+### INP-10: Queue-time dedup detection
+- **What:** When reviewing pending inputs in the queue, surface indicators showing which extracted items (ideas, concepts, etc.) are similar to items already committed to the graph or present in other pending inputs from the same time window. Helps avoid committing near-duplicate knowledge from repeated conversations on the same topic (e.g. discussing AI-assisted dev workflows with 3-4 different people in the same week). Uses embedding similarity to flag matches. User makes the final call — uncheck dupes before committing.
+- **Layer:** input + output
+- **Problems:** P3 (disconnected knowledge), P4 (research not compounding — dupes dilute rather than compound)
+- **Size:** M
+- **Depends on:** INP-07, RET-01 (needs vector similarity search), VEC-01
+- **Enables:** Cleaner graph, lower review burden, better signal-to-noise as input volume grows
 - **Status:** planned
+- **Notes:** Complements INP-09 (context-aware extraction) which tackles dedup at extraction time. This tackles it at review time — belt and braces. First version: compare pending items against committed graph nodes. Second version: also compare pending items against each other within a configurable time window.
+
+### INP-11: Multi-modal processing
+- **What:** Redesign the input processing flow: separate storage from processing, let the user decide when and how to process source materials. Four processing modes: individual extraction (current INP-03), batch analysis (cross-cutting patterns across a set), reflective analysis (longitudinal patterns over time), project synthesis (distil learning from a body of work). Three-space UI model: Inbox (cue for new arrivals), Sources (permanent library), Results (review before commit). Krisp scrape stops at storage; processing is user-triggered.
+- **Layer:** input + output + cross
+- **Problems:** P1, P3, P4 (also design rules 2 and 3 — separate capture from processing; more content must improve signal not noise)
+- **Size:** XL
+- **Depends on:** INP-03 (done), INP-07 (done), INP-01 (done), SRC-01 (done)
+- **Enables:** AUTO-03 (self-development analysis becomes scheduled Mode 3), SRC-02 (Sources section is the library UI), CLIENT-01 synthesis, MISSION-01 synthesis
+- **Status:** done
+- **Brief:** `01-design/briefs/INP-11-multi-modal-processing.md` (approved 2026-04-17)
+- **Implementation:** Sources page at `/inputs/sources` (inbox filter, preview, delete, bulk select + process). Results page at `/inputs/results` (pending/completed split, analysis review panel). API routes: `/api/process/individual`, `/batch`, `/reflective`, `/synthesis`, `/commit-run`. Processing functions in `lib/processing/analyse.ts`. Analysis uses Gemini Pro (`gemini-3.1-pro-preview`).
+- **Remaining:** Analysis → graph commit not yet wired (analysis documents stored in `processing_runs.analysis_result` but not written to graph nodes). Individual extraction commit through `processing_runs` needs adjustment (`commitExtraction()` creates new source doc row — needs to use existing one).
 
 ### INP-08: Krisp meeting auto-classification
 - **What:** Maintain a list of recurring meeting patterns (name, participants, schedule, tag conventions). When a Krisp transcript is ingested via INP-01, auto-match it against known patterns and pre-populate title and tags accordingly. Example: transcripts with Demetrius on Mondays → title "Mastermind hotseat — [date]", tags ["mastermind", "coaching"]. Patterns stored as a simple config (JSON or DB table). User can review/correct before processing.
@@ -461,7 +578,9 @@
 - **Size:** L
 - **Depends on:** INF-06, KG-02, VEC-02, RET-01
 - **Enables:** OUT-01a, flexible interaction with everything
-- **Status:** planned
+- **Status:** done
+- **Brief:** `01-design/briefs/OUT-01-chat-interface.md` (approved 2026-04-21, complete 2026-04-22)
+- **Implementation:** Custom React chat hook (AI SDK v6 has no useChat). Full page at `/chat` + `/chat/[id]` with conversation history panel. Slide-out drawer from top toolbar. Streaming with tool call indicators. Image attach via vision. Markdown rendering. Auto-title via fast model. DB: `conversations` + `messages` tables (migration 0013). Nav restructured: "Content" → "Ask BigBrain".
 
 ### OUT-01a: Chat recipes / skills
 - **What:** Predefined operations runnable from chat. E.g. "generate a LinkedIn post about [topic] for [audience]", "update my value proposition", "what do I know about [X]?"
@@ -473,22 +592,26 @@
 - **Status:** planned
 
 ### OUT-02: Content creator — single-step
-- **What:** Parameter-driven content generation. Select: audience segment, content pillar, offer element, platform, format. Generates one piece of content with tone of voice applied and source knowledge available. Uses template and centralised prompt injections to help with e.g. copywriting, proofing, tone or layout skills.
+- **What:** Parameter-driven content generation built on the eight-layer prompt model. User picks a content type (filterable catalogue), fills a content-type-specific Strategy panel, drills the Infinite Prompt Engine (1–4 step cascade with multi-select on item steps + free-text augment at any depth), tunes Settings (model, person override, tone variation, variant count), and generates N variants. Variants can be edited inline, saved to library (auto-tagged from selections + user tags), chatted with via inline modal, or regenerated. Saved items appear in `/chat` context picker. Architecture: `content_types` carry catalogue metadata + `topic_context_config`; `prompt_stages` (FK) carry per-stage prompt config across the eight layers; `prompt_fragments` is the unified library (six kinds: persona, worldview, craft, context, proofing, output_contract); `topic_paths` declares the 1–4 step cascade. `generation_runs` is the system-of-record for in-flight + recently-generated work; `library_items` is opt-in registry of explicitly-saved variants.
 - **Layer:** output
 - **Problems:** P5
-- **Size:** L
-- **Depends on:** DNA-01 (all DNA types), DNA-09 (tone), SRC-01, INF-06, RET-01
+- **Size:** XL
+- **Depends on:** DNA-01 (all DNA types), DNA-07b (channel taxonomy — done 2026-04-27), DNA-09 (tone), SRC-01, INF-06, RET-01, OUT-01 (chat infra reuse)
 - **Enables:** OUT-02a
-- **Status:** planned
+- **Status:** in-progress — Phase 1 unblocked 2026-04-27 (DNA-07b shipped, channel taxonomy available for `content_types.prerequisites`). Architecture doc approved 2026-04-26.
+- **Architecture:** `01-design/content-creation-architecture.md` (approved 2026-04-26)
+- **Reference:** `04-documentation/reference/channel-taxonomy.md` is the authoritative vocabulary for `content_types.platform_type` (channel) and `format_type`/`subtype` selection. Use `02-app/lib/types/channels.ts` as the TypeScript source of truth.
+- **Note:** Supersedes GEN-PROMPTS-01 (which is dead — DNA generation prompts already shipped via DNA-03/04/05/07/09 builds; content-output prompt work lands here in the new architecture). Phase 1 partial progress: `prompt_fragments` schema doc + Drizzle file + DB table shipped (migration 0021, 2026-04-27). Next pickup: finish `content_types` schema using the new `prerequisites: { channels: string[]; lead_magnets: string[]; dna: string[] }` shape — channels values are queried against `dna_platforms.channel`, lead_magnets against `dna_lead_magnets.kind`. Picker locks query: `dna_platforms WHERE channel = X AND is_active = true`.
 
 ### OUT-02a: Content creator — long-form / multi-step
-- **What:** Generate sales pages, web pages, proposals, documents. Compositions of DNA elements turned into copy. Template-driven or freeform. Review/edit workflow.
+- **What:** Two-step generation flow for long-form content (sales pages, web pages, proposals). Stage 1 produces a structured blueprint (`{purpose, rationale, messaging, provenance}` per section). User reviews and edits in a richer-than-legacy editor (reorder, per-section regenerate, lock sections, swap DNA per section). Stage 2 generates copy section-by-section. Stage 3 (optional, required for sales pages) is a synthesis pass that reconciles flow against the blueprint. Same eight-layer prompt model and `content_types`/`prompt_stages` schema as OUT-02 — this just enables `is_multi_step = true` and adds the editor + stage handoff. Also includes V2 smarts: AI suggestion from one-line goal in picker, project/mission-aware ranking, retrieval-aware step 4 ranking, cost guardrails.
 - **Layer:** output
 - **Problems:** P5
 - **Size:** XL
 - **Depends on:** OUT-02
 - **Enables:** Complex content production
 - **Status:** planned
+- **Architecture:** `01-design/content-creation-architecture.md` (approved 2026-04-26)
 
 ### OUT-03: Strategy generation and update
 - **What:** Generate or refine DNA elements. Multiple trigger paths: (a) via chat — "help me rethink my positioning for [audience]", (b) via forms/dashboard — structured input, (c) **retrieval-informed** — system pulls relevant source knowledge, research, and graph context to suggest or draft strategy updates. E.g. new research on a topic could surface a prompt to revisit a methodology or content pillar. All paths: generates a draft → you approve → DNA updates with version history.
@@ -529,7 +652,119 @@
 - **Size:** M
 - **Depends on:** INF-01, INF-05
 - **Enables:** All dashboard sub-views (DNA-02 through DNA-08, SRC-02, REG-02, KG-03, INP-07)
-- **Status:** planned
+- **Status:** in-progress
+- **Brief:** `01-design/briefs/DASH-01-dashboard-shell.md` (approved 2026-04-12)
+
+### DS-01: Design system
+- **What:** Establish the molecule component layer, token system, and design-system skill to ensure visual consistency before further feature builds. Refactor existing rough components (PageHeader, ContentPane, InlineField, SectionCard) and build missing molecules (SectionDivider, TabbedPane, InPageNav, PageChrome). Fix diagnosed visual issues (zone separation, field definition, sidebar dividers, button padding).
+- **Layer:** cross
+- **Problems:** All (visual consistency underpins every output)
+- **Size:** L
+- **Depends on:** DASH-01 (shell complete — components to refactor exist)
+- **Enables:** DASH-01 → done, DNA-02 and all future features (consistent molecule layer)
+- **Status:** in-progress
+- **Brief:** `01-design/briefs/DS-01-design-system.md` (approved 2026-04-12)
+- **Spec:** `01-design/design-system.md`
+- **Skill:** `.claude/skills/design-system/SKILL.md`
+
+### DS-02: Semantic colour tokens + status & type molecules
+- **What:** Add **state tokens** (`--color-success`, `--color-warning`, `--color-error`, `--color-info` — each with `-bg` and `-foreground` variants, 12 total) and **tag tokens** (`--color-tag-1`..`-6` — desaturated palette sympathetic to sage, each with `-bg` and `-foreground` variants, 18 total). Finalise the existing `StatusBadge` molecule (currently violates the design system by hardcoding `bg-amber-100 text-amber-800` etc.) and introduce a new `TypeBadge` molecule for category differentiation. Migrate all 60 hardcoded named-Tailwind-colour instances (`green-*`, `amber-*`, `emerald-*`, `red-*`, `blue-*`, `purple-*`, `rose-*`, `orange-*`) across ~30 organism files. Drop all `dark:` overrides as part of migration (no dark-mode story exists for the rest of the app). All-in-one migration.
+- **Layer:** cross
+- **Problems:** All (visual consistency)
+- **Size:** M
+- **Depends on:** DS-01 (done)
+- **Enables:** DS-04 (form controls consume tokens), DS-05 (button molecules consume state tokens for destructive variants), all future state styling. Highest leverage of foundation programme.
+- **Status:** done (2026-04-25)
+- **Brief:** `01-design/briefs/DS-02-semantic-tokens-status-and-type-molecules.md` (complete 2026-04-25)
+- **Layout:** `01-design/wireframes/DS-02-layout.md`
+- **Audit:** `00-project-management/foundation-audit-2026-04-25.md` § 1
+- **Priority:** High — first foundation entry. Lowest risk, highest leverage. **Done.**
+
+### DS-03: Spec backfill for unspecced molecules
+- **What:** Write specs for the 42 registered molecules currently lacking design-system spec entries (after DS-02/04/09 closed some gaps). Tiered depth: 19 full specs (Modal + structural + editor primitives + chat); 18 light specs (feature-coupled + create modals + utility); 1 shared spec covering 4 archive modals. Rewrite the 8 existing DS-01-era full specs in DS-02-style format for consistency. Two file moves: `OfferDetailView` → `02-app/app/(dashboard)/dna/offers/[id]/offer-detail-view.tsx` (organism layer, removed from registry); `ConfidenceBadge` → `02-app/components/confidence-badge.tsx` (proper molecule home). After DS-03, `npm run check:design-system` reports 0 missing-spec warnings.
+- **Layer:** cross
+- **Problems:** All (the gate cannot enforce what isn't specified)
+- **Size:** L
+- **Depends on:** DS-02 (tokens), DS-04 (form-control molecules referenced in modal specs), DS-09 (ItemSwitcher; switcher entries already removed)
+- **Enables:** Real enforcement of the design-system gate going forward. Foundation programme step 3.
+- **Status:** done (2026-04-27)
+- **Brief:** `01-design/briefs/DS-03-spec-backfill.md` (complete 2026-04-27)
+- **Layout:** `01-design/wireframes/DS-03-layout.md`
+- **Audit:** `00-project-management/foundation-audit-2026-04-25.md` § 3
+- **Priority:** High — documentation work but unblocks all future drift prevention. **Done.**
+
+### DS-04: Form controls standardisation
+- **What:** Introduce field-control molecules covering selects, sliders, checkboxes, and (TBD) cell-context inputs. Migrate 9 native `<select>` uses, 2 inline shadcn `Select` uses, 4 `<input type=checkbox>` uses, and 2 (soon 6) `<input type=range>` uses to molecules. Audit-flagged 18 raw `<input>` and 14 raw `<textarea>` uses — many are legitimate cell contexts; brief decides per-file. Phase 1 unblocks DNA-09 Applications tab. Renamed from UX-10 (which was a collision; UX-10 is taken).
+- **Layer:** cross
+- **Problems:** All (visual + behavioural consistency)
+- **Size:** L
+- **Depends on:** DS-02 (semantic tokens), DS-01 (done)
+- **Enables:** DNA-09 Applications (needs `SelectField` + zero-centred `SliderField`); consistent form behaviour across all editable surfaces
+- **Status:** done (2026-04-27)
+- **Brief:** `01-design/briefs/DS-04-form-controls-standardisation.md` (complete 2026-04-27)
+- **Layout:** `01-design/wireframes/DS-04-layout.md`
+- **Audit:** `00-project-management/foundation-audit-2026-04-25.md` § 1
+- **Priority:** High — was blocking DNA-09. **Done.**
+
+### DS-05: Button composition molecules
+- **What:** Build `IconButton` (icon-only button with optional tooltip + optional Link rendering) and `ActionButton` (icon + label primary action with optional tooltip / Link / loading state). Migrate ~21 direct `Button` atom imports across organism files (worst offenders: platform-detail-view, segment-detail-view, mission-workspace, project-workspace). Eliminate 3 Tooltip-wrapping-Button imports (folded into IconButton). **Scoped to buttons only** — DropdownMenu (3 imports), Badge (4 imports), and DS-04-deferred form-control imports stay; tracked as known carrythrough.
+- **Layer:** cross
+- **Problems:** All (visual consistency)
+- **Size:** M
+- **Depends on:** DS-02 (tokens), DS-03 (specs precede new molecules per gate; existing molecule specs documented for cross-reference)
+- **Enables:** Header / section / list-action buttons stop drifting. Atom-import warnings drop ~41 → ~10. Remaining warnings are explicitly out-of-scope (DropdownMenu/Badge/form-control deferrals).
+- **Status:** done (2026-04-27)
+- **Brief:** `01-design/briefs/DS-05-button-composition-molecules.md` (complete 2026-04-27)
+- **Layout:** `01-design/wireframes/DS-05-layout.md`
+- **Audit:** `00-project-management/foundation-audit-2026-04-25.md` § 3
+- **Priority:** Medium — biggest atom-import offender by count. **Done.** Atom imports 41 → 20 (carrythrough: Badge × 4, DropdownMenu × 3 + render Buttons × 3, DS-04 deferrals).
+
+### DS-06: Save contract definition + migration
+- **What:** Document a canonical save contract in the design system: which trigger (onBlur+debounce / onMouseUp / form submit / explicit button) and which feedback (inline badge / debounced toast / spinner) for each surface type. Migrate the worst drift hotspots: Value Proposition differentiators (currently silent `onChange` — users can't tell saves persisted), Tone of Voice (4 patterns on one page), Brand Meaning value cards (silent textareas). Extract duplicate debounced-toast logic from `inline-field.tsx:11-17` and `ideas-list.tsx:10-17` into a shared utility. Adds new `ListRowField` molecule for inline-list-row text editing (Differentiators, Alternatives, Brand Meaning values).
+- **Layer:** cross
+- **Problems:** P1 (visibility — users must trust their edits saved)
+- **Size:** M
+- **Depends on:** DS-04 (so new form controls land with the contract baked in)
+- **Enables:** Coherent save UX across the app; absorbs UX-07 (autosave feedback consistency) which is a subset of this work.
+- **Status:** done (2026-04-27)
+- **Brief:** `01-design/briefs/DS-06-save-contract.md` (approved 2026-04-27)
+- **Layout:** `01-design/wireframes/DS-06-layout.md` (approved 2026-04-27)
+- **Audit:** `00-project-management/foundation-audit-2026-04-25.md` § 2
+- **Priority:** Medium — behavioural drift, less visible than appearance drift but more confusing in daily use. **Done.**
+- **Note:** UX-07 (autosave feedback consistency) closed as superseded by this work.
+
+### DS-07: Modal / list / popover molecules
+- **What:** Build the structural molecules that absorb the remaining appearance drift. `ModalFooter` (or extend `Modal` with a `footer?` prop) — covers ~11 archive/create modal files each rolling their own `flex justify-end gap-2 pt-2`. `ListItem` / `RowItem` — covers ~12 files inlining row padding, hover states, dividers. `FloatingMenu` (or wrap shadcn Popover) — covers ~6 files hand-rolling `absolute right-0 top-8 z-50 ...shadow-[var(--shadow-raised)]` (ideas-list, entity-outcomes-panel, mission-workspace). Also: enforce `EmptyState` and `SectionDivider` usage everywhere.
+- **Layer:** cross
+- **Problems:** All (visual consistency)
+- **Size:** L
+- **Depends on:** DS-02, DS-03
+- **Enables:** Closes out the remaining ~30 organism files with appearance-class drift. Last leg of the foundation programme.
+- **Status:** in-progress (brief approved 2026-04-27 — `01-design/briefs/DS-07-modal-list-popover-molecules.md`)
+- **Audit:** `00-project-management/foundation-audit-2026-04-25.md` § 1
+- **Priority:** Medium — bulk migration; do after the higher-leverage DS-02/03/04/05 land.
+
+### DS-08: Skill enforcement gap analysis
+- **What:** Investigate why the design-system gate (skill `design-system` Mode A: "no molecule without a spec") was bypassed for 44 of 51 registered molecules. Review the `feature-build`, `layout-design`, `feature-template-check`, and `design-system` skills for: (a) where the gate should fire, (b) why it didn't, (c) whether the gate is advisory or hard, (d) what the recovery path is when a feature is mid-build and a missing molecule is discovered. Produce a remediation plan: skill changes, hook additions, or workflow changes that prevent the same drift returning after the foundation programme lands.
+- **Layer:** cross / process
+- **Problems:** Meta — the foundation programme is wasted effort if drift returns
+- **Size:** S
+- **Depends on:** None — can run in parallel with DS-02/03
+- **Enables:** Lasting enforcement after foundation work lands.
+- **Status:** in-progress (this conversation, 2026-04-25)
+- **Priority:** High — must precede new feature builds that touch UI.
+
+### DS-09: Page-chrome switcher unification
+- **What:** Replace the four near-identical pill-strip switcher molecules (`AudienceSegmentSwitcher`, `PlatformSwitcher`, `KnowledgeAssetSwitcher`, `OfferSwitcher` — ~40 LOC each, ~163 LOC total) with a single generic `ItemSwitcher` molecule rendered as a compact dropdown. Long item names overflow the pill strip; a select-shaped switcher handles them cleanly via the dropdown. Sits in the PageChrome `subheader` slot (same place as the current pill strip — no PageChrome API change). Uses base-ui Select internally for keyboard nav and accessibility. Link-based navigation (consumer passes `getHref`). Consumer pre-filters items to "active" (the four switchers each had different active rules — that responsibility moves to the consumer). Removes 4 specs from DS-03's queue.
+- **Layer:** cross
+- **Problems:** All (visual + behavioural consistency); P5 (translation friction — long names readable in dropdown)
+- **Size:** S
+- **Depends on:** DS-04 (uses base-ui Select; not the SelectField molecule directly — ItemSwitcher is its own molecule with simpler internals since it's navigation, not value-editing)
+- **Enables:** Unblocks DS-03 spec backfill (3 fewer null entries to write); cleaner subheader layout for all DNA detail views.
+- **Status:** done (2026-04-27)
+- **Brief:** `01-design/briefs/DS-09-page-chrome-switcher-unification.md` (complete 2026-04-27)
+- **Layout:** `01-design/wireframes/DS-09-layout.md`
+- **Priority:** Medium — sequence: DS-04 → DS-09 → DS-03. **Done.**
 
 ### DASH-02: Brand DNA overview
 - **What:** Single view showing all DNA elements at a glance. Status indicators (complete/draft/empty). Drill-in to edit.
@@ -555,14 +790,15 @@
 - **Notes:** This is the "learning" behaviour — not ML, just progressively richer context injection. First version can inject DNA only (no retrieval needed). Second version adds a retrieval step to pull relevant existing nodes before extraction.
 
 ### RET-01: Unified retrieval layer
-- **What:** Single retrieval interface that combines: vector search (semantic), graph traversal (relational), Postgres queries (structured). Returns ranked, deduplicated results with source references. Used by chat, content creator, and anything that needs context.
+- **What:** Single retrieval interface that combines: vector search (semantic), graph traversal (relational), Postgres queries (structured). Returns ranked, deduplicated results with source references. Exposed to chat LLM as tools (`search_knowledge`, `get_brand_dna`, `get_source_knowledge`, `explore_graph`). Designed to scale to 30k+ nodes and adapt to schema changes (new node types, relationship types, data sources).
 - **Layer:** cross
 - **Problems:** P3, P4, P5
 - **Size:** XL
 - **Depends on:** KG-02, VEC-02, DNA-01, SRC-01
-- **Enables:** OUT-01, OUT-02, quality of all generated output
-- **Status:** planned
-- **Notes:** This is the second most critical feature after INP-03. The quality of every output depends on how well retrieval works.
+- **Enables:** OUT-01, OUT-02, INP-09, INP-10, OUT-05, quality of all generated output
+- **Status:** in-progress
+- **Brief:** `01-design/briefs/RET-01-unified-retrieval.md` (approved 2026-04-20)
+- **Notes:** This is the second most critical feature after INP-03. The quality of every output depends on how well retrieval works. 8 use cases identified. Includes embedding generation at write time (change to `writeNode()`). FalkorDB native vector search deferred to VEC-03.
 
 ### PROV-01: Provenance tracking
 - **What:** Every generated output records: which DNA elements, source knowledge items, graph nodes, and research documents informed it. Stored as relationships. Queryable both directions (what informed this output? where has this source been used?).
@@ -575,15 +811,71 @@
 
 ---
 
-## CLIENT PROJECTS (FUTURE)
+## PROJECTS & MISSIONS
+
+### ORG-01: Organisations table
+- **What:** Postgres table for organisations (companies, institutions, government bodies). Clients link here. Contacts link here (future migration from free-text field). Graph Organisation nodes mirror here.
+- **Layer:** data
+- **Problems:** P4
+- **Size:** S
+- **Depends on:** INF-02
+- **Enables:** CLIENT-01, MISSION-01
+- **Status:** done
+- **Brief:** not required (simple schema, defined in CLIENT-01 brief)
+- **Implementation:** `lib/db/schema/projects.ts` — `organisations` table. Migration 0017 applied 2026-04-23.
 
 ### CLIENT-01: Client project workspace
-- **What:** Scoped project view per client. Own deliverables, research, notes — but connected to the wider graph.
+- **What:** Knowledge container for client engagements. Links to client organisation, holds brief/scope, tracks status, connects to missions/inputs/content/graph. Not a project management tool — tasks and deliverables stay in Notion.
 - **Layer:** output
 - **Problems:** P4
-- **Size:** XL
-- **Depends on:** DASH-01, KG-02, DNA-05
-- **Enables:** CLIENT-02
+- **Size:** L
+- **Depends on:** DASH-01, KG-02, ORG-01
+- **Enables:** CLIENT-02, MISSION-01 (optional link)
+- **Status:** done
+- **Brief:** `01-design/briefs/CLIENT-01-client-projects.md`
+- **Layout:** `01-design/wireframes/CLIENT-01-layout.md`
+- **Implementation:** Schema in `lib/db/schema/projects.ts` (7 tables). Queries in `lib/db/queries/client-projects.ts` + `organisations.ts`. Actions in `app/actions/client-projects.ts`. UI: list at `/projects/clients`, workspace at `/projects/clients/[id]`. New molecules: `ItemLinker`, `CreateProjectModal`. Dashboard "Current work" wired. Graph node creation deferred as enhancement.
+
+### MISSION-01: Research missions
+- **What:** Bounded research investigations with thesis, phase lifecycle, and linked knowledge. Clusters inputs, stats, ideas, and content around a specific question. Can be standalone or linked to a client project. Maps to `Mission` graph node type (ADR-002).
+- **Layer:** output
+- **Problems:** P4
+- **Size:** L
+- **Depends on:** DASH-01, KG-02, ORG-01
+- **Enables:** Compound research, content production from investigations
+- **Status:** done
+- **Brief:** `01-design/briefs/MISSION-01-research-missions.md`
+- **Layout:** `01-design/wireframes/MISSION-01-layout.md` (project-workspace template adaptation)
+- **Implementation:** Migration 0014 (missions, verticals, 4 join tables, mission_phase enum). List at `/projects/missions` with phase filter pills. Workspace at `/projects/missions/[id]` — editable name, thesis (autosave), phase selector, verticals (chips + combobox with inline create), linked contacts/inputs/stats (search + link/unlink). Create modal. Dashboard "Current work" integration. Graph node auto-creation deferred to v2. Client project link deferred to CLIENT-01 UI build. Ideas & Content sections stubbed.
+
+### IDEA-01: Ideas / quick capture
+- **What:** System-wide capture for thoughts, questions, and sparks. Lightbulb button in top toolbar, always visible. Text-only, minimal fields, fast capture. Ideas list lives as a tab in Inputs section at `/inputs/ideas`. Separate from graph Idea nodes — lightweight placeholders, not processed inputs.
+- **Layer:** cross
+- **Problems:** P3, P4
+- **Size:** M
+- **Depends on:** DASH-01
+- **Enables:** MISSION-01 (idea tagging), CLIENT-01 (idea tagging)
+- **Status:** done
+- **Brief:** `01-design/briefs/IDEA-01-quick-capture.md`
+- **Layout:** `01-design/wireframes/IDEA-01-layout.md`
+- **Implementation:** `ideas` table (migration 0015) + polymorphic `idea_tags` table (migration 0018) for tagging to any entity type (missions, client_projects, offers, knowledge_assets, audience_segments). Capture modal has idea/question type toggle + ⌘+Enter shortcut + optional `autoTag` for contextual capture. Ideas list page at `/inputs/ideas` with two-dimensional filters (status + type), inline editing, optimistic delete with undo toast, full tag picker. `IdeasPanel` molecule embeds the full experience in mission and client project workspaces with a "This [entity]" / "All ideas" tab split and one-click Link button for quick context tagging.
+
+### IDEA-02: Voice capture for ideas
+- **What:** In-app audio recording + transcription for voice ideas. Record a voice note, auto-transcribe, save as idea. Currently using SuperWhisper externally — this brings it in-app.
+- **Layer:** cross
+- **Problems:** P3
+- **Size:** M
+- **Depends on:** IDEA-01
+- **Enables:** Frictionless voice capture from any device
+- **Status:** parked
+
+### IDEA-03: AI-surfaced ideas
+- **What:** AI skills that traverse the graph or analyse data to auto-generate ideas. Ideas created with `source: ai_surfaced`. Includes: graph gap detection, synthesis suggestions, connection surfacing. Also: "select text in AI chat response → add as idea" UX.
+- **Layer:** cross
+- **Problems:** P3, P4
+- **Size:** L
+- **Depends on:** IDEA-01, RET-01 (unified retrieval)
+- **Enables:** System-generated insights, spark feed
 - **Status:** parked
 
 ### CLIENT-02: Post-project knowledge extraction
@@ -722,7 +1014,7 @@
 | Infrastructure | 6 | 6 | 0 |
 | Data (KG) | 5 | 5 | 0 |
 | Data (Vector) | 2 | 2 | 0 |
-| Data (DNA) | 10 | 10 | 0 |
+| Data (DNA) | 11 | 11 | 0 |
 | Data (Source) | 2 | 2 | 0 |
 | Data (Registry) | 2 | 2 | 0 |
 | Input | 7 | 7 | 0 |
@@ -732,7 +1024,7 @@
 | Cross-cutting | 2 | 2 | 0 |
 | Client (future) | 2 | 0 | 2 |
 | Development skills | 12 | 12 | 0 |
-| **Total** | **64** | **60** | **4** |
+| **Total** | **65** | **61** | **4** |
 
 ---
 
@@ -803,3 +1095,86 @@ That's the thinnest vertical slice: infra → storage → processing → retriev
 - **Enables:** Processing transcripts in under 2 minutes rather than 10+; reduces cognitive load enough to make regular use realistic
 - **Status:** planned
 - **Priority:** High — the pipeline is only useful if reviewing extractions isn't painful. Current UX works for testing but not for regular use.
+
+### UX-06: Tab and panel design consistency
+- **What:** Establish canonical tab variant and left-panel pattern before building more tabbed content. Three issues found during DNA-09 build: (1) ToV tabs render differently in style to audience segments tabs — need one canonical tab treatment, (2) left panels on both audience segments and ToV pages lack proper visual distinction from the main content area, (3) field label treatment is inconsistent between pages. Fix requires a DS-01 design system pass to define these patterns as molecules, then apply to both existing pages.
+- **Layer:** output
+- **Problems:** All (visual consistency underpins every output)
+- **Size:** M
+- **Depends on:** DS-01 (design system spec must define the canonical patterns)
+- **Enables:** DNA-02 (remaining), DNA-04, DNA-05, DNA-07, and any future tabbed or panel-based views
+- **Status:** done
+- **Priority:** High — blocks all further DNA UI builds. Do before DNA-04/DNA-05.
+- **Note:** DS-01 already lists TabbedPane as a missing molecule. This entry captures the specific inconsistencies found in practice so they're not lost. The fix is part of DS-01 execution, but the problems are concrete enough to track separately.
+- **Implementation:** All three issues resolved: (1) TabbedPane molecule established as canonical tab treatment, applied to both audience segments and ToV pages. (2) Left panels use consistent `bg-muted/30` with `border-r border-border/40` for visual distinction. (3) InlineField label spacing fixed — floating label nudged down (`-top-2`), field spacing increased with `mt-2` on outer wrapper.
+
+### UX-07: Autosave feedback consistency
+- **What:** Autosave "Saved"/"Failed" indicators are rendered inconsistently across features. Three different patterns exist: (1) InlineField molecule — `text-[10px] text-emerald-600` inline with label text, top-left of field. (2) Client projects workspace — save text in top-right corner of the section card action slot. (3) Audience segments — debounced toast notification AND inline text next to the field label. Needs a single canonical pattern applied everywhere. Recommend: InlineField's inline-with-label approach as the default, since it's the most established molecule. Toast notifications for save feedback should be removed — they add noise without information that the inline indicator doesn't already provide.
+- **Layer:** output
+- **Problems:** All (visual consistency)
+- **Size:** S
+- **Depends on:** DS-01 (done)
+- **Enables:** Consistent autosave UX across all editable views
+- **Status:** closed — superseded by DS-06 (done 2026-04-27). The foundation audit found broader save-pattern drift; this entry was one slice. The canonical save contract is now documented in `01-design/design-system.md § Save contract` and the lib lives at `02-app/lib/save-feedback.ts`.
+- **Priority:** P2 — cosmetic inconsistency, not blocking. Fix during next design polish pass.
+- **Raised during:** MISSION-01 build (2026-04-23)
+
+### UX-12: VOC mapping index resilience
+- **What:** VOC mapping on offers (and potentially other DNA types) stores array indexes into audience segment VOC arrays. If VOC statements are reordered, edited, or deleted on the audience segment, the indexes can become stale. Improvement: store a snapshot of the statement text alongside the index as a comparator. On load, compare stored text against current text at that index — surface [updated] or [removed] flags with greyed-out styling. Enables the mapping to degrade gracefully as audience segments evolve.
+- **Layer:** output
+- **Problems:** P2
+- **Size:** S
+- **Depends on:** DNA-04
+- **Enables:** Reliable long-term VOC mapping across DNA types
+- **Status:** planned
+- **Priority:** Low — v1 validates indexes on load and shows "(statement removed)" for out-of-range. This is the upgrade path.
+
+### UX-08: Funnel Gen — sales funnel generation from offers
+- **What:** Generate a sales funnel view from existing offers — how offers ladder together, entry points, upsell paths, gaps in the value ladder. Lightweight generation feature, not a full funnel builder. Could live as a dashboard view or a generation action from the offers list.
+- **Layer:** output
+- **Problems:** P2, P5
+- **Size:** M
+- **Depends on:** DNA-04 (offers must exist with customer journeys)
+- **Enables:** Strategic visibility across the offer portfolio
+- **Status:** planned
+- **Priority:** Low — nice-to-have once multiple offers exist with customer journeys populated.
+
+### UX-09: InPageNav consistency audit
+- **What:** Audit all tabbed detail views to ensure every tab with 2+ sections uses the `InPageNav` molecule with the canonical sticky-nav + scrolling-content pattern. The molecule now includes its own positioning (`w-36 shrink-0 self-start sticky top-0`) — no wrapper div needed. Any view that manually positions InPageNav or uses a different scroll pattern must be migrated. Pattern documented in `dna-plural-item-template.md` and `design-system.md`.
+- **Layer:** output
+- **Problems:** All (visual and interaction consistency)
+- **Size:** S
+- **Depends on:** DS-01 (done)
+- **Enables:** Consistent section navigation across all DNA detail views and any future tabbed content
+- **Status:** done
+- **Priority:** High — inconsistency here breaks the scroll UX.
+- **Raised during:** DNA-07 build (2026-04-23)
+- **Implementation:** InPageNav molecule updated to include sticky positioning. Wrapper divs removed from all three consumers (audience segments, knowledge assets, platforms). Template and design system spec updated. All future uses of InPageNav will get correct behaviour automatically.
+
+### UX-13: Inputs/Sources consolidation
+- **What:** The `/inputs/sources` page and the broader `/inputs` section need rethinking. Currently Sources is under Inputs but functions as a standalone source document library. File upload was added ad-hoc (DNA-05 unblock). Needs: (1) consolidate or clarify the relationship between Inputs (queue/process/results) and Sources (library), (2) proper upload UX with drag-and-drop, type detection, and text extraction pipeline, (3) decide whether Sources should be top-level nav or stay under Inputs.
+- **Layer:** output
+- **Problems:** P1 (outputs as overheads — uploading should be frictionless)
+- **Size:** M
+- **Depends on:** None
+- **Enables:** Better source doc management across all DNA types that reference sources
+- **Status:** planned
+- **Priority:** Medium — functional but messy. Upload works for unblocking DNA-05; proper UX pass needed before more features depend on source doc upload.
+
+### UX-10: Universal "Generate" action for draft plural DNA items
+- **What:** DNA-05 introduced a "Generate" button in the header for draft knowledge assets — sends existing metadata to LLM and populates all fields. This pattern should be universal across all plural DNA items (audience segments, offers, platforms, etc.) so any draft can be generated from its detail view without re-running the creation modal.
+- **Layer:** output
+- **Problems:** P5 (translation friction — reduce steps to get from draft to complete)
+- **Size:** S
+- **Depends on:** DNA-05 (established the pattern)
+- **Enables:** Smoother creation flow across all DNA types
+- **Status:** planned
+
+### UX-11: Fixed tab headings and scrollable content pane
+- **What:** DNA-07 (Platforms) established a pattern where tab headings are fixed and the content area scrolls independently. This needs to be applied consistently across all tabbed DNA detail views (audience segments, knowledge assets, offers, etc.). Currently some views scroll the entire page including tabs.
+- **Layer:** output
+- **Problems:** P2 (consistency — same pattern everywhere)
+- **Size:** S
+- **Depends on:** None
+- **Enables:** Consistent UX across all DNA detail views
+- **Status:** planned

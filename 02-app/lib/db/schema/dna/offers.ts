@@ -21,8 +21,10 @@ export const dnaOffers = pgTable('dna_offers', {
   scarcity: text('scarcity'),
   /** { type, headline, description, terms, businessRiskNote } */
   guarantee: jsonb('guarantee'),
-  /** 'awareness' | 'consideration' | 'decision' | 'retention' */
-  customerJourneyStage: varchar('customer_journey_stage', { length: 50 }),
+  /** VOC mapping — { audienceSegmentId, problems: [idx], desires: [idx], objections: [idx], beliefs: [idx] } */
+  vocMapping: jsonb('voc_mapping'),
+  /** Structured customer journey — array of 5 stages (awareness→advocacy), each with thinking/feeling/doing/pushToNext */
+  customerJourney: jsonb('customer_journey'),
   salesFunnelNotes: text('sales_funnel_notes'),
   cta: text('cta'),
   visualPrompt: text('visual_prompt'),

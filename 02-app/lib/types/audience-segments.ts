@@ -73,6 +73,7 @@ export interface AudienceSegmentSummary {
   segmentName: string
   personaName: string | null
   summary: string | null
+  avatarUrl: string | null
   status: SegmentStatus
 }
 

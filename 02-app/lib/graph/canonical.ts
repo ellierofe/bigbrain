@@ -36,6 +36,25 @@ export async function resolveCanonical(
 }
 
 /**
+ * Look up canonical name for a given entity type + name.
+ * Returns the canonical name if found, null if the entity is not registered.
+ */
+export async function findCanonicalName(
+  entityType: string,
+  name: string
+): Promise<string | null> {
+  const dedupKey = deriveDedupeKey(entityType, name)
+
+  const [row] = await db
+    .select({ canonicalName: canonicalRegister.canonicalName })
+    .from(canonicalRegister)
+    .where(eq(canonicalRegister.dedupKey, dedupKey))
+    .limit(1)
+
+  return row?.canonicalName ?? null
+}
+
+/**
  * Register a new canonical entity after its graph node has been written.
  * Safe to call multiple times — uses INSERT ... ON CONFLICT DO NOTHING.
  */

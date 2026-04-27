@@ -1,8 +1,9 @@
-import { sql } from 'drizzle-orm'
+import { sql, eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { graphNodes, graphEdges } from '@/lib/db/schema/graph'
 import { getGraphClient, GRAPH_NAME } from './client'
 import { registerCanonical } from './canonical'
+import { generateEmbedding } from '@/lib/llm/embeddings'
 import { CANONICAL_TYPES, type NodeInput, type EdgeInput, type WriteResult, type BatchWriteResult } from './types'
 
 // ---------------------------------------------------------------------------
@@ -85,7 +86,21 @@ export async function writeNode(input: NodeInput): Promise<WriteResult> {
       console.error(`writeNode: Neon mirror write failed for node ${input.id}:`, mirrorErr)
     }
 
-    // 3. Auto-register canonical for actor types
+    // 3. Generate and store embedding for semantic search
+    try {
+      const embeddingText = `${input.name} — ${input.description}`
+      const embedding = await generateEmbedding(embeddingText)
+      if (embedding) {
+        const vectorLiteral = `[${embedding.join(',')}]`
+        await db.execute(
+          sql`UPDATE graph_nodes SET embedding = ${vectorLiteral}::vector WHERE id = ${input.id}`
+        )
+      }
+    } catch (embedErr) {
+      console.warn(`writeNode: embedding generation failed for node ${input.id}:`, embedErr)
+    }
+
+    // 4. Auto-register canonical for actor types
     if (CANONICAL_TYPES.has(input.label)) {
       try {
         await registerCanonical(input.label, input.name, input.id)

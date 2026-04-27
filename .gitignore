@@ -2,3 +2,8 @@
 *.pem
 .env*
 .mcp.json
+.gstack/
+.claude/
+
+# Office lock files (Excel/Word create these when files are open)
+~$*

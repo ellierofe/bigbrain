@@ -1,4 +1,4 @@
-import { boolean, date, index, integer, jsonb, pgTable, smallint, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
+import { boolean, date, index, integer, jsonb, pgTable, smallint, text, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core'
 import { brands } from './brands'
 import { vector } from './types'
 
@@ -24,10 +24,19 @@ export const srcSourceDocuments = pgTable('src_source_documents', {
   documentDate: date('document_date'),
   // Embedding of extractedText. Populated async after text extraction (INP-05 pipeline).
   embedding: vector('embedding', { dimensions: 1536 }),
+  /** 32-char hex Krisp meeting ID — set at ingestion time (INP-01) */
+  krispMeetingId: text('krisp_meeting_id'),
+  /** 'new' | 'triaged' | null. Auto-scraped items get 'new'. Null for manually-created sources. */
+  inboxStatus: text('inbox_status'),
+  /** Array of { date, mode, runId } tracking each processing run this source was part of */
+  processingHistory: jsonb('processing_history').notNull().default([]),
+  /** contacts.id array — resolved at ingestion time */
+  participantIds: uuid('participant_ids').array(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('src_source_documents_embedding_idx').using('hnsw', t.embedding.op('vector_cosine_ops')),
+  uniqueIndex('src_source_documents_brand_krisp_idx').on(t.brandId, t.krispMeetingId),
 ])
 
 // ---------------------------------------------------------------------------

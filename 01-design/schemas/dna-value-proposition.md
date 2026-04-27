@@ -56,6 +56,10 @@ Singular. One row per brand. The external-facing strategic statement — what is
 
 Singular table — one live row. `version` incremented on every save.
 
+## Intake design
+
+See `01-design/briefs/DNA-02-singular-dna-intake.md` — Flow 3 (Value Proposition). Conversational flow starting with outcomes, then differentiation, then alternatives. Testimonials used as evidence mirrors. Draft all fields as a package for review — corrections work best as specific claim adjustments ("can't promise X, can promise Y").
+
 ## Notes
 
 - `coreStatement` is the primary prompt injection point — concise enough to fit in a system prompt without dominating context

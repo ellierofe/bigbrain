@@ -1,0 +1,210 @@
+When I was 15 I dropped some acid, drew a penguin on a Tupperware lid and created a new language with him. I then started the serious business of mapping the entire human psyche so I could fix all the world's problems.
+
+
+
+10 mins later I was goggling at an episode of Eurotrash - bizarre at the best of times - and all such plans for world peace (/domination?) were gone.
+
+
+
+But the idea of mapping things - of drawing parallels, finding patterns and working out the underlying machinery of the world - stayed with me.
+
+
+
+In ways I'm still trying to work out I think software, social media and the internet has simultaneously pulled us closer to pattern recognition, while also shifting us away from it.
+
+
+
+We have become terribly adept at building recognition based on ephemera rather than material reality.
+
+
+
+Which is why I love hard tech. Because it forces you into the world of atoms. Material reality doesn't get much more material than defence systems, biology, energy production/storage or robots that have to interact meaningfully with the world around them.
+
+
+
+So I'm starting something. In a way it's a continuation of that blitzed out, teen-Ellie's grand ambitions. 
+
+
+
+
+What's the biggest issue with most startup pitch decks?
+
+Too much orange.
+
+How do I know? And how do you fix 'too much orange'?
+
+____
+
+A while back I was struggling to work out how to talk about structure in a pitch deck.
+
+I was thinking "well, it's kind of abstract and there's a bit of 'gut-feel' to it. How do you nail it all down in a sodding LinkedIn post?"
+
+Then I realised I was being an eejit, and it wasn't abstract at all. Structure is a physical thing (obvs) and we can just colour-code - so you can see it at a glance.
+
+So I categorised the contents of a pitch deck down into 10 key components:
+
+- The problem
+- The solution
+- The market
+- The team
+- Why now?
+- Proof/validation/traction
+- Defensibility
+- Funding / development strategy
+- The business model
+- The vision
+
+And I put a little colour-coded block on each slide, depending on what its contents were.
+
+And I looked at it in slide sorter to see what the 'shape' of the deck was.
+
+And I realised that was a really, really dull process so I just got AI to do it instead.
+
+And thus, the Deck Flow Analysis was born.
+
+And in the vast majority of decks I see, there is too much orange. Too much science. All the science.
+
+Of course science needs to be there. But it needs to be contextualised.
+
+How does this science *combine* with your business strategy to create a defensible business that solves a real, quantifiable problem for a sufficient enough market?
+
+Why is now the right time for it?
+
+What money do you need - and what smart, derisked development strategy will it be funding?
+
+Science investors obviously care about science. But the word 'investment' doesn't mean 'donating money to scientists so they can stay in the lab'. 
+
+They want to 'do well by doing good'. 
+
+Which means you need to show them how the 'do well' bit works.
+
+So aim for less orange. Save that for the academic presentations.
+
+Make your *pitch* structure a multicoloured investor love-fest and you'll be head and shoulders above the vast majority of founders they see.
+
+
+
+One of the reasons I love working with high-expertise founders is they don't tend to bullshit.
+
+These aren't people chasing the 'founder' title like they've got a Silicon Valley-shaped hole in their heart. They're scientists and engineers who've built careers on solving real problems with real evidence.
+
+But they're deep in the weeds on the tech or science behind their solution.
+
+Which is why working on a pitch deck can reveal weaknesses in the wider commercial strategy. 
+
+My role as a pitch deck strategist isn't to paper over those cracks with marketing speak; it's to help identify them and work out what can be done.
+
+How do we tell the story in a way that's genuine? In a way that doesn't make these founders feel dirty in the telling of it? In a way that makes them excited, not reluctant, to pitch?
+
+And as a bonus: what steps can the business take to shore up that commercial strategy? To make the story more believable? 
+
+The process of developing a pitch can be a kind of reverse-engineering your way to a story that's both compelling AND true, via a strategy that supports the story you want to tell. The kind that avoids the insecurity and spin Roy's talking about.
+
+
+
+
+I have a half-arsed theory that the massive shift into software and knowledge work is partially responsible for the massive unreal-ing of our world.
+
+People who work in the real world have constant feedback mechanisms because they have to work within the reality of physics.
+
+Hard tech entrepreneurs can't just keep saying "gravity makes things float upwards" and eventually just reshape the laws of nature around their words.
+
+My electrician brother can't pretend electricity is actually just an oppressed force yearning to be free because unoppressing that voltage will knock him on his arse.
+
+My renovator other half can't just hit Ctrl + Z if he drills into a pipe or cuts a tile wrong. He can't tell someone that leaking toilet is actually a response to the minority stress it experiences as the least loved bathroom fixture.
+
+But knowledge workers can create incantations (Israel is committing genocide, Western countries are white supremacist, the Iranian regime is fighting oppression, Islam is the religion of peace, obesity is healthy, men are women etc etc) that they can just keep repeating and repeating and there is no feedback mechanism that puts them on their arse in the way gravity, or electricity, or a shit-spewing toilet would.
+
+I think this might be the most urgent problem to fix in our Western societies, because some of the most abhorrent people on the planet are really making the most of it.
+
+
+
+
+I found 50 hard tech pitch decks online and it taught me… absolutely feck all.
+
+I mean, as a pitch obsessive I learned things that are useful to *me*. But I’m a bloody weirdo who spent 20 years building presentations so I can get excited over a well-placed border line.
+
+But hard tech founders will mostly get led astray by online pitch decks, because:
+
+🤖 The SaaS-ness of it all
+The 50+ decks in hardware were about 5% of all the decks I found. The vast majority were consumer or SaaS. So if you don’t filter heavily you’ll be fishing in the wrong waters.
+
+⛓️‍💥 Context mismatch
+A Star Trek-level moonshot by a world-renowned team raising from Sovereign Wealth Funds in the Middle East is a very different raise to a drug development company from a first-time founder looking for Pre-Seed angels in the UK.
+
+👨🏻‍🦳 The timeline issue
+What worked in the boom time of 2021 probably won't work today. “The past is a foreign country; they do things differently there.”
+
+🕵🏻‍♀️ Missing variables
+Most online decks redact or remove certain slides. And because you don't know what's missing, you don't know how central they were. There are decks where the traction slide is the irrefutable proof - but if that's been removed because it was sensitive, you end up thinking the deck 'won' on the visible conditions, not the invisible ones.
+
+And finally... 
+
+📖 Your story is unique
+Imagine if every biopic charted exactly the same points of a life.
+
+“This was Freddie Mercury at 1 year old, 5 years old, 20 years old and 50 years old….
+
+“Oh, and here’s Mozart, Mandela and Malala at the same ages.”
+
+Congrats. You have four catastrophically crap films.
+
+Because you’d be missing some fairly important life events for each person. You’d get the gist of their lives, but not the marvel.
+
+And so it is with your pitch. Perhaps your ‘why now’ is all-conquering because the EU just passed some regs that force your customers into existence. 
+
+Or your idea is so moonshot it makes the entire concept of ‘problem’ defunct. 
+
+When you're in the business of innovation, you often don't walk the same path as others. So you need to tell the story that’s right for you, not the ‘template’.
+
+If you're getting polite passes and can't figure out why, it's rarely the slides. It's more common that you're answering the wrong questions with your deck; ones that templates or sample decks make you think you should answer, vs the ones your investment case demands.
+
+🔍 If you want to know whether your deck supports your investment case properly, you can use my tool. 
+
+It analyses 
+❓ what investment case you're deck is currently selling (vs what you think you're selling)
+🧐 what supports or undermines that investment case
+♟️ any strategic gaps or weaknesses (against specific measures across different verticals)
+
+
+
+
+
+I’ve somehow ended up building a very boring assessment tool for pitch decks.
+
+It doesn’t look at design, visuals, or how “good” the deck is. 
+It doesn’t score you, rank you, or tell you how fundable you are. 
+There’s nary a glimmer of a story arc or narrative framework.
+
+All the tool does is look at what your deck is actually conveying.
+
+But I fervently believe that this kind of 'boring' is exactly what most founders need way before any assessment on narrative or design.
+
+The founders I work with have lived and breathed their company for so long that bringing all the moving parts together in one document is like wrestling an octopus. Especially when the company doesn't magically stop evolving while you raise (so... wrestling an octopus that keeps growing new legs).
+
+So even when the slides look great and the narrative feels solid, the underlying investment argument can get a bit… mushy. 
+
+The reason someone should put their money and trust behind the company isn’t as clear from the outside as it feels from the inside.
+
+This has always mattered, but it matters more now. 
+
+Increasingly, decks are being read by AI tools during screening. Unlike humans, they don’t get carried by a good story or infer generously if they like a specific sector or founder. 
+
+They just look for whether the case is actually there.
+
+So this tool shows you what your deck is both explicitly and implicitly saying about your company. Upload your PDF and it will return:
+
+– what an AI thinks your investment case is, with a confidence score, so you can see what story you’re telling machines
+
+ – what your slides imply across a set of 12 strategic categories, so you can see what’s missing or underdeveloped (and whether that’s a deck issue or a strategy issue)
+
+ – the kinds of investor questions or concerns that are likely to come up as a result
+
+That’s it, really. It’s not whizz-bang. It's not some 'create your deck in 3 clicks' workflow. 
+
+It’s just a way of getting a clearer, more external read on your deck before you take it into a room.
+
+I’m looking for a few people to try it and tell me whether it’s useful. The screenshots below show the sort of analysis it produces.
+
+Up for it? Let me know.
+

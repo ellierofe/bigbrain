@@ -33,7 +33,7 @@ Twelve node types, plus two infrastructure types pre-seeded at setup.
 |---|---|
 | `Idea` | An atomic thought, observation, or insight — extracted from any input. The most common node. Timestamped to its source. |
 | `Concept` | An abstract principle, theory, or framing — e.g. "managed decline", "compound moat", "three-body problem". More stable and general than an Idea. |
-| `CaseStudy` | A specific line of investigation or research — clusters Ideas, Events, SourceDocuments, and ContentItems around a defined question. Covers both Atomic Lounge case files and client research bodies. |
+| `Mission` | A bounded research investigation — clusters Ideas, Events, SourceDocuments, and ContentItems around a defined question. Covers Atomic Lounge case files, standalone research, and client research bodies. Renamed from `CaseStudy` (2026-04-14) to avoid ambiguity with source knowledge case studies. |
 | `Vertical` | A sector or industry — e.g. defence, energy, robotics, space, biotech. Flat structure, connected with `OVERLAPS_WITH` rather than hierarchy (dual-use sectors genuinely overlap; a hierarchy would be dishonest). |
 | `Methodology` | Ellie's own methodologies, frameworks, and processes. Postgres-primary (full content in `dna_knowledge_assets`), graph-secondary (node enables relationship traversal — "what research supports this methodology?"). Linked via `graphNodeId` in Postgres. |
 
@@ -48,7 +48,7 @@ Twelve node types, plus two infrastructure types pre-seeded at setup.
 
 | Label | Description |
 |---|---|
-| `Event` | A discrete occurrence — interview, meeting, conference, call. Provenance anchor for what was said and when. Interviews for Atomic Lounge case files are Events linked to their CaseStudy. |
+| `Event` | A discrete occurrence — interview, meeting, conference, call. Provenance anchor for what was said and when. Interviews for Atomic Lounge case files are Events linked to their Mission. |
 | `SourceDocument` | An ingested document — transcript, PDF, research file, voice note, web scrape. Provenance anchor for extracted knowledge. Every Idea, Concept, and relationship extracted from a document traces back to its SourceDocument node. |
 | `ContentItem` | A published or generated output — documentary, dossier, field note, LinkedIn post, newsletter, sales page. Enables "what have I written about X?" traversal. Linked back to its source Ideas, CaseStudies, and Methodologies. |
 
@@ -76,17 +76,17 @@ Twelve node types, plus two infrastructure types pre-seeded at setup.
 | Relationship | From → To | Notes |
 |---|---|---|
 | `DERIVED_FROM` | Idea, Concept → SourceDocument, Event | This idea came from this source |
-| `PART_OF` | Event, SourceDocument, ContentItem → CaseStudy | This item belongs to this investigation |
-| `INFORMED_BY` | ContentItem, Methodology → Idea, CaseStudy, SourceDocument | Provenance for outputs and strategy |
+| `PART_OF` | Event, SourceDocument, ContentItem → Mission | This item belongs to this investigation |
+| `INFORMED_BY` | ContentItem, Methodology → Idea, Mission, SourceDocument | Provenance for outputs and strategy |
 | `PRODUCED_BY` | ContentItem → Organisation, Project | Attribution |
 
 #### Thematic grouping
 
 | Relationship | From → To | Notes |
 |---|---|---|
-| `BELONGS_TO` | Idea, Concept, CaseStudy → Vertical | Thematic territory |
-| `OVERLAPS_WITH` | Vertical ↔ Vertical, CaseStudy ↔ CaseStudy | Thematic adjacency — undirected |
-| `SUPPORTS` | Idea, CaseStudy → Methodology, Concept | Evidence chain — this finding supports this claim or approach |
+| `BELONGS_TO` | Idea, Concept, Mission → Vertical | Thematic territory |
+| `OVERLAPS_WITH` | Vertical ↔ Vertical, Mission ↔ Mission | Thematic adjacency — undirected |
+| `SUPPORTS` | Idea, Mission → Methodology, Concept | Evidence chain — this finding supports this claim or approach |
 | `CONTRADICTS` | Idea ↔ Idea, Concept ↔ Concept, Policy ↔ Concept | The gap between narrative and reality — core to Atomic Lounge's thesis |
 | `RELATES_TO` | Any → Any | Generic discovered connection — used when a more specific type doesn't apply |
 
@@ -114,7 +114,7 @@ Twelve node types, plus two infrastructure types pre-seeded at setup.
 | Relationship | From → To | Notes |
 |---|---|---|
 | `LOCATED_IN` | Organisation, Project, Event → Country | Where an entity is based or occurred |
-| `CONCERNS` | Policy, CaseStudy, FundingEvent → Country | Geopolitical scope |
+| `CONCERNS` | Policy, Mission, FundingEvent → Country | Geopolitical scope |
 
 #### Project scoping
 
@@ -145,7 +145,7 @@ Twelve node types, plus two infrastructure types pre-seeded at setup.
 `Person`: `roles[]`, `organisation` (current primary affiliation), `location`
 `Organisation`: `types[]`, `country`, `foundedYear`, `website`
 `FundingEvent`: `round` (seed/series-a/grant/etc), `amount`, `currency`, `date`, `leadInvestor`
-`CaseStudy`: `status` (research/active/published/archived), `thesis` (the specific tension being investigated), `atomicLoungeRef` (case file number if an AL investigation)
+`Mission`: `status` (research/active/published/archived), `thesis` (the specific tension being investigated), `atomicLoungeRef` (case file number if an AL investigation)
 `ContentItem`: `format` (documentary/dossier/field-note/post/etc), `platform`, `publishedAt`, `url`
 `Policy`: `jurisdiction`, `status` (proposed/active/repealed), `programmeType`
 `SourceDocument`: `inputType` (transcript/pdf/voice-note/research/web), `processedAt`, `extractionStatus`
@@ -202,12 +202,12 @@ The following must be created before any ingestion:
 
 | Option | Why rejected |
 |---|---|
-| `Topic` as a node type | Too nebulous — replaced by `Vertical` (sector) and `CaseStudy` (specific investigation). Flat `RELATES_TO` and `OVERLAPS_WITH` handle emergent connections without forcing everything into a topic taxonomy. |
+| `Topic` as a node type | Too nebulous — replaced by `Vertical` (sector) and `Mission` (specific investigation). Flat `RELATES_TO` and `OVERLAPS_WITH` handle emergent connections without forcing everything into a topic taxonomy. |
 | Hierarchy for Verticals | Dual-use sectors genuinely overlap (defence + energy, robotics + defence). A hierarchy would force false precision. Flat with `OVERLAPS_WITH` is more honest. |
 | DNA types as graph nodes (all of them) | Only Methodology gets a graph node — it is genuinely relational (connects to research, clients, events). Other DNA types (audience segments, offers, platforms, content pillars) are Postgres-native and accessed by structured query, not traversal. `graphNodeId` fields can be added to other DNA types later without schema changes. |
 | `source` as a property only (no SourceDocument node) | Rejected in favour of SourceDocument nodes. A SourceDocument node enables traversal — "which ideas and connections came from this interview transcript?" — which a property cannot support. |
 | `FundingEvent` as a relationship property | Node gives traversal power: "all companies that raised Series A in defence in 2024", "grants connected to reshoring investigations". A relationship property cannot be queried this way. |
-| Separate `Topic` nodes alongside `Vertical` | Would create overlap and confusion. `Vertical` handles sector territory; `CaseStudy` handles specific research territory; `Concept` handles abstract ideas. Three distinct roles, no need for a fourth. |
+| Separate `Topic` nodes alongside `Vertical` | Would create overlap and confusion. `Vertical` handles sector territory; `Mission` handles specific research territory; `Concept` handles abstract ideas. Three distinct roles, no need for a fourth. |
 
 ---
 

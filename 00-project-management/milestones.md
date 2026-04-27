@@ -59,7 +59,7 @@
 3. DNA-01 + SRC-01 (via SKL-06 + SKL-09)
 4. INF-04, INF-05, INF-06 (can run in parallel with 3)
 
-## Current milestone: M2 — Input processing pipeline
+## M2 — Input processing pipeline ✓ COMPLETE
 
 **Goal:** First inputs flowing through to storage. Processing pipeline live. Krisp transcripts ingestable.
 
@@ -67,19 +67,32 @@
 - [x] VEC-01: Vector store setup — pgvector columns + HNSW indexes + embedding pipeline
 - [x] KG-01: Graph node/relationship types enforced via TypeScript
 - [x] KG-02: Graph write API — `writeNode()`, `writeEdge()`, `writeBatch()`, canonical register
-- [x] INP-03: Input processing pipeline — brief + layout approved, build in progress
-- [ ] INP-01: Krisp transcript ingestion
+- [x] INP-03: Input processing pipeline — done (confirmed working end-to-end 2026-04-08)
+- [x] INP-01: Krisp transcript ingestion — done (updated for INP-11 model, 58 transcripts ingested 2026-04-18)
+- [x] INP-11: Multi-modal processing — done (4 modes, Sources + Results UI, 2026-04-18)
 
 **Exit criteria:** A Krisp transcript can be uploaded, processed, and result in graph nodes + embeddings in storage.
 
-### M3 — Retrieval and chat
+**Status: COMPLETE** — Transcripts flow from Krisp → Sources → user-triggered processing → Results. Individual extraction → graph commit works via existing pipeline. Analysis modes (batch/reflective/synthesis) produce structured documents stored in `processing_runs`. Analysis → graph commit now built (`commitAnalysis()` in `lib/processing/commit-analysis.ts`, API at `/api/process/commit-analysis`). Embeddings generated at write time via `writeNode()`. Backfill script at `scripts/backfill-embeddings.ts`.
+
+**Last updated:** 2026-04-20
+
+## Current milestone: M3 — Retrieval and chat ✓ COMPLETE
 RET-01 (unified retrieval), OUT-01 (chat interface). First end-to-end: input → storage → retrieval → conversation.
 
+**Completed:**
+- [x] RET-01: Unified retrieval layer — 3 modes (semantic, structured, graph traversal), 4 LLM tools, embedding at write time.
+- [x] OUT-01: Chat interface — full page + slide-out drawer. Custom React hook (AI SDK v6). Streaming with tool call indicators, image attach, conversation history, auto-titling. Nav restructured to "Ask BigBrain".
+
+**Exit criteria met:** User can ask questions in chat → LLM calls retrieval tools → response with source attribution streams back. Conversations persist with history.
+
+**Last updated:** 2026-04-22
+
 ### M4 — Dashboard and DNA editing
-DASH-01 (shell), DASH-02 (DNA overview), DNA-02 through DNA-08. See and edit your strategy.
+DASH-01 (shell — in progress, sidebar + home page reworked 2026-04-14), DASH-02 (DNA overview), DNA-02 through DNA-08. See and edit your strategy. Also includes: CLIENT-01, MISSION-01 (done 2026-04-23), IDEA-01 (done 2026-04-24 with polymorphic tagging + embeddable IdeasPanel across workspaces).
 
 ### M5 — Content creation
 OUT-02 (single-step content creator), DNA-09 (tone of voice system). Generate content using the full system.
 
-### M6+ — Automation, long-form, client projects, design generation
-AUTO-01–04, OUT-02a, CLIENT-01–02, OUT-04. Later milestones, sequence determined by need.
+### M6+ — Automation, long-form, post-project extraction, design generation
+AUTO-01–04, OUT-02a, CLIENT-02, OUT-04. Later milestones, sequence determined by need.

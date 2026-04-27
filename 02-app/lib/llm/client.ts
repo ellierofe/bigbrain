@@ -28,7 +28,7 @@ export const MODELS = {
   powerful: anthropic("claude-opus-4-6"),
   // Alternatives available if needed
   geminiFlash: google("gemini-2.5-flash"),
-  geminiPro: google("gemini-2.5-pro-preview-03-25"),
+  geminiPro: google("gemini-3.1-pro-preview"),
   grok: xai("grok-3-mini"),
 } as const
 

@@ -1,7 +1,10 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
+import { Info } from 'lucide-react'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { useDebouncedSave } from '@/lib/save-feedback'
 import { cn } from '@/lib/utils'
 
 interface InlineFieldBaseProps {
@@ -10,9 +13,15 @@ interface InlineFieldBaseProps {
   label: string
   placeholder?: string
   icon?: LucideIcon
+  /** Optional description shown as an info icon with tooltip */
+  description?: string
+  /** Background class for the label patch (must match parent bg). Default: bg-card */
+  labelBg?: string
   className?: string
   /** debounce delay after blur before save fires, default 500ms */
   debounceMs?: number
+  /** When true, the input is non-interactive and visually muted. */
+  disabled?: boolean
 }
 
 interface InlineInputProps extends InlineFieldBaseProps {
@@ -26,87 +35,110 @@ interface InlineTextareaProps extends InlineFieldBaseProps {
 
 type InlineFieldProps = InlineInputProps | InlineTextareaProps
 
-type SaveState = 'idle' | 'saving' | 'saved' | 'error'
-
 export function InlineField(props: InlineFieldProps) {
-  const { value, onSave, label, placeholder, icon: Icon, className, debounceMs = 500 } = props
+  const { value, onSave, label, placeholder, icon: Icon, description, labelBg, className, debounceMs = 500, disabled } = props
 
   const [localValue, setLocalValue] = useState(value ?? '')
-  const [saveState, setSaveState] = useState<SaveState>('idle')
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const savedValueRef = useRef(value ?? '')
+  const [isFocused, setIsFocused] = useState(false)
+  const { state: saveState, errorMsg, trigger } = useDebouncedSave({ value: value ?? '', onSave, debounceMs })
 
-  const triggerSave = useCallback(
-    (val: string) => {
-      if (val === savedValueRef.current) return
+  const handleBlur = () => {
+    setIsFocused(false)
+    trigger(localValue)
+  }
 
-      if (timerRef.current) clearTimeout(timerRef.current)
+  const handleFocus = () => {
+    setIsFocused(true)
+  }
 
-      timerRef.current = setTimeout(async () => {
-        setSaveState('saving')
-        setErrorMsg(null)
-        const result = await onSave(val)
-        if (result.ok) {
-          savedValueRef.current = val
-          setSaveState('saved')
-          setTimeout(() => setSaveState('idle'), 2000)
-        } else {
-          setSaveState('error')
-          setErrorMsg(result.error ?? 'Save failed')
-        }
-      }, debounceMs)
-    },
-    [onSave, debounceMs]
-  )
-
-  const handleBlur = () => triggerSave(localValue)
-
-  const sharedInputClass = cn(
-    'w-full rounded-md border border-transparent bg-transparent px-0 py-1',
-    'text-sm text-foreground placeholder:text-muted-foreground/50',
-    'focus:outline-none focus:border-border focus:bg-muted/30 focus:px-2',
-    'hover:bg-muted/20 hover:px-2 transition-all duration-100',
-    className
-  )
+  const showLabel = label.length > 0
 
   return (
-    <div className="flex flex-col gap-0.5">
-      <div className="flex items-center gap-1.5">
-        {Icon && <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {label}
-        </span>
-      </div>
-
-      {props.variant === 'textarea' ? (
-        <textarea
-          value={localValue}
-          onChange={(e) => setLocalValue(e.target.value)}
-          onBlur={handleBlur}
-          placeholder={placeholder}
-          rows={props.rows ?? 3}
-          className={cn(sharedInputClass, 'resize-none')}
-          aria-label={label}
-        />
-      ) : (
-        <input
-          type="text"
-          value={localValue}
-          onChange={(e) => setLocalValue(e.target.value)}
-          onBlur={handleBlur}
-          placeholder={placeholder}
-          className={sharedInputClass}
-          aria-label={label}
-        />
-      )}
-
-      <div className="min-h-4">
-        {saveState === 'saved' && (
-          <p className="text-[11px] text-emerald-600">Saved ✓</p>
+    <div className={cn("relative", showLabel && "mt-3")}>
+      {/* Field container with always-visible border */}
+      <div
+        className={cn(
+          'rounded-md border px-3 pb-2 transition-colors duration-100',
+          showLabel ? 'pt-5' : 'pt-2',
+          isFocused
+            ? 'border-field-active/50 bg-field-active/[0.03]'
+            : 'border-border/60 bg-transparent hover:border-border',
+          disabled && 'opacity-50 cursor-not-allowed',
         )}
-        {saveState === 'error' && (
-          <p className="text-[11px] text-destructive">{errorMsg ?? 'Save failed — try again'}</p>
+      >
+        {/* Label integrated with top border */}
+        {showLabel && (
+          <div className={cn("absolute -top-2 left-2.5 flex items-center gap-1 px-1", labelBg ?? 'bg-card')}>
+            {Icon && (
+              <Icon
+                className={cn(
+                  'h-3 w-3 shrink-0 transition-colors duration-100',
+                  isFocused ? 'text-field-active' : 'text-muted-foreground'
+                )}
+              />
+            )}
+            <span
+              className={cn(
+                'text-[10px] font-semibold capitalize tracking-wide transition-colors duration-100',
+                isFocused ? 'text-field-active' : 'text-muted-foreground'
+              )}
+            >
+              {label}
+            </span>
+            {description && (
+              <Tooltip>
+                <TooltipTrigger render={<span />} className="cursor-help">
+                  <Info className="h-2.5 w-2.5 text-muted-foreground/50" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  {description}
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {saveState === 'saved' && (
+              <span className="text-[10px] text-success ml-1">Saved</span>
+            )}
+            {saveState === 'error' && (
+              <span className="text-[10px] text-destructive ml-1">{errorMsg ?? 'Failed'}</span>
+            )}
+          </div>
+        )}
+
+        {/* Input */}
+        {props.variant === 'textarea' ? (
+          <textarea
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            placeholder={placeholder}
+            rows={props.rows ?? 3}
+            disabled={disabled}
+            className={cn(
+              'w-full resize-none bg-transparent text-sm text-foreground',
+              'placeholder:text-muted-foreground/40',
+              'focus:outline-none disabled:cursor-not-allowed',
+              className
+            )}
+            aria-label={label}
+          />
+        ) : (
+          <input
+            type="text"
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            placeholder={placeholder}
+            disabled={disabled}
+            className={cn(
+              'w-full bg-transparent py-0.5 text-sm text-foreground',
+              'placeholder:text-muted-foreground/40',
+              'focus:outline-none disabled:cursor-not-allowed',
+              className
+            )}
+            aria-label={label}
+          />
         )}
       </div>
     </div>

@@ -11,9 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { TypeBadge, type TagHue } from '@/components/type-badge'
+import { InlineCellSelect } from '@/components/inline-cell-select'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,11 +47,11 @@ const TYPE_MIN: Record<VocType, number> = {
   shared_beliefs: 5,
 }
 
-const TYPE_BADGE_CLASS: Record<VocType, string> = {
-  problems: 'bg-blue-100 text-blue-800',
-  desires: 'bg-green-100 text-green-800',
-  objections: 'bg-amber-100 text-amber-800',
-  shared_beliefs: 'bg-purple-100 text-purple-800',
+const TYPE_BADGE_HUE: Record<VocType, TagHue> = {
+  problems: 1,        // dusty blue
+  desires: 6,         // olive
+  objections: 3,      // custard
+  shared_beliefs: 4,  // dusty lavender
 }
 
 const CATEGORY_OPTIONS: VocCategory[] = ['practical', 'emotional', 'psychological', 'social']
@@ -202,7 +203,7 @@ export function VocTable({ segmentId, problems, desires, objections, sharedBelie
             >
               {f === 'all' ? 'All' : TYPE_LABELS[f]}
               {count !== undefined && (
-                <span className={`ml-1.5 ${belowMin ? 'text-amber-500' : ''}`}>
+                <span className={`ml-1.5 ${belowMin ? 'text-warning' : ''}`}>
                   ({count})
                 </span>
               )}
@@ -268,23 +269,23 @@ export function VocTable({ segmentId, problems, desires, objections, sharedBelie
                   />
                 </TableCell>
                 <TableCell>
-                  <Badge className={TYPE_BADGE_CLASS[row.type]}>
-                    {TYPE_LABELS[row.type].replace(/s$/, '')}
-                  </Badge>
+                  <TypeBadge
+                    hue={TYPE_BADGE_HUE[row.type]}
+                    label={TYPE_LABELS[row.type].replace(/s$/, '')}
+                  />
                 </TableCell>
                 {filter !== 'objections' && (
                   <TableCell>
                     {row.type !== 'objections' && row.category ? (
                       editingKey === row._key ? (
-                        <select
+                        <InlineCellSelect
                           value={row.category}
-                          onChange={e => updateRow(row._key, { category: e.target.value as VocCategory })}
-                          className="text-xs rounded border border-border bg-background px-1 py-0.5"
-                        >
-                          {CATEGORY_OPTIONS.map(c => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
-                        </select>
+                          options={CATEGORY_OPTIONS.map(c => ({ value: c, label: c }))}
+                          onSave={(v) => {
+                            updateRow(row._key, { category: v as VocCategory })
+                            return Promise.resolve({ ok: true })
+                          }}
+                        />
                       ) : (
                         <span className="text-xs text-muted-foreground">{row.category}</span>
                       )

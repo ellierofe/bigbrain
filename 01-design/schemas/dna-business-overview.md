@@ -45,6 +45,10 @@ Singular. One row per brand. The factual foundation — what the business is, wh
 
 Singular table — one live row. `version` is incremented and `updatedAt` is refreshed on every save. No separate history table at this stage; version number provides a change indicator without full audit trail.
 
+## Intake design
+
+See `01-design/briefs/DNA-02-singular-dna-intake.md` — Flow 1 (Business Overview). Mostly direct form entry with collaborative drafting for `fullDescription`.
+
 ## Notes
 
 - `vertical` and `specialism` map directly to the old `${business_field}` and `${business_specialism}` prompt variables

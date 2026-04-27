@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { dnaAudienceSegments } from '@/lib/db/schema/dna/audience-segments'
 import {
@@ -57,6 +58,72 @@ export async function createSegment(
   } catch (err) {
     console.error('createSegment error', err)
     return { ok: false, error: 'Failed to create segment. Please try again.' }
+  }
+}
+
+/** Save all LLM-generated fields to a segment row */
+export async function saveGeneratedSegment(
+  id: string,
+  data: {
+    segmentName: string
+    personaName: string
+    summary: string
+    roleContext: string
+    demographics: Record<string, unknown>
+    psychographics: Record<string, unknown>
+    problems: unknown[]
+    desires: unknown[]
+    objections: unknown[]
+    sharedBeliefs: unknown[]
+    avatarPrompt: string
+  }
+): Promise<ActionResult> {
+  try {
+    await db
+      .update(dnaAudienceSegments)
+      .set({
+        segmentName: data.segmentName,
+        personaName: data.personaName,
+        summary: data.summary,
+        roleContext: data.roleContext,
+        demographics: data.demographics,
+        psychographics: data.psychographics,
+        problems: data.problems,
+        desires: data.desires,
+        objections: data.objections,
+        sharedBeliefs: data.sharedBeliefs,
+        avatarPrompt: data.avatarPrompt,
+        status: 'active',
+        updatedAt: new Date(),
+      })
+      .where(eq(dnaAudienceSegments.id, id))
+
+    revalidatePath('/dna/audience-segments')
+    revalidatePath(`/dna/audience-segments/${id}`)
+    return { ok: true, data: undefined }
+  } catch (err) {
+    console.error('saveGeneratedSegment error', err)
+    return { ok: false, error: 'Failed to save generated segment.' }
+  }
+}
+
+/** Save the avatar URL after async image generation */
+export async function saveSegmentAvatarUrl(
+  id: string,
+  avatarUrl: string
+): Promise<ActionResult> {
+  try {
+    await db
+      .update(dnaAudienceSegments)
+      .set({ avatarUrl, updatedAt: new Date() })
+      .where(eq(dnaAudienceSegments.id, id))
+
+    revalidatePath(`/dna/audience-segments/${id}`)
+    revalidatePath('/dna/audience-segments')
+    return { ok: true, data: undefined }
+  } catch (err) {
+    console.error('saveSegmentAvatarUrl error', err)
+    return { ok: false, error: 'Failed to save avatar.' }
   }
 }
 

@@ -139,6 +139,9 @@ export function ProcessInputClient({ brandId }: ProcessInputClientProps) {
               className="flex-1 min-w-[200px]"
               aria-label="Title"
             />
+            {/* DS-04: deferred — toolbar-row context. Whole row needs a labelled-controls
+                pattern (Title/SourceType/Date sit as siblings without labels). Keep native
+                until the row is redesigned. */}
             <select
               value={sourceType}
               onChange={(e) => setSourceType(e.target.value as SourceType)}
@@ -208,7 +211,7 @@ export function ProcessInputClient({ brandId }: ProcessInputClientProps) {
         {/* Footer row */}
         <div className="flex items-center justify-between">
           <span
-            className={`text-xs ${isLongText ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}
+            className={`text-xs ${isLongText ? 'text-warning' : 'text-muted-foreground'}`}
             title={isLongText ? 'Long text will be chunked for processing.' : undefined}
           >
             {charCount.toLocaleString()} chars · ~{wordCount.toLocaleString()} words

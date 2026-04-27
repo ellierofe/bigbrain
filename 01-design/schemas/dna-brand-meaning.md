@@ -58,6 +58,10 @@ Array of up to 6 value objects:
 
 Singular table — one live row. `version` incremented and `updatedAt` refreshed on every save.
 
+## Intake design
+
+See `01-design/briefs/DNA-02-singular-dna-intake.md` — Flow 2 (Brand Meaning). This is the hardest intake — requires a 4-stage conversational flow. Do not present as blank form fields. Key: ask about the problem and the future first, draft vision/mission/purpose statements last as synthesis.
+
 ## Notes
 
 - Vision/mission/purpose are kept as separate fields (not a single blob) so each can be individually displayed, edited, and injected into prompts independently

@@ -2,7 +2,7 @@
 export type NodeLabel =
   | 'Idea'
   | 'Concept'
-  | 'CaseStudy'
+  | 'Mission'
   | 'Vertical'
   | 'Methodology'
   | 'Person'
@@ -46,6 +46,7 @@ export type RelationshipType =
   // Project scoping
   | 'SCOPED_TO'
   | 'GENERATED'
+  | 'COMMISSIONED_BY'
 
 // Actor node types that go through canonical register resolution
 export const CANONICAL_TYPES = new Set<NodeLabel>(['Person', 'Organisation', 'Project'])

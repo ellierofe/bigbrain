@@ -27,8 +27,9 @@ Plural. One row per offer. Full offer strategy — from USP and positioning thro
 | `pricing` | jsonb | nullable | Price points, payment plans, tiers — see structure below |
 | `scarcity` | text | nullable | Any genuine scarcity or urgency (limited places, cohort dates, etc.) |
 | `guarantee` | jsonb | nullable | Guarantee type, description, terms — see structure below |
-| `customerJourneyStage` | varchar(50) | nullable | Where in the funnel this offer typically sits: `awareness \| consideration \| decision \| retention` |
+| `customerJourney` | jsonb | nullable | Structured customer journey — 5 stages (awareness, consideration, decision, service, advocacy), each with thinking/feeling/doing/pushToNext. See structure below. |
 | `salesFunnelNotes` | text | nullable | How this offer fits into the broader sales funnel — what leads into it, what follows |
+| `vocMapping` | jsonb | nullable | Which of the primary audience's VOC statements this offer addresses. See structure below. |
 | `cta` | text | nullable | Primary call to action text for this offer. Maps to `${offer_CTA}`. |
 | `visualPrompt` | text | nullable | AI image generation prompt for offer key art. Captures the emotional/tangible transformation. |
 | `internalNotes` | text | nullable | Working notes — what's been tested, what's changed, strategic context |
@@ -64,6 +65,40 @@ Plural. One row per offer. Full offer strategy — from USP and positioning thro
   "businessRiskNote": ""
 }
 ```
+
+## `customerJourney` JSONB structure
+
+```json
+[
+  {
+    "stage": "awareness",
+    "thinking": "They're starting to realise their positioning isn't landing...",
+    "feeling": "Frustrated, uncertain",
+    "doing": "Googling, asking peers, reading content",
+    "pushToNext": "Sees a post or case study that names their exact problem"
+  },
+  { "stage": "consideration", "thinking": "...", "feeling": "...", "doing": "...", "pushToNext": "..." },
+  { "stage": "decision", "thinking": "...", "feeling": "...", "doing": "...", "pushToNext": "..." },
+  { "stage": "service", "thinking": "...", "feeling": "...", "doing": "...", "pushToNext": "..." },
+  { "stage": "advocacy", "thinking": "...", "feeling": "...", "doing": "..." }
+]
+```
+
+Five fixed stages. Advocacy has no `pushToNext` (no next stage). Generated on-demand after core offer is confirmed, using audience profile + offer details + VOC mapping as context.
+
+## `vocMapping` JSONB structure
+
+```json
+{
+  "audienceSegmentId": "uuid",
+  "problems": [0, 3, 7],
+  "desires": [1, 4],
+  "objections": [2],
+  "beliefs": [0, 5]
+}
+```
+
+Values are indexes into the primary audience segment's JSONB VOC arrays. The `audienceSegmentId` identifies which segment was the primary audience at mapping time.
 
 ## Relationships
 

@@ -2,7 +2,7 @@ import { Users, LayoutList } from 'lucide-react'
 import Link from 'next/link'
 import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
-import { Button } from '@/components/ui/button'
+import { ActionButton } from '@/components/action-button'
 import { Badge } from '@/components/ui/badge'
 import { listAllSegments } from '@/lib/db/queries/audience-segments'
 import { CreateSegmentButton } from './create-segment-button'
@@ -34,10 +34,13 @@ export default async function AudienceSegmentsCardsPage({
         action={
           <div className="flex items-center gap-2">
             {firstActiveId && (
-              <Button variant="outline" size="sm" render={<Link href={`/dna/audience-segments/${firstActiveId}`} />}>
-                <LayoutList className="h-4 w-4" />
-                <span className="ml-1.5">Detail view</span>
-              </Button>
+              <ActionButton
+                icon={LayoutList}
+                variant="outline"
+                href={`/dna/audience-segments/${firstActiveId}`}
+              >
+                Detail view
+              </ActionButton>
             )}
             <CreateSegmentButton />
           </div>
@@ -71,12 +74,20 @@ export default async function AudienceSegmentsCardsPage({
               >
                 <div className="flex items-start gap-3">
                   {/* Avatar */}
-                  <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold text-muted-foreground"
-                    aria-hidden
-                  >
-                    {segment.segmentName.charAt(0).toUpperCase()}
-                  </div>
+                  {segment.avatarUrl ? (
+                    <img
+                      src={segment.avatarUrl}
+                      alt={segment.segmentName}
+                      className="h-12 w-12 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold text-muted-foreground"
+                      aria-hidden
+                    >
+                      {segment.segmentName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">

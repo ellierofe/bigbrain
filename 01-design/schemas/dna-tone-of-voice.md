@@ -2,8 +2,8 @@
 status: draft
 tables: dna_tone_of_voice, dna_tov_samples, dna_tov_applications
 type: singular (base) + plural library (samples) + plural (applications)
-related_features: DNA-01, DNA-09, OUT-02
-last_updated: 2026-03-29
+related_features: DNA-01, DNA-09, DNA-07b, OUT-02
+last_updated: 2026-04-27
 ---
 
 # Schema: Tone of Voice (three tables)
@@ -97,8 +97,8 @@ Plural library. Real writing samples that demonstrate the voice in action, tagge
 |---|---|---|---|
 | `id` | uuid | PK, defaultRandom | |
 | `brandId` | uuid | not null, FK → `brands.id` | Owning brand |
-| `formatType` | varchar(50) | not null | `social \| email \| sales \| blog \| spoken \| other` |
-| `subtype` | varchar(100) | nullable | More specific tag: e.g. `linkedin_post`, `nurture_email`, `sales_page`, `youtube_script`, `podcast_intro` |
+| `formatType` | varchar(50) | not null | Cascade bucket. See `04-documentation/reference/channel-taxonomy.md` for the canonical vocabulary. Aligned values: `social_short \| social_visual \| blog \| newsletter \| email \| sales \| spoken_audio \| spoken_video \| ad_copy \| event \| outreach \| brainstorm \| other`. |
+| `subtype` | varchar(100) | nullable | Canonical leaf — e.g. `linkedin_post`, `nurture_email`, `sales_page`, `to_camera_script`, `podcast_script`, `cold_dm`. Preferred match for the cascade when present. See taxonomy doc for canonical subtypes. |
 | `body` | text | not null | The sample text itself |
 | `notes` | text | nullable | What makes this a good example — specific techniques, what to notice |
 | `sourceContext` | text | nullable | Where this came from (e.g. "LinkedIn post, March 2025, high engagement") |
@@ -120,7 +120,7 @@ Applied by AI at sample intake, based on the base ToV dimension scores as a guid
 - `embedding` — HNSW index (added when VEC-01 is implemented; lower priority given tag-based filtering)
 
 ### Notes
-- **Primary retrieval strategy:** filter by `formatType` first (hard), then `tonalTags` overlap with the generation brief's intended register (soft). If multiple candidates remain, take most recent `isCurrent`.
+- **Primary retrieval strategy:** match by `subtype` exactly when the generation context supplies one; otherwise filter by `formatType` first (hard), then `tonalTags` overlap with the generation brief's intended register (soft). If multiple candidates remain, take most recent `isCurrent`. Cross-bucket fallbacks documented in `04-documentation/reference/channel-taxonomy.md` (`brainstorm` → `blog`, `spoken_audio` ↔ `spoken_video`, `event` → `blog`, `outreach` → `email`).
 - **Embedding role:** secondary/fallback — useful once the sample library is large and tags alone leave too many candidates. Not the primary matching mechanism.
 - `embedding` dimension (1536) assumes OpenAI text-embedding-3-small or Claude equivalent. Update if a different model is chosen at VEC-01.
 
@@ -137,8 +137,8 @@ Plural. Per-format or per-context instructions that describe how the base voice 
 | `id` | uuid | PK, defaultRandom | |
 | `brandId` | uuid | not null, FK → `brands.id` | Owning brand |
 | `label` | varchar(200) | not null | Human-readable name: e.g. "LinkedIn posts", "Client emails", "Sales pages", "Recorded video scripts" |
-| `formatType` | varchar(50) | not null | `social \| email \| sales \| blog \| spoken \| other` — matches `dna_tov_samples.formatType` |
-| `subtype` | varchar(100) | nullable | More specific context if needed |
+| `formatType` | varchar(50) | not null | Same vocabulary as `dna_tov_samples.formatType`. See `04-documentation/reference/channel-taxonomy.md`: `social_short \| social_visual \| blog \| newsletter \| email \| sales \| spoken_audio \| spoken_video \| ad_copy \| event \| outreach \| brainstorm \| other`. |
+| `subtype` | varchar(100) | nullable | More specific context if needed — same canonical leaves as samples |
 | `dimensionDeltas` | jsonb | nullable | How scores shift from the base — see structure below |
 | `tonalTags` | text[] | nullable | Tonal register tags for this application — same tag set as `dna_tov_samples`. AI-suggested at creation, human-correctable. Describes the register this context calls for (e.g. `formal + authoritative` for client emails; `conversational + direct` for LinkedIn). Used to match samples at retrieval time. |
 | `notes` | text | nullable | Prose description of what changes and why. Cadence, CTA style, sentence length, punctuation conventions, emotional register shifts. |

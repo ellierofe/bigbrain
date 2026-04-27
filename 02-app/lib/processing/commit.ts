@@ -136,6 +136,8 @@ export async function commitExtraction(
 
   // Collect all confirmed node ids for temporal edges
   const confirmedNodeIds: string[] = []
+  // Collect embedding text for each node (keyed by nodeId)
+  const nodeEmbeddingTexts: Map<string, string> = new Map()
 
   // Helper: write a node and collect its id if successful
   async function writeAndCollect(
@@ -183,7 +185,10 @@ export async function commitExtraction(
       },
       'ideas'
     )
-    if (nodeId) await writeDerivedFrom(nodeId)
+    if (nodeId) {
+      await writeDerivedFrom(nodeId)
+      nodeEmbeddingTexts.set(nodeId, idea.text)
+    }
   }
 
   // Concepts
@@ -202,7 +207,10 @@ export async function commitExtraction(
       },
       'concepts'
     )
-    if (nodeId) await writeDerivedFrom(nodeId)
+    if (nodeId) {
+      await writeDerivedFrom(nodeId)
+      nodeEmbeddingTexts.set(nodeId, `${concept.name}: ${concept.description}`)
+    }
   }
 
   // People — resolve canonical first
@@ -225,6 +233,11 @@ export async function commitExtraction(
     if (r.success) {
       counts.people++
       confirmedNodeIds.push(nodeId)
+      const personParts = [person.name]
+      if (person.role) personParts.push(person.role)
+      if (person.organisation) personParts.push(`at ${person.organisation}`)
+      personParts.push(person.context)
+      nodeEmbeddingTexts.set(nodeId, personParts.join(', '))
 
       // MENTIONS edge: SourceDocument → Person
       const mentionsR = await writeEdge({
@@ -260,6 +273,7 @@ export async function commitExtraction(
     if (r.success) {
       counts.organisations++
       confirmedNodeIds.push(nodeId)
+      nodeEmbeddingTexts.set(nodeId, `${org.name}. ${org.context}`)
 
       const mentionsR = await writeEdge({
         fromNodeId: sourceDocNodeId,
@@ -320,7 +334,10 @@ export async function commitExtraction(
       },
       'techniques'
     )
-    if (nodeId) await writeDerivedFrom(nodeId)
+    if (nodeId) {
+      await writeDerivedFrom(nodeId)
+      nodeEmbeddingTexts.set(nodeId, `${technique.name}: ${technique.description}`)
+    }
   }
 
   // Content angles — written as Idea nodes with subtype: 'content-angle'
@@ -341,7 +358,10 @@ export async function commitExtraction(
       },
       'contentAngles'
     )
-    if (nodeId) await writeDerivedFrom(nodeId)
+    if (nodeId) {
+      await writeDerivedFrom(nodeId)
+      nodeEmbeddingTexts.set(nodeId, angle.angle)
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -412,6 +432,38 @@ export async function commitExtraction(
       }
     } catch (err) {
       errors.push(`embedding for story ${storyId}: ${err instanceof Error ? err.message : String(err)}`)
+    }
+  }
+
+  // graph_nodes embeddings — embed all confirmed graph nodes for similarity search
+  for (const nodeId of confirmedNodeIds) {
+    try {
+      const embeddingText = nodeEmbeddingTexts.get(nodeId)
+      if (!embeddingText) continue
+      const embedding = await generateEmbedding(embeddingText)
+      if (embedding) {
+        const vec = `[${embedding.join(',')}]`
+        const sqlClient = neon(process.env.DATABASE_URL!)
+        await sqlClient`UPDATE graph_nodes SET embedding = ${vec}::vector WHERE id = ${nodeId}`
+        counts.embeddings++
+      }
+    } catch (err) {
+      errors.push(`embedding for graph node ${nodeId}: ${err instanceof Error ? err.message : String(err)}`)
+    }
+  }
+
+  // Also embed the SourceDocument graph node
+  if (sourceDocResult.success && text) {
+    try {
+      const embedding = await generateEmbedding(`${metadata.title}. ${text.slice(0, 2000)}`)
+      if (embedding) {
+        const vec = `[${embedding.join(',')}]`
+        const sqlClient = neon(process.env.DATABASE_URL!)
+        await sqlClient`UPDATE graph_nodes SET embedding = ${vec}::vector WHERE id = ${sourceDocNodeId}`
+        counts.embeddings++
+      }
+    } catch (err) {
+      errors.push(`embedding for SourceDocument graph node: ${err instanceof Error ? err.message : String(err)}`)
     }
   }
 

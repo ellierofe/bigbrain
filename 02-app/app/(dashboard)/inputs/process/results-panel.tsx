@@ -1,53 +1,117 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { X, ChevronDown } from 'lucide-react'
+import { useState, useMemo, useCallback } from 'react'
+import { X, ChevronDown, ChevronRight, LayoutGrid, List } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
-import { CategorySection } from './category-section'
+import { CategorySection, type AnyItem } from './category-section'
 import type {
   ExtractionResult,
+  ExtractionOutput,
   CommitResult,
   StorySubject,
 } from '@/lib/types/processing'
+
+type GroupMode = 'topic' | 'type'
+
+interface TopicCluster {
+  topic: string
+  items: Array<{ id: string; category: string }>
+}
+
+interface DedupMatch {
+  matchedNodeName: string
+  score: number
+  source: 'graph' | 'pending'
+}
 
 interface ResultsPanelProps {
   result: ExtractionResult
   onClose: () => void
   onCommitSuccess: (commitResult: CommitResult) => void
+  /** Pre-computed topic clusters (from ingestion or on-the-fly) */
+  topicClusters?: TopicCluster[]
+  /** Whether topic clusters are currently loading */
+  clusteringInProgress?: boolean
+  /** Dedup matches keyed by item id */
+  dedupMatches?: Record<string, DedupMatch[]>
+  /** Canonical matches keyed by item id */
+  canonicalMatches?: Record<string, string>
+  /** Whether dedup is loading */
+  dedupInProgress?: boolean
 }
 
-export function ResultsPanel({ result, onClose, onCommitSuccess }: ResultsPanelProps) {
-  const { extraction } = result
+type CategoryKey = keyof ExtractionOutput
 
-  // Build initial checked state — all items checked by default
-  const allIds = useMemo(() => [
-    ...extraction.ideas.map((i) => i.id),
-    ...extraction.concepts.map((c) => c.id),
-    ...extraction.people.map((p) => p.id),
-    ...extraction.organisations.map((o) => o.id),
-    ...extraction.stories.map((s) => s.id),
-    ...extraction.techniques.map((t) => t.id),
-    ...extraction.contentAngles.map((a) => a.id),
-  ], [extraction])
+const CATEGORY_LABELS: Record<CategoryKey, string> = {
+  ideas: 'IDEAS',
+  concepts: 'CONCEPTS',
+  people: 'PEOPLE',
+  organisations: 'ORGANISATIONS',
+  stories: 'STORIES',
+  techniques: 'TECHNIQUES',
+  contentAngles: 'CONTENT ANGLES',
+}
 
-  const [checkedIds, setCheckedIds] = useState<Set<string>>(() => new Set(allIds))
+const CATEGORY_ORDER: CategoryKey[] = [
+  'ideas', 'concepts', 'people', 'organisations', 'stories', 'techniques', 'contentAngles',
+]
+
+export function ResultsPanel({
+  result,
+  onClose,
+  onCommitSuccess,
+  topicClusters,
+  clusteringInProgress,
+  dedupMatches = {},
+  canonicalMatches = {},
+  dedupInProgress,
+}: ResultsPanelProps) {
+  // Mutable extraction state — edits modify this, commit sends this
+  const [editedExtraction, setEditedExtraction] = useState<ExtractionOutput>(
+    () => structuredClone(result.extraction)
+  )
+
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(() => {
+    const allIds = getAllIds(editedExtraction)
+    return new Set(allIds)
+  })
   const [storySubjects, setStorySubjects] = useState<Record<string, StorySubject>>({})
   const [committing, setCommitting] = useState(false)
   const [commitResult, setCommitResult] = useState<CommitResult | null>(null)
   const [showErrors, setShowErrors] = useState(false)
+  const [groupMode, setGroupMode] = useState<GroupMode>(topicClusters ? 'topic' : 'type')
 
+  const allIds = useMemo(() => getAllIds(editedExtraction), [editedExtraction])
   const checkedCount = checkedIds.size
   const totalCount = allIds.length
 
-  const populatedCategories = [
-    extraction.ideas,
-    extraction.concepts,
-    extraction.people,
-    extraction.organisations,
-    extraction.stories,
-    extraction.techniques,
-    extraction.contentAngles,
-  ].filter((arr) => arr.length > 0).length
+  const populatedCategories = CATEGORY_ORDER.filter(
+    (key) => editedExtraction[key].length > 0
+  ).length
+
+  // -------------------------------------------------------------------------
+  // Edit handler — updates a single item in the mutable extraction
+  // -------------------------------------------------------------------------
+
+  const handleEditItem = useCallback((itemId: string, updates: Partial<AnyItem>) => {
+    setEditedExtraction((prev) => {
+      const next = structuredClone(prev)
+      for (const key of CATEGORY_ORDER) {
+        const arr = next[key] as AnyItem[]
+        const idx = arr.findIndex((i) => i.id === itemId)
+        if (idx !== -1) {
+          arr[idx] = { ...arr[idx], ...updates }
+          break
+        }
+      }
+      return next
+    })
+  }, [])
+
+  // -------------------------------------------------------------------------
+  // Toggle helpers
+  // -------------------------------------------------------------------------
 
   function toggleItem(id: string, checked: boolean) {
     setCheckedIds((prev) => {
@@ -73,6 +137,10 @@ export function ResultsPanel({ result, onClose, onCommitSuccess }: ResultsPanelP
     setCheckedIds(checked ? new Set(allIds) : new Set())
   }
 
+  // -------------------------------------------------------------------------
+  // Commit — sends the edited extraction
+  // -------------------------------------------------------------------------
+
   async function handleCommit() {
     if (checkedCount === 0) return
     setCommitting(true)
@@ -82,7 +150,7 @@ export function ResultsPanel({ result, onClose, onCommitSuccess }: ResultsPanelP
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          result,
+          result: { ...result, extraction: editedExtraction },
           confirmedIds: Array.from(checkedIds),
           storySubjects,
         }),
@@ -96,10 +164,6 @@ export function ResultsPanel({ result, onClose, onCommitSuccess }: ResultsPanelP
       const commitRes: CommitResult = await res.json()
       setCommitResult(commitRes)
       onCommitSuccess(commitRes)
-
-      if (!commitRes.success && commitRes.errors.length > 0) {
-        // Partial failure — shown inline, not toast
-      }
     } catch (err) {
       toast.error('Save failed — nothing was written. Please try again.')
     } finally {
@@ -107,9 +171,9 @@ export function ResultsPanel({ result, onClose, onCommitSuccess }: ResultsPanelP
     }
   }
 
-  // ---------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
   // Success state
-  // ---------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
   if (commitResult) {
     const { counts, errors } = commitResult
     const parts = [
@@ -138,7 +202,9 @@ export function ResultsPanel({ result, onClose, onCommitSuccess }: ResultsPanelP
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2">
-          {errors.length > 0 && (
+          {errors.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Everything was written to the graph and database successfully.</p>
+          ) : (
             <div className="text-xs text-destructive bg-destructive/10 rounded p-3">
               <p className="font-medium mb-1">Saved with errors — {errors.length} item{errors.length !== 1 ? 's' : ''} failed.</p>
               <button
@@ -169,14 +235,101 @@ export function ResultsPanel({ result, onClose, onCommitSuccess }: ResultsPanelP
     )
   }
 
-  // ---------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
   // Empty extraction state
-  // ---------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
   const isEmpty = allIds.length === 0
 
-  // ---------------------------------------------------------------------------
-  // Normal panel
-  // ---------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // Topic-clustered view
+  // -------------------------------------------------------------------------
+  function renderTopicView() {
+    if (!topicClusters || topicClusters.length === 0) {
+      if (clusteringInProgress) {
+        return (
+          <div className="px-5 py-4 text-xs text-muted-foreground">
+            Analysing topics...
+          </div>
+        )
+      }
+      // Fall back to type view if no clusters
+      return renderTypeView()
+    }
+
+    return topicClusters.map((cluster) => {
+      // Group this cluster's items by category
+      const byCategory: Partial<Record<CategoryKey, AnyItem[]>> = {}
+      for (const ref of cluster.items) {
+        const key = ref.category as CategoryKey
+        const arr = editedExtraction[key] as AnyItem[]
+        const item = arr.find((i) => i.id === ref.id)
+        if (item) {
+          if (!byCategory[key]) byCategory[key] = []
+          byCategory[key]!.push(item)
+        }
+      }
+
+      const clusterItemIds = cluster.items.map((i) => i.id)
+      const clusterCheckedCount = clusterItemIds.filter((id) => checkedIds.has(id)).length
+
+      return (
+        <TopicSection
+          key={cluster.topic}
+          topic={cluster.topic}
+          totalItems={cluster.items.length}
+          checkedCount={clusterCheckedCount}
+          onToggleAll={(checked) => toggleAll(clusterItemIds, checked)}
+        >
+          {CATEGORY_ORDER.map((key) => {
+            const items = byCategory[key]
+            if (!items || items.length === 0) return null
+            return (
+              <CategorySection
+                key={key}
+                label={CATEGORY_LABELS[key]}
+                items={items}
+                checkedIds={checkedIds}
+                onToggleItem={toggleItem}
+                onToggleAll={toggleAll}
+                onEditItem={handleEditItem}
+                storySubjects={key === 'stories' ? storySubjects : undefined}
+                onStorySubjectChange={key === 'stories' ? (id, subject) =>
+                  setStorySubjects((prev) => ({ ...prev, [id]: subject })) : undefined}
+                dedupMatches={dedupMatches}
+                canonicalMatches={canonicalMatches}
+              />
+            )
+          })}
+        </TopicSection>
+      )
+    })
+  }
+
+  // -------------------------------------------------------------------------
+  // Type-grouped view (original)
+  // -------------------------------------------------------------------------
+  function renderTypeView() {
+    return CATEGORY_ORDER.map((key) => (
+      <CategorySection
+        key={key}
+        label={CATEGORY_LABELS[key]}
+        items={editedExtraction[key] as AnyItem[]}
+        checkedIds={checkedIds}
+        onToggleItem={toggleItem}
+        onToggleAll={toggleAll}
+        onEditItem={handleEditItem}
+        storySubjects={key === 'stories' ? storySubjects : undefined}
+        onStorySubjectChange={key === 'stories' ? (id, subject) =>
+          setStorySubjects((prev) => ({ ...prev, [id]: subject })) : undefined}
+        dedupMatches={dedupMatches}
+        canonicalMatches={canonicalMatches}
+      />
+    ))
+  }
+
+  // -------------------------------------------------------------------------
+  // Main panel
+  // -------------------------------------------------------------------------
   return (
     <div className="w-[480px] shrink-0 flex flex-col h-full border-l border-border bg-background">
       {/* Header */}
@@ -220,77 +373,55 @@ export function ResultsPanel({ result, onClose, onCommitSuccess }: ResultsPanelP
         </div>
       ) : (
         <>
-          {/* Global controls */}
-          <div className="flex items-center gap-3 px-5 py-2 border-b border-border shrink-0">
-            <button
-              onClick={() => toggleGlobal(true)}
-              className="text-xs text-muted-foreground hover:text-foreground underline"
-            >
-              Select all
-            </button>
-            <button
-              onClick={() => toggleGlobal(false)}
-              className="text-xs text-muted-foreground hover:text-foreground underline"
-            >
-              Deselect all
-            </button>
+          {/* Controls bar */}
+          <div className="flex items-center justify-between px-5 py-2 border-b border-border shrink-0">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => toggleGlobal(true)}
+                className="text-xs text-muted-foreground hover:text-foreground underline"
+              >
+                Select all
+              </button>
+              <button
+                onClick={() => toggleGlobal(false)}
+                className="text-xs text-muted-foreground hover:text-foreground underline"
+              >
+                Deselect all
+              </button>
+            </div>
+            {/* Group mode toggle */}
+            {topicClusters && topicClusters.length > 0 && (
+              <div className="flex items-center gap-1 border border-border rounded">
+                <button
+                  onClick={() => setGroupMode('topic')}
+                  className={`p-1 ${groupMode === 'topic' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  aria-label="Group by topic"
+                  title="Group by topic"
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setGroupMode('type')}
+                  className={`p-1 ${groupMode === 'type' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  aria-label="Group by type"
+                  title="Group by type"
+                >
+                  <List className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Category sections */}
+          {/* Dedup loading indicator */}
+          {dedupInProgress && (
+            <div className="px-5 py-1.5 text-xs text-muted-foreground border-b border-border bg-muted/20">
+              Checking for duplicates...
+            </div>
+          )}
+
+          {/* Items — topic or type view */}
           <div className="flex-1 overflow-y-auto">
-            <CategorySection
-              label="IDEAS"
-              items={extraction.ideas}
-              checkedIds={checkedIds}
-              onToggleItem={toggleItem}
-              onToggleAll={toggleAll}
-            />
-            <CategorySection
-              label="CONCEPTS"
-              items={extraction.concepts}
-              checkedIds={checkedIds}
-              onToggleItem={toggleItem}
-              onToggleAll={toggleAll}
-            />
-            <CategorySection
-              label="PEOPLE"
-              items={extraction.people}
-              checkedIds={checkedIds}
-              onToggleItem={toggleItem}
-              onToggleAll={toggleAll}
-            />
-            <CategorySection
-              label="ORGANISATIONS"
-              items={extraction.organisations}
-              checkedIds={checkedIds}
-              onToggleItem={toggleItem}
-              onToggleAll={toggleAll}
-            />
-            <CategorySection
-              label="STORIES"
-              items={extraction.stories}
-              checkedIds={checkedIds}
-              onToggleItem={toggleItem}
-              onToggleAll={toggleAll}
-              storySubjects={storySubjects}
-              onStorySubjectChange={(id, subject) =>
-                setStorySubjects((prev) => ({ ...prev, [id]: subject }))
-              }
-            />
-            <CategorySection
-              label="TECHNIQUES"
-              items={extraction.techniques}
-              checkedIds={checkedIds}
-              onToggleItem={toggleItem}
-              onToggleAll={toggleAll}
-            />
-            <CategorySection
-              label="CONTENT ANGLES"
-              items={extraction.contentAngles}
-              checkedIds={checkedIds}
-              onToggleItem={toggleItem}
-              onToggleAll={toggleAll}
-            />
+            {groupMode === 'topic' ? renderTopicView() : renderTypeView()}
           </div>
 
           {/* Sticky footer */}
@@ -317,4 +448,71 @@ export function ResultsPanel({ result, onClose, onCommitSuccess }: ResultsPanelP
       )}
     </div>
   )
+}
+
+// ---------------------------------------------------------------------------
+// TopicSection — collapsible wrapper for a topic cluster
+// ---------------------------------------------------------------------------
+
+function TopicSection({
+  topic,
+  totalItems,
+  checkedCount,
+  onToggleAll,
+  children,
+}: {
+  topic: string
+  totalItems: number
+  checkedCount: number
+  onToggleAll: (checked: boolean) => void
+  children: React.ReactNode
+}) {
+  const [expanded, setExpanded] = useState(true)
+  const allChecked = checkedCount === totalItems
+
+  return (
+    <div className="border-b border-border last:border-b-0">
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/60">
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="flex items-center gap-1.5 flex-1 text-left"
+        >
+          {expanded ? (
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          )}
+          <span className="text-sm font-semibold text-foreground">
+            {topic}
+          </span>
+          <span className="ml-1 text-xs text-muted-foreground">
+            ({checkedCount}/{totalItems})
+          </span>
+        </button>
+        <Checkbox
+          checked={allChecked}
+          onCheckedChange={(checked) => onToggleAll(!!checked)}
+          className="h-3.5 w-3.5"
+          aria-label={`Select all in ${topic}`}
+        />
+      </div>
+      {expanded && <div>{children}</div>}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function getAllIds(extraction: ExtractionOutput): string[] {
+  return [
+    ...extraction.ideas.map((i) => i.id),
+    ...extraction.concepts.map((c) => c.id),
+    ...extraction.people.map((p) => p.id),
+    ...extraction.organisations.map((o) => o.id),
+    ...extraction.stories.map((s) => s.id),
+    ...extraction.techniques.map((t) => t.id),
+    ...extraction.contentAngles.map((a) => a.id),
+  ]
 }

@@ -1,7 +1,7 @@
 # Template: DNA Plural Item
 Pattern name: `dna-plural-item`
 Established from: DNA-03 (Audience Segments)
-Last updated: 2026-03-31
+Last updated: 2026-04-23
 
 ---
 
@@ -24,12 +24,14 @@ If items exist → redirect to first item's detail view. If empty → show empty
 
 ### Header area
 ```
-[Page title]                    [⊞ cards icon] [+ New item] [⊗ Archive]
-────────────────────────────────────────────────────────────────────────
-[Item A pill] [Item B pill] [Item C pill]    ← switcher pills
+[Page title] [Status badge ●]              [⊞ cards icon] [+ New item] [⊗ Archive]
+────────────────────────────────────────────────────────────────────────────────────
+[Segment ▾ Item A]    ← ItemSwitcher dropdown (subheader slot)
 ```
+- **Status badge inline with title** — uses `StatusBadge` molecule (DS-02). State-keyword API maps to semantic state tokens (draft → warning, active → success, archived → neutral). Opens dropdown to change status.
+- Status is NOT in the left panel — it's a header-level concern, always visible
 - Actions in-line with title (no separate right panel)
-- Switcher only shown when 2+ active items
+- **Switcher** uses the `ItemSwitcher` molecule (DS-09) in the PageChrome `subheader` slot. Compact dropdown trigger with the type label (e.g. "Segment") above the current item name. Renders nothing when fewer than 2 active items exist. Replaces the previous pill strip — long item names now handled by the dropdown.
 - Archive disabled with tooltip when only 1 active item
 - "Mark as active" replaces Archive when viewing a draft item
 
@@ -59,7 +61,12 @@ If items exist → redirect to first item's detail view. If empty → show empty
 ### Content pane
 - Tabs (3 typically): Main content tab | Sub-items/table tab | Related Content tab
 - Related Content tab is always the last tab, always a stub until REG-01 is built
-- Within main tab: mini-nav (sticky, ~160px) + scrollable anchor-linked sections
+- Within tabs that have sections: use `InPageNav` molecule (sticky, w-36) alongside a scrolling content column
+- **InPageNav pattern (mandatory for any tab with 2+ sections):**
+  - Tab content is a `flex gap-6` row
+  - `<InPageNav>` is the first child — the molecule handles its own `w-36 shrink-0 self-start sticky top-0` positioning
+  - Content is the second child: `flex-1 min-w-0 flex flex-col gap-8 pb-16`
+  - The nav stays pinned while the content scrolls. Do NOT wrap InPageNav in an extra div.
 - All fields: inline editable, floating labels, icon prefix, autosave on blur
 
 ### Autosave behaviour

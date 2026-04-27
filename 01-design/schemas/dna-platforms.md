@@ -2,13 +2,15 @@
 status: approved
 table: dna_platforms
 type: plural
-related_features: DNA-01, DNA-07, OUT-02
-last_updated: 2026-03-29
+related_features: DNA-01, DNA-07, DNA-07b, OUT-02
+last_updated: 2026-04-27
 ---
 
 # Schema: dna_platforms
 
-Plural. One row per platform. Platform-specific strategy and constraints — how the brand shows up on each channel, what formats work, what the objectives are, and what the rules are for content created there. Used by the content creator to apply platform-appropriate formatting and strategy.
+Plural. One row per channel. Channel-specific strategy and constraints — how the brand shows up on each channel, what the objectives are, what the operating rules are. Used by the content creator and other generation surfaces to apply channel-appropriate formatting and strategy, and by `content_types.prerequisites` to gate the picker.
+
+> **Vocabulary note:** the table is named `dna_platforms` (legacy), but the canonical concept is **channel**. The taxonomy at `04-documentation/reference/channel-taxonomy.md` is authoritative for `category` and `channel` values. A future rename is intentionally deferred — column-driven semantics give us everything we need today.
 
 ## Fields
 
@@ -16,8 +18,10 @@ Plural. One row per platform. Platform-specific strategy and constraints — how
 |---|---|---|---|
 | `id` | uuid | PK, defaultRandom | |
 | `brandId` | uuid | not null, FK → `brands.id` | Owning brand |
-| `name` | varchar(100) | not null | Platform name — e.g. "LinkedIn", "Newsletter", "Instagram", "Podcast", "YouTube" |
-| `platformType` | varchar(50) | not null | `social \| email \| owned_content \| video \| audio \| other` |
+| `name` | varchar(100) | not null | Channel name — e.g. "LinkedIn", "Newsletter", "Instagram", "Podcast", "YouTube", "Cold outreach", "Hosted events" |
+| `category` | varchar(50) | not null | `owned_real_estate \| owned_content \| social \| paid \| earned \| in_person \| relationships \| other`. See [channel-taxonomy.md](../../04-documentation/reference/channel-taxonomy.md). Drives UI grouping and per-category field relevance. |
+| `channel` | varchar(50) | not null | Canonical channel value — e.g. `linkedin`, `podcast`, `blog`, `cold_outreach`, `hosted_event`. See `channel-taxonomy.md` for the closed enum scoped per category. This is what `content_types.prerequisites.channels` gates against. |
+| `platformType` | varchar(50) | nullable | **Deprecated.** Legacy `social \| email \| owned_content \| video \| audio \| other`. Kept temporarily during the DNA-07b migration; do not introduce new code that reads it. Will be dropped in a follow-up. |
 | `handle` | varchar(200) | nullable | Profile URL or handle on this platform |
 | `isActive` | boolean | not null, default true | Is the brand currently active on this platform? |
 | `primaryObjective` | text | nullable | What is this platform for? e.g. "Thought leadership and direct client acquisition" vs "Community and content distribution" |
@@ -113,15 +117,31 @@ Signature features and content structure for this platform. Informs the content 
 ## Relationships
 
 - `contentPillarIds` → `dna_content_pillars.id`
-- Referenced by content creator (OUT-02) as a parameter — platform choice applies format constraints and strategy
-- Informs `dna_tov_applications` — each platform should have a corresponding ToV application record
+- Referenced by content creator (OUT-02) as a parameter — channel choice applies format constraints and strategy
+- Gated by `content_types.prerequisites.channels` — picker locks evaluate `WHERE channel = X AND is_active = true`
+- Informs `dna_tov_applications` — each content-publishing channel typically has a corresponding ToV application record
 - `handle` may reference `dna_business_overview.socialHandles` (denormalised for convenience)
+
+## Per-category field relevance
+
+Not every field is meaningful for every category. `dna_platforms` is one table holding all channels (publishing platforms, paid surfaces, in-person events, relationship channels). All fields are nullable; the UI hides fields that don't apply to the row's `category` via a `categoryHasField()` lookup. See `channel-taxonomy.md` for the relevance matrix.
+
+Examples of expected sparseness:
+
+- `relationships` rows (e.g. `cold_outreach`, `partnership`): `contentFormats`, `characterLimits`, `hashtagStrategy`, `subtopicIdeas`, `structureAndFeatures` are all `(n/a)` — these channels don't produce single-format publishing artifacts. `engagementApproach`, `doNotDo`, `usp`, `audience`, `primaryObjective` remain meaningful.
+- `in_person` rows (e.g. `hosted_event`, `networking`): `contentFormats`, `characterLimits`, `hashtagStrategy` are `(n/a)`. `subtopicIdeas` and `structureAndFeatures` may apply to talk content but not to networking cadence.
+- `paid` rows: `contentFormats` reinterpreted as ad formats; `characterLimits` reinterpreted as ad-spec limits; `hashtagStrategy` and `subtopicIdeas` typically `(n/a)`.
+
+When a category surfaces a real need the current field set doesn't cover (e.g. cold outreach wants sequence templates and follow-up cadence; hosted events want venue / attendee count / co-hosts), decide between adding nullable columns or splitting into a sibling table — don't pre-build.
 
 ## Notes
 
-- `contentFormats` is the most important field for generation quality — it gives the LLM the structural rules for each format on each platform
+- `category` and `channel` together are what the rest of the system gates on, groups by, and queries against. `platformType` is legacy and deprecated.
+- `contentFormats` is the most important field for generation quality on publishing channels — it gives the LLM the structural rules for each format on each channel
 - `characterLimits` are stored here so the content creator can enforce them at generation time, not just as a note in a prompt
-- Owned content platforms (newsletter, blog, podcast) use this table too — they have strategy, format, and objectives just like social platforms
-- `doNotDo` is deliberately platform-specific: what's fine on Instagram may be wrong for LinkedIn
-- `subtopicIdeas` and `structureAndFeatures` are adapted from the legacy platform strategy prompt — they capture the outputs of a platform strategy session as structured data rather than prose, so they're available for content generation, not just reference
-- `customerJourneyStage` is about the platform's role in the funnel — not the individual customer's journey through it (that lives in audience segments)
+- Owned content channels (newsletter, blog, podcast) use this table too — they have strategy, format, and objectives just like social channels
+- Non-publishing channels (cold outreach, networking, partnerships, hosted events) use this table too — they have objectives, audience, USP, and do-not-do rules even though they don't have content formats
+- `doNotDo` is deliberately channel-specific: what's fine on Instagram may be wrong for LinkedIn; what's fine in cold outreach may be wrong in a partnership pitch
+- `subtopicIdeas` and `structureAndFeatures` are adapted from the legacy platform strategy prompt — they capture the outputs of a channel strategy session as structured data rather than prose, so they're available for content generation, not just reference
+- `customerJourneyStage` is about the channel's role in the funnel — not the individual customer's journey through it (that lives in audience segments)
+- The cards UI groups channels by `category`. Hue/icon defaults are by `category`, overridable per `channel` if needed. The legacy `PLATFORM_TYPE_HUES` lookup is replaced by a `CATEGORY_HUES` map.
