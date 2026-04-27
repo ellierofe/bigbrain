@@ -3,7 +3,12 @@
 .env*
 .mcp.json
 .gstack/
-.claude/
+
+# Claude Code: track project skills/agents/commands; ignore per-machine settings + runtime
+.claude/*
+!.claude/skills/
+!.claude/agents/
+!.claude/commands/
 
 # Office lock files (Excel/Word create these when files are open)
 ~$*
