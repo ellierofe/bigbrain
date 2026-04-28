@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { Plus, Trash2, ChevronDown } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ActionButton } from '@/components/action-button'
+import { ActionMenu } from '@/components/action-menu'
 import { SectionDivider } from '@/components/section-divider'
 import { InlineCellSelect } from '@/components/inline-cell-select'
 import {
@@ -41,14 +42,12 @@ export function EntityOutcomesPanel({
   const [isPending, startTransition] = useTransition()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [addingKind, setAddingKind] = useState<EntityOutcomeKind | null>(null)
-  const [addDropdownOpen, setAddDropdownOpen] = useState(false)
 
   function outcomesByKind(kind: EntityOutcomeKind) {
     return outcomes.filter(o => o.kind === kind)
   }
 
   async function handleAdd(kind: EntityOutcomeKind) {
-    setAddDropdownOpen(false)
     setAddingKind(kind)
 
     const parentKey = parentType === 'knowledgeAsset' ? 'knowledgeAssetId' : 'offerId'
@@ -223,31 +222,22 @@ export function EntityOutcomesPanel({
   return (
     <div className="flex flex-col gap-6">
       {/* Add dropdown */}
-      <div className="relative self-end">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setAddDropdownOpen(!addDropdownOpen)}
-          disabled={!!addingKind}
-        >
-          <Plus className="mr-1 h-3.5 w-3.5" />
-          Add
-          <ChevronDown className="ml-1 h-3 w-3" />
-        </Button>
-        {addDropdownOpen && (
-          <div className="absolute right-0 top-full z-50 mt-1 rounded-md border border-border bg-card shadow-[var(--shadow-raised)] py-1 min-w-[140px]">
-            {OUTCOME_KINDS.map(kind => (
-              <button
-                key={kind.value}
-                type="button"
-                onClick={() => handleAdd(kind.value)}
-                className="flex w-full px-3 py-1.5 text-sm hover:bg-muted transition-colors"
-              >
-                {kind.label.slice(0, -1)}
-              </button>
-            ))}
-          </div>
-        )}
+      <div className="self-end">
+        <ActionMenu
+          trigger={
+            <ActionButton variant="outline" disabled={!!addingKind}>
+              <Plus className="mr-1 h-3.5 w-3.5" />
+              Add
+              <ChevronDown className="ml-1 h-3 w-3" />
+            </ActionButton>
+          }
+          minWidth="140px"
+          items={OUTCOME_KINDS.map((kind) => ({
+            type: 'action' as const,
+            label: kind.label.slice(0, -1),
+            onClick: () => handleAdd(kind.value),
+          }))}
+        />
       </div>
 
       {OUTCOME_KINDS.map(kind => (

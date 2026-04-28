@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import { X, ChevronDown, ChevronRight, LayoutGrid, List } from 'lucide-react'
+// DS-07 exception: Checkbox used for bulk-selection UI (transient selection state, not
+// field-level autosave).
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
 import { CategorySection, type AnyItem } from './category-section'

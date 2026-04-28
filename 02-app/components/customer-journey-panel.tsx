@@ -201,22 +201,24 @@ export function CustomerJourneyPanel({
         open={confirmRegenerate}
         onOpenChange={setConfirmRegenerate}
         title="Regenerate customer journey?"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmRegenerate(false)}
+            >
+              Cancel
+            </Button>
+            <Button size="sm" onClick={runGeneration}>
+              Regenerate
+            </Button>
+          </>
+        }
       >
         <p className="text-sm text-muted-foreground">
           This will replace the current journey. Any manual edits will be lost.
         </p>
-        <div className="mt-4 flex justify-end gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setConfirmRegenerate(false)}
-          >
-            Cancel
-          </Button>
-          <Button size="sm" onClick={runGeneration}>
-            Regenerate
-          </Button>
-        </div>
       </Modal>
     </div>
   )

@@ -107,20 +107,21 @@
   --ring:                #A5C4B2;
   --field-active:        #4A8B9C;
 
-  /* ===== State tokens (DS-02) ===== */
+  /* ===== State tokens (DS-02 — retuned 2026-04-28) ===== */
   /* Used for status, save feedback, confidence, warnings. */
-  --success:             #047857;
-  --success-bg:          #D1FAE5;
-  --success-foreground:  #064E3B;
-  --warning:             #B45309;
-  --warning-bg:          #FEF3C7;
-  --warning-foreground:  #78350F;
-  --error:               var(--destructive);
-  --error-bg:            #FEE2E2;
-  --error-foreground:    #7F1D1D;
-  --info:                #1D4ED8;
-  --info-bg:             #DBEAFE;
-  --info-foreground:     #1E3A8A;
+  /* Palette: dusty-saturated, harmonised with the sage/terracotta brand family. */
+  --success:             #6B9A7E;   /* deepened sage, sympathetic with --primary */
+  --success-bg:          #D6E5DC;
+  --success-foreground:  #2D4A38;
+  --warning:             #C59B6C;   /* gold */
+  --warning-bg:          #F0DFC8;
+  --warning-foreground:  #6B4A20;
+  --error:               #AF1B1B;   /* deep red */
+  --error-bg:            #F2D1D1;
+  --error-foreground:    #5A0E0E;
+  --info:                #A1BED6;   /* dusty blue, matches --tag-1 */
+  --info-bg:             #D5E2EC;
+  --info-foreground:     #2A4A63;
 
   /* ===== Tag tokens (DS-02) ===== */
   /* Decorative category differentiation. Single-role backgrounds. */

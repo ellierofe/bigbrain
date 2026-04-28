@@ -76,6 +76,16 @@ export function CreateApplicationModal({
       title="New application"
       description="Define a per-format voice shift. You can edit everything else after creating."
       size="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={() => handleOpenChange(false)} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button onClick={handleCreate} disabled={!canSubmit}>
+            {submitting ? 'Creating…' : 'Create'}
+          </Button>
+        </>
+      }
     >
       <div className="flex flex-col gap-4 pt-2">
         <div className="flex flex-col gap-1.5">
@@ -113,14 +123,6 @@ export function CreateApplicationModal({
           />
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="ghost" onClick={() => handleOpenChange(false)} disabled={submitting}>
-            Cancel
-          </Button>
-          <Button onClick={handleCreate} disabled={!canSubmit}>
-            {submitting ? 'Creating…' : 'Create'}
-          </Button>
-        </div>
       </div>
     </Modal>
   )

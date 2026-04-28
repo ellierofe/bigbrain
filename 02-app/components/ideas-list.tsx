@@ -17,6 +17,7 @@ import {
   untagIdeaAction,
 } from '@/app/actions/ideas'
 import { EmptyState } from '@/components/empty-state'
+import { FilterPillGroup } from '@/components/filter-pill-group'
 import type { Idea, IdeaType, IdeaStatus, IdeaTag, IdeaTagEntityType } from '@/lib/types/ideas'
 import type { TaggableEntity } from '@/lib/db/queries/taggable-entities'
 
@@ -251,47 +252,21 @@ export function IdeasList({
     <div className="flex flex-col gap-3">
       {showFilters && (
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground w-12 shrink-0">Status</span>
-            <div className="flex gap-1">
-              {statusPills.map((pill) => (
-                <button
-                  key={pill.value}
-                  type="button"
-                  onClick={() => setStatusFilter(pill.value)}
-                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-medium transition-colors ${
-                    statusFilter === pill.value
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                  }`}
-                >
-                  {pill.label}
-                  <span className={`text-[11px] ${statusFilter === pill.value ? 'opacity-70' : 'opacity-50'}`}>{pill.count}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground w-12 shrink-0">Type</span>
-            <div className="flex gap-1">
-              {typePills.map((pill) => (
-                <button
-                  key={pill.value}
-                  type="button"
-                  onClick={() => setTypeFilter(pill.value)}
-                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-medium transition-colors ${
-                    typeFilter === pill.value
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                  }`}
-                >
-                  {pill.value !== 'all' && <pill.icon className="h-3 w-3" />}
-                  {pill.label}
-                  <span className={`text-[11px] ${typeFilter === pill.value ? 'opacity-70' : 'opacity-50'}`}>{pill.count}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          <FilterPillGroup
+            label="Status"
+            value={statusFilter}
+            onChange={(v) => setStatusFilter(v as StatusFilter)}
+            options={statusPills}
+          />
+          <FilterPillGroup
+            label="Type"
+            value={typeFilter}
+            onChange={(v) => setTypeFilter(v as TypeFilter)}
+            options={typePills.map((p) => ({
+              ...p,
+              icon: p.value !== 'all' ? p.icon : undefined,
+            }))}
+          />
         </div>
       )}
 

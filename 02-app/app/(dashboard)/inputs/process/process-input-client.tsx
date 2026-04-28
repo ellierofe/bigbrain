@@ -2,6 +2,9 @@
 
 import { useState, useRef } from 'react'
 import { toast } from 'sonner'
+// DS-07 exception: explicit-submit input form (process-text flow). Not autosave; values
+// are submitted as a batch on user action. DS-04 deferred — see existing comment at the
+// SourceType select site below.
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ResultsPanel } from './results-panel'

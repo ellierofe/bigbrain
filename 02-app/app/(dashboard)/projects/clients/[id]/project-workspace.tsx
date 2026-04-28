@@ -15,20 +15,14 @@ import { ContentPane } from '@/components/content-pane'
 import { SectionCard } from '@/components/section-card'
 import { IdeasPanel } from '@/components/ideas-panel'
 import { EmptyState } from '@/components/empty-state'
-// Button kept for DropdownMenuTrigger render slot — DS-05 deferred (DropdownMenu out of scope)
-import { Button } from '@/components/ui/button'
 import { ActionButton } from '@/components/action-button'
 import { IconButton } from '@/components/icon-button'
+// DS-07 exception: brief Textarea (line 275) — pending InlineField textarea migration in a follow-up.
 import { Textarea } from '@/components/ui/textarea'
 import { Modal } from '@/components/modal'
 import { ItemLinker } from '@/components/item-linker'
 import { TypeBadge } from '@/components/type-badge'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { StatusBadge, type StatusOption } from '@/components/status-badge'
 import {
   updateProjectFieldAction,
   linkItemAction,
@@ -49,19 +43,12 @@ import type { TaggableEntity } from '@/lib/db/queries/taggable-entities'
 // Status
 // ---------------------------------------------------------------------------
 
-const STATUS_OPTIONS: { label: string; value: ProjectStatus }[] = [
-  { label: 'Active', value: 'active' },
-  { label: 'Paused', value: 'paused' },
-  { label: 'Complete', value: 'complete' },
-  { label: 'Archived', value: 'archived' },
+const STATUS_OPTIONS: StatusOption[] = [
+  { value: 'active', label: 'Active', state: 'success' },
+  { value: 'paused', label: 'Paused', state: 'warning' },
+  { value: 'complete', label: 'Complete', state: 'info' },
+  { value: 'archived', label: 'Archived', state: 'neutral' },
 ]
-
-const statusBadge: Record<string, string> = {
-  active: 'bg-success-bg text-success-foreground',
-  paused: 'bg-warning-bg text-warning-foreground',
-  complete: 'bg-info-bg text-info-foreground',
-  archived: 'bg-muted text-muted-foreground',
-}
 
 // Phase = mission phase (read-only display in linked-missions list).
 // Interactive phase changing happens in mission-workspace.tsx.
@@ -154,10 +141,16 @@ export function ProjectWorkspace({
     }
   }
 
-  async function handleStatusChange(newStatus: ProjectStatus) {
-    setStatus(newStatus)
-    await updateProjectFieldAction(project.id, 'status', newStatus)
+  async function handleStatusChange(newStatus: string) {
+    const previous = status
+    setStatus(newStatus as ProjectStatus)
+    const result = await updateProjectFieldAction(project.id, 'status', newStatus)
+    if (!result.ok) {
+      setStatus(previous)
+      return result
+    }
     router.refresh()
+    return { ok: true as const }
   }
 
   async function handleArchive() {
@@ -230,25 +223,12 @@ export function ProjectWorkspace({
         }
         action={
           <div className="flex items-center gap-2">
-            {/* Status dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="outline" size="sm" className="gap-1.5">
-                    <span className={`inline-block h-2 w-2 rounded-full ${statusBadge[status]?.split(' ')[0] ?? 'bg-muted'}`} />
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align="end">
-                {STATUS_OPTIONS.map((opt) => (
-                  <DropdownMenuItem key={opt.value} onClick={() => handleStatusChange(opt.value)}>
-                    <span className={`inline-block h-2 w-2 rounded-full mr-2 ${statusBadge[opt.value]?.split(' ')[0] ?? 'bg-muted'}`} />
-                    {opt.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Status picker */}
+            <StatusBadge
+              status={status}
+              onChange={handleStatusChange}
+              options={STATUS_OPTIONS}
+            />
 
             {/* Archive button */}
             <IconButton
@@ -408,20 +388,25 @@ export function ProjectWorkspace({
       </ContentPane>
 
       {/* Archive confirmation modal */}
-      <Modal open={archiveOpen} onOpenChange={setArchiveOpen} title="Archive project" size="sm">
-        <div className="space-y-4 pt-2">
-          <p className="text-sm text-muted-foreground">
-            Archive <span className="font-medium text-foreground">{project.name}</span>?
-            It will be hidden from your active projects but remains accessible from the Archived filter.
-            Linked items won't be affected.
-          </p>
-          <div className="flex justify-end gap-2">
+      <Modal
+        open={archiveOpen}
+        onOpenChange={setArchiveOpen}
+        title="Archive project"
+        size="sm"
+        footer={
+          <>
             <ActionButton variant="outline" onClick={() => setArchiveOpen(false)}>Cancel</ActionButton>
             <ActionButton variant="destructive" onClick={handleArchive} loading={archiving}>
               {archiving ? 'Archiving...' : 'Archive'}
             </ActionButton>
-          </div>
-        </div>
+          </>
+        }
+      >
+        <p className="text-sm text-muted-foreground">
+          Archive <span className="font-medium text-foreground">{project.name}</span>?
+          It will be hidden from your active projects but remains accessible from the Archived filter.
+          Linked items won't be affected.
+        </p>
       </Modal>
 
       {/* Unlink confirmation modal */}
@@ -430,18 +415,20 @@ export function ProjectWorkspace({
         onOpenChange={(open) => { if (!open) setUnlinkTarget(null) }}
         title="Unlink item"
         size="sm"
-      >
-        {unlinkTarget && (
-          <div className="space-y-4 pt-2">
-            <p className="text-sm text-muted-foreground">
-              Unlink <span className="font-medium text-foreground">{unlinkTarget.label}</span> from this project?
-              The item itself won't be deleted.
-            </p>
-            <div className="flex justify-end gap-2">
+        footer={
+          unlinkTarget ? (
+            <>
               <ActionButton variant="outline" onClick={() => setUnlinkTarget(null)}>Cancel</ActionButton>
               <ActionButton variant="destructive" onClick={handleUnlink}>Unlink</ActionButton>
-            </div>
-          </div>
+            </>
+          ) : undefined
+        }
+      >
+        {unlinkTarget && (
+          <p className="text-sm text-muted-foreground">
+            Unlink <span className="font-medium text-foreground">{unlinkTarget.label}</span> from this project?
+            The item itself won't be deleted.
+          </p>
         )}
       </Modal>
     </div>

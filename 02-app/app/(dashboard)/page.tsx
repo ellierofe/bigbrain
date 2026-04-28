@@ -7,27 +7,23 @@ import {
   FileText,
   Mic,
   Clock,
-  Plus,
-  ChevronDown,
   Target,
   Compass,
 } from 'lucide-react'
 import { SectionCard } from '@/components/section-card'
 import { EmptyState } from '@/components/empty-state'
-// Button kept for DropdownMenuTrigger render slot — DS-05 deferred (DropdownMenu out of scope)
-import { Button } from '@/components/ui/button'
 import { ActionButton } from '@/components/action-button'
+import { ListItem } from '@/components/list-item'
+import { StatusBadge, type StatusOption } from '@/components/status-badge'
+import { NewInputDropdown } from './new-input-dropdown'
+// DS-07 exception: Tooltip wraps the disabled-QuickAction span (line ~425). The
+// tooltip-on-disabled-element pattern is its own concern; promoting it to a molecule is
+// follow-up work (potential `DisabledHint` molecule).
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   getPendingInputsCount,
   getRecentPendingInputs,
@@ -36,9 +32,16 @@ import {
   getRecentActivity,
 } from '@/lib/db/queries/dashboard'
 import { getActiveMissions } from '@/lib/db/queries/missions'
-import { PHASE_LABELS, PHASE_COLOURS } from '@/lib/types/missions'
 import { getActiveProjectsForDashboard } from '@/lib/db/queries/client-projects'
 import { FolderKanban } from 'lucide-react'
+
+const MISSION_PHASE_OPTIONS: StatusOption[] = [
+  { value: 'exploring', label: 'Exploring', hue: 1 },
+  { value: 'synthesising', label: 'Synthesising', hue: 2 },
+  { value: 'producing', label: 'Producing', hue: 3 },
+  { value: 'complete', label: 'Complete', hue: 4 },
+  { value: 'paused', label: 'Paused', hue: 5 },
+]
 
 /** Hardcoded brand ID — replace with session lookup when multi-brand auth lands */
 const BRAND_ID = 'ea444c72-d332-4765-afd5-8dda97f5cf6f'
@@ -63,11 +66,11 @@ const activityLayerIcon = {
   source: FileText,
 }
 
-const statusColour: Record<string, string> = {
-  pending: 'bg-warning-bg text-warning-foreground',
-  committed: 'bg-success-bg text-success-foreground',
-  skipped: 'bg-muted text-muted-foreground',
-}
+const INPUT_STATUS_OPTIONS: StatusOption[] = [
+  { value: 'pending', label: 'Pending', state: 'warning' },
+  { value: 'committed', label: 'Committed', state: 'success' },
+  { value: 'skipped', label: 'Skipped', state: 'neutral' },
+]
 
 export default async function DashboardHome() {
   const [pendingCount, recentPending, sourceCount, graphNodeCount, recentActivity, activeMissions, activeProjects] =
@@ -137,64 +140,66 @@ export default async function DashboardHome() {
                 }
               />
             ) : (
-              <div className="flex flex-col divide-y divide-border">
+              <div className="flex flex-col">
                 {/* Client projects */}
                 {activeProjects.map((project) => (
-                  <Link
+                  <ListItem
                     key={`project-${project.id}`}
+                    as="link"
                     href={`/projects/clients/${project.id}`}
-                    className="flex items-center justify-between gap-3 py-3 hover:bg-muted/30 -mx-2 px-2 rounded transition-colors"
+                    leading={<FolderKanban className="h-4 w-4 text-muted-foreground shrink-0" />}
+                    trailing={
+                      <>
+                        <StatusBadge
+                          status="active"
+                          options={[{ value: 'active', label: 'Active', state: 'success' }]}
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          {timeAgo(project.updatedAt)}
+                        </span>
+                      </>
+                    }
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <FolderKanban className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        <span className="text-sm font-medium text-foreground truncate">
-                          {project.name}
-                        </span>
-                        <span className="text-xs text-muted-foreground truncate max-w-[250px]">
-                          {project.organisationName}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="rounded-full bg-success-bg px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-success-foreground">
-                        Active
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="text-sm font-medium text-foreground truncate">
+                        {project.name}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {timeAgo(project.updatedAt)}
+                      <span className="text-xs text-muted-foreground truncate max-w-[250px]">
+                        {project.organisationName}
                       </span>
                     </div>
-                  </Link>
+                  </ListItem>
                 ))}
                 {/* Missions */}
                 {activeMissions.map((mission) => (
-                  <Link
+                  <ListItem
                     key={`mission-${mission.id}`}
+                    as="link"
                     href={`/projects/missions/${mission.id}`}
-                    className="flex items-center justify-between gap-3 py-3 hover:bg-muted/30 -mx-2 px-2 rounded transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <Compass className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        <span className="text-sm font-medium text-foreground truncate">
-                          {mission.name}
+                    leading={<Compass className="h-4 w-4 text-muted-foreground shrink-0" />}
+                    trailing={
+                      <>
+                        <StatusBadge
+                          status={mission.phase}
+                          options={MISSION_PHASE_OPTIONS}
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          {timeAgo(mission.updatedAt)}
                         </span>
-                        {mission.thesis && (
-                          <span className="text-xs text-muted-foreground truncate max-w-[250px]">
-                            {mission.thesis}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${PHASE_COLOURS[mission.phase]}`}>
-                        {PHASE_LABELS[mission.phase]}
+                      </>
+                    }
+                  >
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="text-sm font-medium text-foreground truncate">
+                        {mission.name}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {timeAgo(mission.updatedAt)}
-                      </span>
+                      {mission.thesis && (
+                        <span className="text-xs text-muted-foreground truncate max-w-[250px]">
+                          {mission.thesis}
+                        </span>
+                      )}
                     </div>
-                  </Link>
+                  </ListItem>
                 ))}
               </div>
             )}
@@ -258,9 +263,17 @@ export default async function DashboardHome() {
           ) : (
             <div className="flex flex-col">
               <div className="text-3xl font-bold text-foreground mb-4">{pendingCount}</div>
-              <div className="flex flex-col divide-y divide-border">
+              <div className="flex flex-col">
                 {recentPending.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between py-3 gap-3">
+                  <ListItem
+                    key={item.id}
+                    trailing={
+                      <StatusBadge
+                        status={item.status}
+                        options={INPUT_STATUS_OPTIONS}
+                      />
+                    }
+                  >
                     <div className="flex flex-col gap-0.5 min-w-0">
                       <span className="text-sm font-medium text-foreground truncate">
                         {item.title}
@@ -275,12 +288,7 @@ export default async function DashboardHome() {
                           : '—'}
                       </span>
                     </div>
-                    <span
-                      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${statusColour[item.status] ?? statusColour.pending}`}
-                    >
-                      {item.status}
-                    </span>
-                  </div>
+                  </ListItem>
                 ))}
               </div>
             </div>
@@ -296,21 +304,27 @@ export default async function DashboardHome() {
               description="Processed inputs and committed sources will appear here."
             />
           ) : (
-            <div className="flex flex-col divide-y divide-border">
+            <div className="flex flex-col">
               {recentActivity.map((item) => {
                 const Icon = activityLayerIcon[item.layer]
                 const relativeTime = timeAgo(item.createdAt)
                 return (
-                  <div key={`${item.layer}-${item.id}`} className="flex items-center gap-3 py-3">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                  <ListItem
+                    key={`${item.layer}-${item.id}`}
+                    leading={
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted">
+                        <Icon className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    }
+                    trailing={
+                      <span className="text-xs text-muted-foreground shrink-0">{relativeTime}</span>
+                    }
+                  >
+                    <div className="flex flex-col gap-0.5 min-w-0">
                       <span className="text-sm text-foreground truncate">{item.title}</span>
                       <span className="text-xs text-muted-foreground capitalize">{item.type}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground shrink-0">{relativeTime}</span>
-                  </div>
+                  </ListItem>
                 )
               })}
             </div>
@@ -347,42 +361,6 @@ function StatCard({
   )
 }
 
-function NewInputDropdown() {
-  const inputTypes = [
-    { label: 'Text', href: '/inputs/process', enabled: true },
-    { label: 'Document', href: '#', enabled: false },
-    { label: 'Audio', href: '#', enabled: false },
-    { label: 'URL / Link', href: '#', enabled: false },
-  ]
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            New input
-            <ChevronDown className="h-3 w-3 opacity-50" />
-          </Button>
-        }
-      />
-      <DropdownMenuContent align="end">
-        {inputTypes.map((item) =>
-          item.enabled ? (
-            <DropdownMenuItem key={item.label} render={<Link href={item.href} />}>
-              {item.label}
-            </DropdownMenuItem>
-          ) : (
-            <DropdownMenuItem key={item.label} disabled>
-              {item.label}
-              <span className="ml-auto text-[10px] text-muted-foreground">Soon</span>
-            </DropdownMenuItem>
-          )
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
 
 function QuickAction({
   href,

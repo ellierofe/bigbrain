@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
 import { ActionButton } from '@/components/action-button'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/status-badge'
 import { listAllSegments } from '@/lib/db/queries/audience-segments'
 import { CreateSegmentButton } from './create-segment-button'
 
@@ -93,10 +93,20 @@ export default async function AudienceSegmentsCardsPage({
                     <div className="flex items-center gap-1.5">
                       <p className="truncate font-semibold text-sm">{segment.segmentName}</p>
                       {segment.status === 'draft' && (
-                        <Badge variant="secondary" className="text-[10px] shrink-0">Draft</Badge>
+                        <span className="shrink-0">
+                          <StatusBadge
+                            status="draft"
+                            options={[{ value: 'draft', label: 'Draft', state: 'warning' }]}
+                          />
+                        </span>
                       )}
                       {segment.status === 'archived' && (
-                        <Badge variant="outline" className="text-[10px] shrink-0 opacity-60">Archived</Badge>
+                        <span className="shrink-0">
+                          <StatusBadge
+                            status="archived"
+                            options={[{ value: 'archived', label: 'Archived', state: 'neutral' }]}
+                          />
+                        </span>
                       )}
                     </div>
                     {segment.summary && (

@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Pencil, Check, X } from 'lucide-react'
+// DS-07 exception: Checkbox used for bulk-selection UI (transient selection state, not
+// field-level autosave). CheckboxField is for save-bearing fields; this is a different pattern.
 import { Checkbox } from '@/components/ui/checkbox'
 import { InlineCellSelect } from '@/components/inline-cell-select'
 import { ConfidenceBadge } from '@/components/confidence-badge'

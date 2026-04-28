@@ -12,7 +12,6 @@ import {
   TrendingUp, LayoutGrid as LayoutGridIcon, Brain, Target,
   Fingerprint, Heart, Coffee,
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { IconButton } from '@/components/icon-button'
 import { ActionButton } from '@/components/action-button'
 import { PageChrome } from '@/components/page-chrome'
@@ -23,8 +22,13 @@ import { EmptyState } from '@/components/empty-state'
 import { InlineField } from '@/components/inline-field'
 import { VocTable } from '@/components/voc-table'
 import { ItemSwitcher } from '@/components/item-switcher'
+import { StatusBadge } from '@/components/status-badge'
 import { CreateSegmentModal } from '@/components/create-segment-modal'
-import { ArchiveSegmentModal } from '@/components/archive-segment-modal'
+import { ArchiveItemModal } from '@/components/archive-item-modal'
+import {
+  checkAndArchiveSegment,
+  confirmArchiveSegment,
+} from '@/app/actions/audience-segments'
 import {
   saveSegmentField,
   saveSegmentJsonField,
@@ -156,7 +160,12 @@ export function SegmentDetailView({
               getLabel={(s) => s.segmentName}
             />
             {segment.status === 'draft' && (
-              <Badge variant="secondary" data-testid="draft-badge">Draft</Badge>
+              <span data-testid="draft-badge">
+                <StatusBadge
+                  status="draft"
+                  options={[{ value: 'draft', label: 'Draft', state: 'warning' }]}
+                />
+              </span>
             )}
           </div>
         }
@@ -330,11 +339,16 @@ export function SegmentDetailView({
 
       {/* Modals */}
       <CreateSegmentModal open={createOpen} onOpenChange={setCreateOpen} />
-      <ArchiveSegmentModal
+      <ArchiveItemModal
         open={archiveOpen}
         onOpenChange={setArchiveOpen}
-        segmentId={segment.id}
-        segmentName={segment.segmentName}
+        itemName={segment.segmentName}
+        itemType="segment"
+        dependencyCheck={() => checkAndArchiveSegment(segment.id)}
+        onConfirm={() => confirmArchiveSegment(segment.id)}
+        onArchived={(nextId) => {
+          router.push(nextId ? `/dna/audience-segments/${nextId}` : '/dna/audience-segments')
+        }}
       />
     </div>
   )

@@ -58,8 +58,8 @@ export const componentRegistry: ComponentEntry[] = [
     path: "@/components/modal",
     category: "overlay",
     description:
-      "Standard modal dialog. Wraps shadcn Dialog. Use for all modal interactions: generation, confirmation, editing.",
-    props: "open, onOpenChange, title, description?, children, size? (sm|md|lg|xl)",
+      "Standard modal dialog. Wraps shadcn Dialog. Use for all modal interactions: generation, confirmation, editing. Optional footer slot for action buttons.",
+    props: "open, onOpenChange, title, description?, children, footer?, size? (sm|md|lg|xl|2xl)",
     usedIn: [],
     spec: "molecule-specifications/modal",
   },
@@ -304,14 +304,15 @@ export const componentRegistry: ComponentEntry[] = [
     spec: "molecule-specifications/createsegmentmodal",
   },
   {
-    name: "ArchiveSegmentModal",
-    path: "@/components/archive-segment-modal",
+    name: "ArchiveItemModal",
+    path: "@/components/archive-item-modal",
     category: "overlay",
     description:
-      "Archive confirmation modal for audience segments. Checks dependents on open, shows warning if any exist. Redirects to next active segment or empty state on confirm.",
-    props: "open, onOpenChange, segmentId, segmentName",
-    usedIn: ["DNA-03"],
-    spec: "molecule-specifications/archive-modal",
+      "Configurable archive confirmation modal. Runs a dependency check on open, then shows confirm UI (with dependents list when present) and confirm/cancel footer. Replaces per-entity archive modals — used by audience segments, platforms, offers and any future archive flow.",
+    props:
+      "open, onOpenChange, itemName, itemType, dependencyCheck, onConfirm, onArchived?, dependentsCopy?",
+    usedIn: ["DNA-03", "DNA-04", "DNA-05", "DS-07"],
+    spec: "molecule-specifications/archiveitemmodal",
   },
   {
     name: "ItemSwitcher",
@@ -498,9 +499,10 @@ export const componentRegistry: ComponentEntry[] = [
     path: "@/components/status-badge",
     category: "form",
     description:
-      "Clickable status indicator for page headers. Token-driven state-coloured pill (draft=warning, active=success, archived=neutral by default) with dropdown to change status. Custom options pass `state` keyword (success|warning|error|info|neutral). Template-level component for all dna-plural-item instances.",
-    props: "status, onChange, options? (StatusOption[] — { value, label, state })",
-    usedIn: ["DNA-05", "DS-02"],
+      "Status indicator pill. Two option variants: state-shaped ({ value, label, state: success|warning|error|info|neutral }) for health-style status, and tag-hue-shaped ({ value, label, hue: 1-8 }) for categorical lifecycle states (e.g. mission phases). Pass onChange to enable a dropdown picker; omit onChange for a static read-only pill. Composes FloatingMenu for popover chrome.",
+    props:
+      "status, onChange? (omit for read-only pill), options? (StatusOption[] — all options must share the same shape, all-state or all-hue)",
+    usedIn: ["DNA-05", "DS-02", "DS-07"],
     spec: "molecule-specifications/statusbadge",
   },
   {
@@ -662,5 +664,59 @@ export const componentRegistry: ComponentEntry[] = [
     props: "open, onOpenChange, brandId, excludeIds?, onAdded? ((created: number) => void)",
     usedIn: ["DNA-09"],
     spec: null,
+  },
+  {
+    name: "FloatingMenu",
+    path: "@/components/floating-menu",
+    category: "overlay",
+    description:
+      "Token-driven popover container. Owns positioning (align/side), raised shadow, click-outside dismissal, and Escape-key dismissal. Used internally by StatusBadge and ActionMenu; available for direct use anywhere a popover is the right pattern. Distinct from shadcn Popover — thinner, no portal, no collision detection.",
+    props:
+      "open, onOpenChange, trigger, children, align? (start|end), side? (bottom|top), minWidth?, className?, containerClassName?",
+    usedIn: ["DS-07"],
+    spec: "molecule-specifications/floatingmenu",
+  },
+  {
+    name: "ActionMenu",
+    path: "@/components/action-menu",
+    category: "overlay",
+    description:
+      "Generic context-action dropdown menu. Wraps FloatingMenu with item chrome (action, link, disabled, divider). Owns its own open state (sealed unit). Use for overflow/context menus and quick-action triggers.",
+    props:
+      "trigger, items (ActionMenuItem[]), align? (start|end, default end), side? (bottom|top), minWidth?",
+    usedIn: ["DS-07"],
+    spec: "molecule-specifications/actionmenu",
+  },
+  {
+    name: "ListItem",
+    path: "@/components/list-item",
+    category: "layout",
+    description:
+      "Opinionated list-row shell. Owns padding, hover, and divider tokens via density variants. Composes leading / children / trailing slots. Renders as div, link or button via the `as` prop.",
+    props:
+      "leading?, children, trailing?, density? (default|compact), divider?, className?, as? (div|link|button), onClick? OR href",
+    usedIn: ["DS-07"],
+    spec: "molecule-specifications/listitem",
+  },
+  {
+    name: "FilterPill",
+    path: "@/components/filter-pill",
+    category: "form",
+    description:
+      "Visual pill atom for filter rows. Single button with optional leading icon and count, active/inactive state colours from primary/secondary tokens.",
+    props: "label, active, onClick, icon? (LucideIcon), count?",
+    usedIn: ["DS-07"],
+    spec: "molecule-specifications/filterpill",
+  },
+  {
+    name: "FilterPillGroup",
+    path: "@/components/filter-pill-group",
+    category: "form",
+    description:
+      "Single-select state container for FilterPill. Renders an optional left label and a row of pills; one pill is active at a time.",
+    props:
+      "label?, value, onChange, options (FilterPillOption[] — { value, label, count?, icon? })",
+    usedIn: ["DS-07"],
+    spec: "molecule-specifications/filterpillgroup",
   },
 ]

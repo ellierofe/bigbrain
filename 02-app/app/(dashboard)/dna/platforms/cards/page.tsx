@@ -3,7 +3,7 @@ import { LayoutGrid } from 'lucide-react'
 import { listPlatforms, listAllPlatforms } from '@/lib/db/queries/platforms'
 import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/status-badge'
 import { ActionButton } from '@/components/action-button'
 import { CreatePlatformButton } from '../create-platform-button'
 import { TypeBadge } from '@/components/type-badge'
@@ -102,9 +102,10 @@ export default async function PlatformCardsPage({
                             </span>
                           )}
                           {isInactive && (
-                            <Badge variant="secondary" className="text-[10px]">
-                              Inactive
-                            </Badge>
+                            <StatusBadge
+                              status="inactive"
+                              options={[{ value: 'inactive', label: 'Inactive', state: 'warning' }]}
+                            />
                           )}
                         </div>
                         <h3 className="font-display text-sm font-semibold truncate">

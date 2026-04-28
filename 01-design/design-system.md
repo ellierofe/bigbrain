@@ -541,23 +541,34 @@ interface PageChromeProps {
 ### StatusBadge
 
 **File:** `components/status-badge.tsx`
-**Purpose:** Interactive status indicator with dropdown to change status. Used in detail-view headers (knowledge assets, audience segments, platforms, offers) and anywhere a user can change the status of an entity. Distinct from `TypeBadge` (which is decorative and non-interactive).
+**Purpose:** Status indicator pill. Interactive (with dropdown picker) when `onChange` is provided; static read-only pill when `onChange` is omitted. Used in detail-view headers (knowledge assets, audience segments, platforms, offers, missions, projects), in card-grid status indicators, and anywhere a status needs a token-driven coloured pill. Distinct from `TypeBadge` (which is purely decorative and only takes a tag hue).
+
+**Two option variants** (a single `options` array must be all-state or all-hue — never mixed):
+
+1. **State variant** — for health/lifecycle statuses where colour signals "is this OK?": `{ value, label, state: 'success' | 'warning' | 'error' | 'info' | 'neutral' }`.
+2. **Tag-hue variant** — for categorical lifecycle states where colour signals "which kind?" (e.g. mission phases): `{ value, label, hue: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 }`. Uses `TypeBadge`'s desaturated tag palette.
 
 **Spec:**
-- **Pill button:** `inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-opacity` — opens dropdown on click.
-- **Dropdown:** `absolute top-full left-0 z-50 mt-1 rounded-md border border-border bg-card shadow-[var(--shadow-raised)] py-1 min-w-[120px]` — dismisses on outside click. Each option button: `flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted transition-colors` with a small dot indicator + label.
-- **State styling** (driven by `state` keyword on each option):
+- **Pill (interactive trigger):** `inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-opacity` — opens dropdown on click. Composes `FloatingMenu` for the popover chrome (positioning, click-outside dismissal, Escape dismissal, raised shadow).
+- **Pill (read-only — `onChange` omitted):** same chrome minus the chevron icon and the click handler. Renders as `<span>`. No hover state. No dropdown.
+- **Dropdown items:** `flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted transition-colors` with a small dot indicator + label. The current option is filtered out of the dropdown.
+- **State styling** (state variant):
   - `success` → `bg-success-bg text-success-foreground`
   - `warning` → `bg-warning-bg text-warning-foreground`
   - `error` → `bg-error-bg text-error-foreground`
   - `info` → `bg-info-bg text-info-foreground`
   - `neutral` → `bg-muted text-muted-foreground`
-- **Behavioural states:** idle (full opacity), hover (`hover:opacity-80 cursor-pointer`), pending (`opacity-60` + button disabled while async `onChange` resolves).
-- **Default options:** draft → warning, active → success, archived → neutral.
-- **Custom options:** consumers pass `{ value, label, state }[]`. The `state` keyword drives styling internally; consumers never pass classNames.
-- **Accessibility:** button has `aria-haspopup="listbox"` and `aria-expanded={open}`.
-- **Props:** `status: string`, `onChange: (status) => Promise<{ ok, error? }>`, `options?: StatusOption[]`.
-- **Do not:** hardcode colour classes inside the component; bake in any specific status string (`value`/`label` are arbitrary); add a state keyword outside the closed set.
+- **Hue styling** (tag-hue variant): `bg-tag-{N} text-foreground` where `N` is 1–8 (matches `TypeBadge`). Tag tokens are desaturated enough that `text-foreground` reads on all eight; no per-hue foreground tokens.
+- **Behavioural states (interactive):** idle (full opacity), hover (`hover:opacity-80 cursor-pointer`), pending (`opacity-60` + button disabled while async `onChange` resolves).
+- **Default options:** draft → warning, active → success, archived → neutral (state variant).
+- **Custom options:** consumers pass `{ value, label, state }[]` OR `{ value, label, hue }[]` — the molecule infers the variant from the option shape.
+- **Accessibility (interactive):** button has `aria-haspopup="listbox"` and `aria-expanded={open}`.
+- **Props:** `status: string`, `onChange?: (status) => Promise<{ ok, error? }>` (omit to render as static pill), `options?: StatusOption[]`.
+- **Do not:** hardcode colour classes inside the component; bake in any specific status string (`value`/`label` are arbitrary); add a state keyword outside the closed set; mix state-shaped and hue-shaped options in a single `options` array.
+
+**When to use which variant:**
+- **State variant** when status answers "is this in a healthy or attention-worthy state?" — DNA item statuses (Draft / Active / Archived), client project status (Active / Paused / Complete / Archived).
+- **Tag-hue variant** when status answers "which lifecycle stage / category?" — mission phases (Exploring / Synthesising / Producing / Complete / Paused). Five distinct stages benefit from five distinct colours rather than 2× warning + 2× info.
 
 ---
 
@@ -943,7 +954,7 @@ interface ActionButtonProps {
 - Centred overlay with backdrop. Backdrop, focus trap, Escape-to-close, click-outside-to-close: all handled by shadcn Dialog.
 - Header: `DialogTitle` (required) + optional `DialogDescription`.
 - Body: `children` rendered below the header.
-- No built-in footer slot — consumers render their own footer inside `children` (typically a `flex justify-end gap-2` row of `Button`s).
+- Footer: optional `footer` prop. When provided, rendered after `children` inside `<div className="mt-6 flex justify-end gap-2">`. When omitted, no footer chrome is added — consumers can still render footer-like content inside `children` if they need full control.
 
 **Size variants** (`size` prop): `sm` (`sm:max-w-sm`), `md` default (`sm:max-w-md`), `lg`, `xl`, `2xl`. Each maps to the equivalent shadcn `sm:max-w-*` class. Default `md`.
 
@@ -968,24 +979,31 @@ interface ModalProps {
   title: string
   description?: string
   children: React.ReactNode
+  footer?: React.ReactNode
   size?: "sm" | "md" | "lg" | "xl" | "2xl"  // default "md"
 }
 ```
 
-**Footer convention** (used by all consumers):
+**Footer convention** (canonical — used by all standard footers):
 ```tsx
-<Modal title="..." ...>
+<Modal
+  title="..."
+  footer={
+    <>
+      <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
+      <Button size="sm" onClick={handleSubmit}>Confirm</Button>
+    </>
+  }
+>
   {/* body */}
-  <div className="mt-6 flex justify-end gap-2">
-    <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-    <Button size="sm" onClick={handleSubmit}>Confirm</Button>
-  </div>
 </Modal>
 ```
 
+The footer slot bakes in the canonical chrome (`mt-6 flex justify-end gap-2`) so consumers don't reinvent it. Multi-step modals that need different footers per phase pass different `footer` content per render — see `ArchiveItemModal` for a worked example (footer omitted during 'checking' / 'archiving' phases, present during 'confirm').
+
 **Do not:**
 - Add custom backdrop / animation / focus-trap logic — use shadcn Dialog as-is.
-- Add a `footer` prop. Consumers render their own footer using the convention above; the flexibility is intentional (some modals have multi-step footers, generation states, etc.).
+- Render a manual `flex justify-end gap-2` footer inside `children` for new modals — pass via `footer` prop instead.
 - Hardcode colour classes — use `bg-card`, `border-border`, etc. via the underlying shadcn atom.
 - Make modals non-dismissible by default. If a consumer truly needs to block dismissal during async work, gate Cancel/onOpenChange manually.
 
@@ -2094,6 +2112,292 @@ interface ConfidenceBadgeProps {
 
 **Do not:**
 - Show the absolute dimension scores here — applications are deltas, not full re-specs.
+
+---
+
+### FloatingMenu
+
+**File:** `02-app/components/floating-menu.tsx`
+**Purpose:** Token-driven popover container. Owns positioning, raised shadow, click-outside dismissal, and Escape-key dismissal. Used internally by `StatusBadge` and `ActionMenu`; also available for direct use anywhere a popover trigger / panel pattern is right. Distinct from shadcn `Popover` — thinner, no portal, no collision detection, no animations. The intentional minimum so popover behaviour is consistent across the app without rebuilding the same `useEffect` + absolute-positioned div in every consumer.
+
+**Anatomy:**
+- Wrapper: `<div className={containerClassName}>` — defaults to `relative inline-flex`. Consumer can pass a block-level wrapper class via `containerClassName` if the trigger needs full width.
+- Trigger: rendered as-is via the `trigger` prop. Consumer owns the trigger element, its onClick toggling, and its accessibility attributes.
+- Panel (when `open`): `absolute z-50 rounded-md border border-border bg-card shadow-[var(--shadow-raised)] py-1` plus alignment classes from `align` (`start` → `left-0`; `end` → `right-0`) and side classes from `side` (`bottom` default → `top-full mt-1`; `top` → `bottom-full mb-1`).
+
+**Behavioural states:**
+- **Closed:** trigger only; panel not rendered.
+- **Open:** panel rendered; click-outside listener active; Escape listener active.
+- **Closing:** instant. No transitions in v1.
+
+**Behaviour:**
+- `useEffect` attaches `mousedown` + `keydown` listeners only when `open === true`. Cleanup removes them.
+- Click outside the wrapper container fires `onOpenChange(false)`.
+- Escape fires `onOpenChange(false)` — focus stays where it was (no automatic return).
+- **No automatic initial focus.** Trigger keeps focus on open. Keyboard users `Tab` into the panel naturally because it's a sibling element after the trigger in DOM order.
+
+**Edge cases:**
+- **Nested menus:** each FloatingMenu owns its own `containerRef`. Click outside the inner menu but inside the outer is outside the inner's container → inner closes, outer stays open. This is correct behaviour.
+- **Trigger is a button + panel item is also a button:** no conflict — trigger handles its own toggling via the consumer's onClick.
+
+**Props:**
+```ts
+interface FloatingMenuProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  trigger: React.ReactNode
+  children: React.ReactNode
+  align?: 'start' | 'end'        // default 'start'
+  side?: 'bottom' | 'top'        // default 'bottom'
+  minWidth?: string              // applied as inline style
+  className?: string             // applied to the panel only
+  containerClassName?: string    // applied to the wrapper
+}
+```
+
+**Do not:**
+- Add a portal. If positioning context becomes a problem, migrate to shadcn `Popover` rather than reinventing.
+- Add open/close transitions in v1 — match existing instant feel.
+- Inject `aria-haspopup` / `aria-expanded` on the trigger — that belongs on the consumer's trigger element.
+- Use `<button>` as the wrapper — must stay a `<div>` so the trigger element retains its own role.
+
+---
+
+### ActionMenu
+
+**File:** `02-app/components/action-menu.tsx`
+**Purpose:** Generic context-action dropdown menu. Wraps `FloatingMenu` with item chrome (action / link / disabled / divider). Owns its own open state — sealed unit, drop-in replacement for ad-hoc DropdownMenu compositions. Use for overflow menus, quick-action triggers, "more options" dropdowns. Distinct from `StatusBadge` (which is for status selection specifically) and `ItemSwitcher` (which is a pill-strip with dropdown for cross-item navigation).
+
+**Anatomy:**
+- Owns `useState<boolean>` for open/close.
+- Wraps `FloatingMenu` (`align` default `'end'`, `minWidth` default `'12rem'`).
+- Renders one element per item via the discriminated `ActionMenuItem` union:
+  - `'action'` → `<button onClick={...}>` with hover bg, optional left icon, optional `destructive` variant.
+  - `'link'` → Next.js `<Link>` with same chrome; click fires `onOpenChange(false)` synchronously before navigation.
+  - `'disabled'` → same chrome rendered as `<div>`, `opacity-50 cursor-not-allowed`. Optional `hint` rendered right-aligned.
+  - `'divider'` → `<div className="h-px bg-border my-1" />`.
+
+**Item chrome (uniform):** `flex w-full items-center gap-2 px-3 py-1.5 text-sm transition-colors`. Icon: `h-3.5 w-3.5`. Action / link items: `hover:bg-muted`. Destructive action items: `text-destructive hover:bg-destructive/10` (icon also `text-destructive`).
+
+**Props:**
+```ts
+type ActionMenuItem =
+  | { type: 'action';   label: string; icon?: LucideIcon; onClick: () => void; destructive?: boolean }
+  | { type: 'link';     label: string; icon?: LucideIcon; href: string }
+  | { type: 'disabled'; label: string; icon?: LucideIcon; hint?: string }
+  | { type: 'divider' }
+
+interface ActionMenuProps {
+  trigger: React.ReactNode
+  items: ActionMenuItem[]
+  align?: 'start' | 'end'        // default 'end'
+  side?: 'bottom' | 'top'        // default 'bottom'
+  minWidth?: string              // default '12rem'
+}
+```
+
+**Do not:**
+- Expose FloatingMenu's internals (className overrides on the panel, etc.) — items have fixed chrome.
+- Add a "checked" / radio item variant. Use `StatusBadge` for status-style selection.
+- Add roving keyboard focus — same v1 reasoning as FloatingMenu.
+
+---
+
+### ListItem
+
+**File:** `02-app/components/list-item.tsx`
+**Purpose:** Opinionated list-row shell. Owns padding, hover, and divider tokens via density variants. Composes three slots — `leading`, `children`, `trailing` — letting consumers control row contents without owning chrome. Closes ~12 hand-rolled list-row patterns across the app. Renders as `<div>`, `<Link>`, or `<button>` per the `as` prop.
+
+**Anatomy:**
+- Outer element per `as`:
+  - `as="div"` (default): `<div>`. If `onClick` provided: adds `role="button"`, `tabIndex={0}`, Enter/Space keyboard handler.
+  - `as="link"`: Next.js `<Link href>`.
+  - `as="button"`: `<button type="button">`.
+- Layout: `flex items-center gap-3`.
+- Padding: `density="default"` (default) → `py-3 px-3`; `density="compact"` → `py-1.5 px-2`.
+- Divider: `divider={true}` (default) → `border-b border-border`. `divider={false}` for sites where the parent owns separator strategy.
+- Slots:
+  - `leading?` rendered first.
+  - `children` wrapped in `<div className="flex-1 min-w-0">` — consumers can apply `truncate` inside.
+  - `trailing?` wrapped in `<div className="flex items-center gap-3 shrink-0">`.
+
+**Behavioural states:**
+- **Idle (non-interactive):** no hover; no cursor change.
+- **Hover (interactive):** `hover:bg-muted/50 cursor-pointer transition-colors`.
+- **Focus-visible (interactive):** `focus-visible:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`.
+
+**Edge cases:**
+- **No leading and no trailing:** children fills the row; vertical alignment still correct via `flex items-center`.
+- **Long children content:** consumer wraps the relevant child in `truncate` inside the `flex-1 min-w-0` slot.
+- **Last row in a list:** `divider={true}` still renders the bottom border. Parent containers that don't want this set `divider={false}` per row, OR use `divide-y divide-border` on a wrapper and `divider={false}` on every row.
+
+**Props:**
+```ts
+type ListItemDensity = 'default' | 'compact'
+
+interface ListItemBaseProps {
+  leading?: React.ReactNode
+  children: React.ReactNode
+  trailing?: React.ReactNode
+  density?: ListItemDensity      // default 'default'
+  divider?: boolean              // default true
+  className?: string
+}
+
+type ListItemProps =
+  | (ListItemBaseProps & { as?: 'div';   onClick?: () => void })
+  | (ListItemBaseProps & { as: 'link';   href: string })
+  | (ListItemBaseProps & { as: 'button'; onClick: () => void })
+```
+
+**Do not:**
+- Accept `bg`, `padding`, or `hover` props — these are tokens, not customisation surface. If a consumer thinks they need them, that's drift; push back to add a real density variant or new molecule.
+- Bake icons into `leading` — different lists want different leading content (icon, status dot, avatar, checkbox).
+- Add a `selected` variant in v1 — no current consumer needs it. Build when needed.
+
+---
+
+### FilterPill
+
+**File:** `02-app/components/filter-pill.tsx`
+**Purpose:** Visual pill atom for filter rows. Single button with optional leading icon and count. Used by `FilterPillGroup` (state container) but also exportable for ad-hoc filter rows.
+
+**Anatomy:**
+- `<button type="button">`, `inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-medium transition-colors`.
+- Active: `bg-primary text-primary-foreground`.
+- Inactive: `bg-secondary text-secondary-foreground hover:bg-secondary/80`.
+- Optional icon (left): `<Icon className="h-3 w-3" />`.
+- Optional count (right): `<span className="text-[11px]">{count}</span>` with `opacity-70` (active) / `opacity-50` (inactive).
+
+**Behavioural states:**
+- Active (state).
+- Inactive idle / hover.
+- (No disabled variant in v1 — no current consumer needs it.)
+
+**Props:**
+```ts
+interface FilterPillProps {
+  label: string
+  active: boolean
+  onClick: () => void
+  icon?: LucideIcon
+  count?: number
+}
+```
+
+**Do not:**
+- Hardcode colours — `bg-primary` / `bg-secondary` tokens only.
+- Accept a `variant` prop — there's one shape. Different visual = different molecule.
+- Build multi-select state into the pill itself — that's `FilterPillGroup`'s job (or future `MultiFilterPillGroup`).
+
+---
+
+### FilterPillGroup
+
+**File:** `02-app/components/filter-pill-group.tsx`
+**Purpose:** Single-select state container for `FilterPill`. Renders an optional left label + the pills row. Closes the duplicated status-group / type-group markup in `ideas-list.tsx`.
+
+**Anatomy:**
+- Row container: `flex items-center gap-1.5`.
+- Optional left label: `<span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground w-12 shrink-0">{label}</span>`.
+- Pills container: `<div className="flex gap-1">{pills}</div>`.
+- Each option rendered via `FilterPill`; `active` = `option.value === value`.
+
+**Behaviour:**
+- Single-select. `value` is the currently selected option's `value`.
+- `onChange(value)` fires on any pill click. Clicking the active pill re-fires `onChange` with the same value.
+- No deselect affordance — there's always one selected. Consumers wanting an "All" affordance provide an `'all'` option.
+
+**Edge cases:**
+- **`value` doesn't match any option:** all pills render inactive; first click sets `value`. Defensive — consumers should always have a default that matches an option.
+- **Empty `options`:** renders an empty pills row (consumer's bug; don't add placeholder).
+- **Single option:** renders one pill; clicking re-fires `onChange` (harmless).
+
+**Props:**
+```ts
+interface FilterPillOption {
+  value: string
+  label: string
+  count?: number
+  icon?: LucideIcon
+}
+
+interface FilterPillGroupProps {
+  label?: string
+  value: string
+  onChange: (value: string) => void
+  options: FilterPillOption[]
+}
+```
+
+**Do not:**
+- Multi-select. Future `MultiFilterPillGroup` is a separate molecule when needed.
+- Wrap pills onto multiple rows. ≤6 options on one row is the design contract; more = different molecule (filter dropdown, faceted search).
+
+---
+
+### ArchiveItemModal
+
+**File:** `02-app/components/archive-item-modal.tsx`
+**Purpose:** Configurable archive confirmation modal. Wraps `Modal` (with `footer` slot). Replaces three near-identical files (`archive-platform-modal`, `archive-offer-modal`, `archive-segment-modal`). General enough to absorb future archive flows (clients, missions, ideas) without API changes.
+
+**Anatomy:**
+- Wraps `Modal` (`size="md"`, `title={`Archive "${itemName}"`}`).
+- Internal `phase` state: `'checking' | 'confirm' | 'archiving'`.
+- `useEffect` watches `open` (per ADR-001 controlled-modal pattern): on `true` → resets phase to `'checking'` → fires `dependencyCheck()`. On result: branch to `'confirm'` (storing dependents) or close + toast on error.
+- Confirm button → phase `'archiving'`, fires `onConfirm()`. On success → close + `onArchived?(nextId)`. On error → close + toast.
+- Body switches on phase. Footer rendered via Modal's `footer` slot — present in `'confirm'`, omitted in `'checking'` / `'archiving'`.
+
+**Default copy** (token-substituted with `{itemType}`):
+- `withDependents`: `"This {itemType} is used by:"`
+- `warningWithDependents`: `"These references will remain but show the {itemType} as archived."`
+- `withoutDependents`: `"This {itemType} will no longer appear in selection. It will remain visible where already referenced."`
+
+Consumers override via the optional `dependentsCopy` prop — pass any of the three strings to override; unspecified strings fall back to the default template.
+
+**Action shape:**
+```ts
+dependencyCheck: () => Promise<
+  | { ok: true; data: { dependents: { name: string; type: string }[] } }
+  | { ok: false; error: string }
+>
+onConfirm: () => Promise<
+  | { ok: true; data: { nextId?: string | null } }
+  | { ok: false; error: string }
+>
+```
+
+This matches the existing platform / segment archive server actions exactly. Offer's existing action returns `redirectTo` instead of `nextId` — consumer adapts in a tiny wrapper at the call site (no action-side change needed).
+
+**Edge cases:**
+- **`dependencyCheck` slow:** "Checking…" body holds; footer omitted (no spinning state needed because there's nothing to confirm yet). Modal-level dismissal still works (Escape, backdrop) — in-flight check resolves into a closed modal harmlessly.
+- **`onConfirm` slow:** "Archiving…" body holds; footer omitted (avoids Cancel after the user committed).
+- **`open` toggles to `false` mid-async:** the cancellation flag in `useEffect` cleanup prevents post-close `setState` calls.
+
+**Props:**
+```ts
+interface ArchiveCopy {
+  withDependents?: string
+  warningWithDependents?: string
+  withoutDependents?: string
+}
+
+interface ArchiveItemModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  itemName: string
+  itemType: string  // singular lowercase, e.g. "channel", "offer", "segment"
+  dependencyCheck: () => Promise<...>
+  onConfirm: () => Promise<...>
+  onArchived?: (nextId: string | null) => void
+  dependentsCopy?: ArchiveCopy
+}
+```
+
+**Do not:**
+- Bake routing logic (`router.push`) into the molecule. Leave navigation to `onArchived` so different entity types can land on different pages.
+- Hardcode `itemType` in copy beyond the `{itemType}` token. Custom phrasing belongs in `dependentsCopy`.
+- Add a "soft delete" / "hard delete" toggle. Soft archive only.
 
 ---
 

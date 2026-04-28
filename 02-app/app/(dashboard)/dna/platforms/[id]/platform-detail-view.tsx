@@ -35,11 +35,19 @@ import { SourceMaterialsTable } from '@/components/source-materials-table'
 import { EmptyState } from '@/components/empty-state'
 import { ItemSwitcher } from '@/components/item-switcher'
 import { CreatePlatformModal } from '@/components/create-platform-modal'
-import { ArchivePlatformModal } from '@/components/archive-platform-modal'
-import { Badge } from '@/components/ui/badge'
+import { ArchiveItemModal } from '@/components/archive-item-modal'
+import {
+  checkAndArchivePlatform,
+  confirmArchivePlatform,
+} from '@/app/actions/platforms'
+import { StatusBadge } from '@/components/status-badge'
 import { IconButton } from '@/components/icon-button'
 import { ActionButton } from '@/components/action-button'
 import { SelectField } from '@/components/select-field'
+// DS-07 exception: Input + Textarea used inside ExpandableCardList renderExpanded callbacks
+// (lines 265, 274, 287, 301, 378, 384, 454). Parent owns the save lifecycle (whole-list onSave),
+// each input is `onChange→state`, not a saving field. A `FormField` molecule is the right
+// long-term home for this pattern; tracked as DS-10 follow-up.
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -609,7 +617,10 @@ export function PlatformDetailView({
         subheader={
           <div className="flex items-center gap-2">
             {!platform.isActive && (
-              <Badge variant="secondary" className="text-[10px]">Inactive</Badge>
+              <StatusBadge
+                status="inactive"
+                options={[{ value: 'inactive', label: 'Inactive', state: 'warning' }]}
+              />
             )}
             <ItemSwitcher
               items={allPlatforms.filter((p) => p.isActive)}
@@ -688,11 +699,16 @@ export function PlatformDetailView({
 
       {/* Modals */}
       <CreatePlatformModal open={createOpen} onOpenChange={setCreateOpen} />
-      <ArchivePlatformModal
+      <ArchiveItemModal
         open={archiveOpen}
         onOpenChange={setArchiveOpen}
-        platformId={platform.id}
-        platformName={platform.name}
+        itemName={platform.name}
+        itemType="channel"
+        dependencyCheck={() => checkAndArchivePlatform(platform.id)}
+        onConfirm={() => confirmArchivePlatform(platform.id)}
+        onArchived={(nextId) => {
+          router.push(nextId ? `/dna/platforms/${nextId}` : '/dna/platforms')
+        }}
       />
       <ChangeCategoryChannelModal
         open={changeOpen}

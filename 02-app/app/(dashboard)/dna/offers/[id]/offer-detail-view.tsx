@@ -7,6 +7,7 @@ import {
   Gem, MessageSquare, MousePointerClick, Image, CircleDollarSign, Banknote,
   Tag, StickyNote, RefreshCw, Shield, Type, FileText, Scale, AlertTriangle,
   Clock, Filter, Plus, Archive, LayoutGrid, LinkIcon, Unlink, ExternalLink,
+  Sparkles, Loader2,
 } from 'lucide-react'
 import { PageChrome } from '@/components/page-chrome'
 import { ContentPane } from '@/components/content-pane'
@@ -20,7 +21,8 @@ import { VocMapping } from '@/components/voc-mapping'
 import { EntityOutcomesPanel } from '@/components/entity-outcomes-panel'
 import { CustomerJourneyPanel } from '@/components/customer-journey-panel'
 import { CreateOfferModal } from '@/components/create-offer-modal'
-import { ArchiveOfferModal } from '@/components/archive-offer-modal'
+import { ArchiveItemModal } from '@/components/archive-item-modal'
+import { checkOfferDependents, archiveOfferAction } from '@/app/actions/offers'
 import { SectionDivider } from '@/components/section-divider'
 import { EmptyState } from '@/components/empty-state'
 import { ActionButton } from '@/components/action-button'
@@ -83,6 +85,59 @@ export function OfferDetailView({
 
   const isDraft = offer.status === 'draft'
   const linkedAsset = knowledgeAssets.find(a => a.id === offer.knowledgeAssetId)
+
+  // Detect ungenerated drafts: status=draft, has vocMapping, but no LLM-populated content
+  const needsGeneration =
+    isDraft &&
+    !!offer.vocMapping &&
+    !!offer.targetAudienceIds?.[0] &&
+    !offer.overview &&
+    !offer.usp
+
+  const [generating, setGenerating] = useState(false)
+
+  async function handleGenerateFromInputs() {
+    const audienceId = offer.targetAudienceIds?.[0]
+    if (!audienceId || !offer.vocMapping) {
+      toast.error('Missing inputs for generation')
+      return
+    }
+
+    setGenerating(true)
+    try {
+      const res = await fetch('/api/generate/offer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'generate',
+          offerId: offer.id,
+          name: offer.name,
+          offerType: offer.offerType,
+          audienceSegmentId: audienceId,
+          vocMapping: {
+            problems: offer.vocMapping.problems ?? [],
+            desires: offer.vocMapping.desires ?? [],
+            objections: offer.vocMapping.objections ?? [],
+            beliefs: offer.vocMapping.beliefs ?? [],
+          },
+        }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error ?? 'Generation failed')
+      }
+
+      toast.success('Offer generated')
+      // Hard reload — router.refresh() doesn't reliably pick up DB changes
+      // made directly inside the API route (no revalidatePath path triggers).
+      window.location.reload()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Generation failed')
+    } finally {
+      setGenerating(false)
+    }
+  }
 
   // -------------------------------------------------------------------------
   // Save helpers
@@ -366,6 +421,25 @@ export function OfferDetailView({
         }
       />
 
+      {needsGeneration && (
+        <div className="mx-4 mb-3 flex items-center gap-3 rounded-md border border-primary/30 bg-primary/5 px-4 py-3">
+          <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+          <div className="flex-1 text-sm">
+            <p className="font-medium">This offer is ready to generate.</p>
+            <p className="text-muted-foreground text-xs mt-0.5">
+              Your inputs are saved. The AI will use the audience and VOC mapping to fill in the rest.
+            </p>
+          </div>
+          <ActionButton
+            icon={generating ? Loader2 : Sparkles}
+            onClick={handleGenerateFromInputs}
+            disabled={generating}
+          >
+            {generating ? 'Generating…' : 'Generate offer'}
+          </ActionButton>
+        </div>
+      )}
+
       <div className="flex flex-1 min-h-0 gap-0">
         {/* Left sticky panel */}
         <div className="w-[220px] shrink-0 self-start sticky top-0 flex flex-col gap-4 p-4 border-r border-border/40 bg-muted/30">
@@ -490,11 +564,24 @@ export function OfferDetailView({
         )}
       </Modal>
 
-      <ArchiveOfferModal
+      <ArchiveItemModal
         open={archiveOpen}
         onOpenChange={setArchiveOpen}
-        offerId={offer.id}
-        offerName={offer.name}
+        itemName={offer.name}
+        itemType="offer"
+        dependencyCheck={() => checkOfferDependents(offer.id)}
+        onConfirm={async () => {
+          const result = await archiveOfferAction(offer.id)
+          if (!result.ok) return result
+          // Adapt offer's redirectTo shape to the canonical nextId shape
+          const nextId = result.data.redirectTo?.startsWith('/dna/offers/')
+            ? result.data.redirectTo.slice('/dna/offers/'.length)
+            : null
+          return { ok: true as const, data: { nextId } }
+        }}
+        onArchived={(nextId) => {
+          router.push(nextId ? `/dna/offers/${nextId}` : '/dna/offers')
+        }}
       />
     </div>
   )

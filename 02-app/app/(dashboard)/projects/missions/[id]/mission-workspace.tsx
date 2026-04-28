@@ -17,17 +17,13 @@ import {
 import { ContentPane } from '@/components/content-pane'
 import { SectionCard } from '@/components/section-card'
 import { IdeasPanel } from '@/components/ideas-panel'
-// Button kept for DropdownMenuTrigger render slot — DS-05 deferred (DropdownMenu out of scope)
-import { Button } from '@/components/ui/button'
+import { StatusBadge } from '@/components/status-badge'
 import { ActionButton } from '@/components/action-button'
-import { Textarea } from '@/components/ui/textarea'
+// DS-07 exception: search input inside typeahead popover (lines 429, 570) and thesis Textarea
+// (line 223 — pending InlineField textarea migration). category-section-style typeahead is its own
+// pattern; not part of DS-07 scope.
 import { Input } from '@/components/ui/input'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { Textarea } from '@/components/ui/textarea'
 import {
   saveMissionField,
   changeMissionPhase,
@@ -53,11 +49,17 @@ import type {
   MissionLinkedInput,
   MissionLinkedStat,
 } from '@/lib/types/missions'
-import { PHASE_LABELS, PHASE_COLOURS } from '@/lib/types/missions'
+import type { StatusOption } from '@/components/status-badge'
 import type { Idea, IdeaTag } from '@/lib/types/ideas'
 import type { TaggableEntity } from '@/lib/db/queries/taggable-entities'
 
-const ALL_PHASES: MissionPhase[] = ['exploring', 'synthesising', 'producing', 'complete', 'paused']
+const PHASE_OPTIONS: StatusOption[] = [
+  { value: 'exploring', label: 'Exploring', hue: 1 },
+  { value: 'synthesising', label: 'Synthesising', hue: 2 },
+  { value: 'producing', label: 'Producing', hue: 3 },
+  { value: 'complete', label: 'Complete', hue: 4 },
+  { value: 'paused', label: 'Paused', hue: 5 },
+]
 
 interface MissionWorkspaceProps {
   mission: MissionDetail
@@ -137,12 +139,15 @@ export function MissionWorkspace({
   }
 
   // Phase change
-  const handlePhaseChange = async (newPhase: MissionPhase) => {
-    setPhase(newPhase) // optimistic
-    const result = await changeMissionPhase(mission.id, newPhase)
+  const handlePhaseChange = async (newPhase: string) => {
+    const previous = phase
+    setPhase(newPhase as MissionPhase) // optimistic
+    const result = await changeMissionPhase(mission.id, newPhase as MissionPhase)
     if (!result.ok) {
-      setPhase(mission.phase) // revert
+      setPhase(previous)
+      return result
     }
+    return { ok: true as const }
   }
 
   return (
@@ -175,31 +180,11 @@ export function MissionWorkspace({
 
         <div className="flex items-center gap-2 shrink-0">
           {/* Phase selector */}
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button variant="outline" size="sm">
-                  <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide mr-1.5 ${PHASE_COLOURS[phase]}`}>
-                    {PHASE_LABELS[phase]}
-                  </span>
-                  Phase
-                </Button>
-              }
-            />
-            <DropdownMenuContent align="end">
-              {ALL_PHASES.map((p) => (
-                <DropdownMenuItem
-                  key={p}
-                  onClick={() => handlePhaseChange(p)}
-                  className={phase === p ? 'font-medium' : ''}
-                >
-                  <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide mr-2 ${PHASE_COLOURS[p]}`}>
-                    {PHASE_LABELS[p]}
-                  </span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <StatusBadge
+            status={phase}
+            onChange={handlePhaseChange}
+            options={PHASE_OPTIONS}
+          />
         </div>
       </div>
 

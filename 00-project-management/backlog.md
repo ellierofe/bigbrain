@@ -757,7 +757,7 @@
 - **Size:** L
 - **Depends on:** DS-02, DS-03
 - **Enables:** Closes out the remaining ~30 organism files with appearance-class drift. Last leg of the foundation programme.
-- **Status:** in-progress (brief approved 2026-04-27 — `01-design/briefs/DS-07-modal-list-popover-molecules.md`)
+- **Status:** done (2026-04-28)
 - **Audit:** `00-project-management/foundation-audit-2026-04-25.md` § 1
 - **Priority:** Medium — bulk migration; do after the higher-leverage DS-02/03/04/05 land.
 

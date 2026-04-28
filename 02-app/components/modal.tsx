@@ -12,6 +12,7 @@ interface ModalProps {
   title: string
   description?: string
   children: React.ReactNode
+  footer?: React.ReactNode
   /** Optional: constrain width. Defaults to "sm" */
   size?: "sm" | "md" | "lg" | "xl" | "2xl"
 }
@@ -30,6 +31,7 @@ export function Modal({
   title,
   description,
   children,
+  footer,
   size = "md",
 }: ModalProps) {
   return (
@@ -42,6 +44,7 @@ export function Modal({
           )}
         </DialogHeader>
         {children}
+        {footer && <div className="mt-6 flex justify-end gap-2">{footer}</div>}
       </DialogContent>
     </Dialog>
   )
