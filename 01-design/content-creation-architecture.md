@@ -707,7 +707,7 @@ The catalogue + per-type configuration. **Does not** carry per-stage prompt cont
 > **Vocabulary source-of-truth:** `04-documentation/reference/channel-taxonomy.md` (DNA-07b, done 2026-04-27). `platform_type`, `format_type`, `subtype`, and `prerequisites.channels` all draw from there. TypeScript constants live in `02-app/lib/types/channels.ts`.
 
 - `id`, `slug`, `name`, `description`, `icon`
-- `category` (display category for the picker — Sales / Email / Social / Long form / Brainstorm…). **Note:** this is the *content-type display category*, not the `dna_platforms.category` from the channel taxonomy. Distinct concept; same word. Don't conflate.
+- `picker_group` (picker display grouping — Sales / Email / Social / Long form / Brainstorm / Outreach / Other). Drives the left-rail grouping in the picker UI. Renamed from `category` to remove collision with `dna_platforms.category` (channel taxonomy). The two are distinct concepts; this column groups the picker UI, the platforms taxonomy column groups channels.
 - `platform_type` (the **channel** the content type targets — values from `Channel` enum in the channel-taxonomy doc: `linkedin`, `instagram`, `podcast`, `blog`, `newsletter`, `cold_outreach`, `hosted_event`, etc.). Used at picker time to filter by channel.
 - `format_type` (drives ToV cascade — values from the format-bucket enum in the channel-taxonomy doc: `social_short`, `social_visual`, `blog`, `newsletter`, `email`, `sales`, `spoken_audio`, `spoken_video`, `ad_copy`, `event`, `outreach`, `brainstorm`, `other`)
 - `subtype` (canonical leaf for ToV cascade — `linkedin_post`, `blog_post_long`, `cold_dm`, `podcast_script`, etc. Optional; preferred match when present, else falls back to `format_type`)
@@ -848,7 +848,7 @@ To make the schema concrete:
 # content_types row
 slug: sales-page-aida
 name: Sales page (AIDA)
-category: Sales              # picker display category (not dna_platforms.category)
+picker_group: sales          # picker display grouping (not dna_platforms.category)
 platform_type: sales_page    # channel key from channel-taxonomy.md
 format_type: sales           # cascade bucket
 subtype: sales_page          # canonical leaf

@@ -598,10 +598,16 @@
 - **Size:** XL
 - **Depends on:** DNA-01 (all DNA types), DNA-07b (channel taxonomy — done 2026-04-27), DNA-09 (tone), SRC-01, INF-06, RET-01, OUT-01 (chat infra reuse)
 - **Enables:** OUT-02a
-- **Status:** in-progress — Phase 1 unblocked 2026-04-27 (DNA-07b shipped, channel taxonomy available for `content_types.prerequisites`). Architecture doc approved 2026-04-26.
+- **Status:** in-progress — Phase 1 batch 1 complete 2026-04-28. Architecture doc approved 2026-04-26.
 - **Architecture:** `01-design/content-creation-architecture.md` (approved 2026-04-26)
-- **Reference:** `04-documentation/reference/channel-taxonomy.md` is the authoritative vocabulary for `content_types.platform_type` (channel) and `format_type`/`subtype` selection. Use `02-app/lib/types/channels.ts` as the TypeScript source of truth.
-- **Note:** Supersedes GEN-PROMPTS-01 (which is dead — DNA generation prompts already shipped via DNA-03/04/05/07/09 builds; content-output prompt work lands here in the new architecture). Phase 1 partial progress: `prompt_fragments` schema doc + Drizzle file + DB table shipped (migration 0021, 2026-04-27). Next pickup: finish `content_types` schema using the new `prerequisites: { channels: string[]; lead_magnets: string[]; dna: string[] }` shape — channels values are queried against `dna_platforms.channel`, lead_magnets against `dna_lead_magnets.kind`. Picker locks query: `dna_platforms WHERE channel = X AND is_active = true`.
+- **Reference:**
+  - `04-documentation/reference/channel-taxonomy.md` — authoritative vocabulary for `content_types.platform_type` (channel) and `format_type`/`subtype` selection. TS source of truth: `02-app/lib/types/channels.ts`.
+  - `04-documentation/reference/prompt-vocabulary.md` (added 2026-04-28) — canonical `${...}` placeholder vocabulary (3 groups, 21 placeholders) + bundle slug vocabulary (11 V1 slugs for `topic_context_config.dna_pulls`). TS source of truth lands at `02-app/lib/llm/content/types.ts` + `bundles.ts` (latter not yet created).
+- **Note:** Supersedes GEN-PROMPTS-01 (dead — DNA generation prompts shipped via DNA-03/04/05/07/09 builds; content-output prompt work lands here in the new architecture).
+  - **Phase 1 batch 1 (shipped 2026-04-27 → 2026-04-28):** `prompt_fragments` (migration 0021), `content_types` (0023), `prompt_stages` (0024). Eight-layer assembler sketch at `02-app/lib/llm/content/{types,assemble}.ts` validated all four jsonb shapes (`prerequisites`, `strategy_fields`, `topic_context_config`, `craft_fragment_config`) — no schema changes needed.
+  - **Phase 1 batch 2 (next pickup):** `topic_paths` (open question: tree table vs jsonb config), `generation_runs` (use `GenerationInputs` shape from `lib/llm/content/types.ts` for `inputs` jsonb), `library_items` (may fold REG-01 in).
+  - **Phase 2 (later):** real assembler (skeleton async pre-pass, `bundles.ts` BUNDLE_RESOLVERS map, real fragment lookups).
+  - **Phase 3 (later):** seed 38 legacy fragments + 5 V1 content types + topic_paths rows.
 
 ### OUT-02a: Content creator — long-form / multi-step
 - **What:** Two-step generation flow for long-form content (sales pages, web pages, proposals). Stage 1 produces a structured blueprint (`{purpose, rationale, messaging, provenance}` per section). User reviews and edits in a richer-than-legacy editor (reorder, per-section regenerate, lock sections, swap DNA per section). Stage 2 generates copy section-by-section. Stage 3 (optional, required for sales pages) is a synthesis pass that reconciles flow against the blueprint. Same eight-layer prompt model and `content_types`/`prompt_stages` schema as OUT-02 — this just enables `is_multi_step = true` and adds the editor + stage handoff. Also includes V2 smarts: AI suggestion from one-line goal in picker, project/mission-aware ranking, retrieval-aware step 4 ranking, cost guardrails.

@@ -121,7 +121,8 @@ The human must give explicit approval — "run it", "go ahead", "approved" or si
    INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
    VALUES ('[hash]', [when_from_journal]);
    ```
-   The `when` value comes from the matching entry in `lib/db/migrations/meta/_journal.json`.
+
+   > ⚠️ **Always read the `when` value directly from the journal entry for this specific migration's `tag`.** Open `lib/db/migrations/meta/_journal.json`, find the entry whose `tag` matches the migration filename, and use its `when` integer verbatim. Do not reuse a value from a prior migration's transcript and do not estimate from the current time — Drizzle treats this as the canonical sort key, and a wrong value silently corrupts migration ordering. If you have to fix it after the fact, do so via `UPDATE drizzle.__drizzle_migrations SET created_at = [correct_when] WHERE hash = '[hash]';`.
 
 If the transaction fails, capture the full error and present it. Do not attempt to fix the migration automatically — surface the error and wait for instruction.
 
