@@ -1,6 +1,5 @@
-import { generateObject } from 'ai'
 import { z } from 'zod'
-import { MODELS } from '@/lib/llm/client'
+import { MODELS, generateObjectWithFallback } from '@/lib/llm/client'
 import type { ExtractionOutput } from '@/lib/types/processing'
 
 // ---------------------------------------------------------------------------
@@ -73,7 +72,7 @@ export async function clusterByTopic(
     .join('\n')
 
   try {
-    const { object } = await generateObject({
+    const { object } = await generateObjectWithFallback<z.infer<typeof clusterSchema>>({
       model: MODELS.fast,
       schema: clusterSchema,
       prompt: `Group these extracted knowledge items by overarching topic. Each item has an ID in brackets.
@@ -82,7 +81,7 @@ People and organisations should be grouped with the topic they were discussed in
 
 Items:
 ${itemList}`,
-    })
+    }, { tag: 'INP-03 cluster' })
 
     // Build clusters with category info
     const idToCategory = new Map(itemDescriptions.map((d) => [d.id, d.category]))

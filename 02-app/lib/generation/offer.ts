@@ -1,5 +1,4 @@
-import { generateObject } from 'ai'
-import { MODELS } from '@/lib/llm/client'
+import { MODELS, generateObjectWithFallback } from '@/lib/llm/client'
 import {
   OFFER_GENERATION_SYSTEM_PROMPT,
   OFFER_EVALUATION_SYSTEM_PROMPT,
@@ -59,14 +58,14 @@ export async function evaluateOfferInputs(
 ): Promise<OfferEvaluationResult> {
   const context = await loadBusinessContext(brandId)
 
-  const { object } = await generateObject({
+  const { object } = await generateObjectWithFallback<OfferEvaluationResult>({
     model: MODELS.geminiPro,
     schema: offerEvaluationSchema,
     system: OFFER_EVALUATION_SYSTEM_PROMPT,
     prompt: buildOfferEvaluationUserMessage(input, context),
-  })
+  }, { tag: 'DNA-04 evaluate' })
 
-  return object as OfferEvaluationResult
+  return object
 }
 
 // ---------------------------------------------------------------------------
@@ -79,14 +78,14 @@ export async function generateOffer(
 ): Promise<OfferGenerationOutput> {
   const context = await loadBusinessContext(brandId)
 
-  const { object } = await generateObject({
+  const { object } = await generateObjectWithFallback<OfferGenerationOutput>({
     model: MODELS.geminiPro,
     schema: offerGenerationSchema,
     system: OFFER_GENERATION_SYSTEM_PROMPT,
     prompt: buildOfferGenerationUserMessage(input, context),
-  })
+  }, { tag: 'DNA-04 generate' })
 
-  return object as OfferGenerationOutput
+  return object
 }
 
 // ---------------------------------------------------------------------------
@@ -96,12 +95,12 @@ export async function generateOffer(
 export async function generateCustomerJourney(
   input: JourneyPromptInput
 ): Promise<OfferJourneyOutput> {
-  const { object } = await generateObject({
+  const { object } = await generateObjectWithFallback<OfferJourneyOutput>({
     model: MODELS.geminiPro,
     schema: offerJourneySchema,
     system: JOURNEY_GENERATION_SYSTEM_PROMPT,
     prompt: buildJourneyUserMessage(input),
-  })
+  }, { tag: 'DNA-04 journey' })
 
-  return object as OfferJourneyOutput
+  return object
 }

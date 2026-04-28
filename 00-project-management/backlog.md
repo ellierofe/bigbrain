@@ -237,14 +237,25 @@
 - **Note:** Status badge needs moving from left panel to header area (template-level change from DNA-05 layout design, 2026-04-23). Small refactor — next time this page is touched.
 
 ### DNA-04: Plural DNA elements — Offers
-- **What:** CRUD for offers. Each offer: name, description, target audience, key VOCs met, USP, features, outcomes, benefits, pricing, FAQs, bonuses, guarantee, positioning, strategy. Three-phase creation: quick form → VOC mapping → interlocutor generation. Knowledge asset linking in scope.
+- **What:** CRUD for offers. Each offer: name, description, target audience, key VOCs met, USP, features, outcomes, benefits, pricing, FAQs, bonuses, guarantee, positioning, strategy. Three-phase creation: quick form → VOC mapping → interlocutor generation. Knowledge asset linking in scope. 5-tab detail view: Positioning, Commercial, Value Gen, Journey, Related Content. Customer journey is structured 5-stage JSONB generated on-demand.
 - **Layer:** output
 - **Problems:** P2, P5
 - **Size:** M
 - **Depends on:** DNA-01, DASH-01
 - **Enables:** OUT-02
-- **Status:** in-progress
-- **Brief:** `01-design/briefs/DNA-04-offers.md` (approved 2026-04-23)
+- **Status:** done
+- **Brief:** `01-design/briefs/DNA-04-offers.md` (complete 2026-04-28)
+- **Implementation:** Migration 0019 added `voc_mapping` + `customer_journey` JSONB, dropped `customer_journey_stage`. Reused VocMapping, EntityOutcomesPanel, StatusBadge from DNA-05. New molecules: `OfferDetailView`, `CreateOfferModal`, `ArchiveOfferModal`, `OfferSwitcher`, `CustomerJourneyPanel`. App-wide LLM resilience added during this build via `generateObjectWithFallback()` in `lib/llm/client.ts` — wraps every `generateObject` call across the app, falls back to `claude-opus-4-7` when primary fails, with auto-recovery for known response anomalies (single-key wrappers, stringified inner JSON).
+
+### DNA-04a: Offers — design system polish
+- **What:** UI/UX polish pass on offers — currently not using the design system properly or consistently. Audit and fix: token-only styling (no hardcoded colours/spacing), no appearance classes in organism layer, all atom imports through the molecule layer (e.g. native `<select>` and `<input>` in detail view + create modal should use `SelectField` / proper input molecules), spacing and field treatment consistency with audience segments and knowledge assets.
+- **Layer:** output
+- **Problems:** All (visual consistency)
+- **Size:** S
+- **Depends on:** DNA-04 (done)
+- **Enables:** Consistent DNA item experience
+- **Status:** planned
+- **Note:** Build session focused on functional completeness; design polish deferred to a fresh context.
 
 ### DNA-05: Plural DNA elements — Knowledge Assets
 - **What:** Full CRUD for knowledge assets (methodologies, frameworks, processes, tools, templates). Source-doc-driven creation with VOC mapping and interlocutor generation. Entity outcomes (value gen). Manual graph linking for methodology kind. Brief: `01-design/briefs/DNA-05-knowledge-assets.md`.

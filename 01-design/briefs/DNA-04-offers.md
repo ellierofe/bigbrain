@@ -1,7 +1,7 @@
 # Offers Brief
 Feature ID: DNA-04
-Status: approved
-Last updated: 2026-04-23
+Status: complete
+Last updated: 2026-04-28
 
 ## Summary
 
@@ -294,3 +294,7 @@ None — all decisions resolved.
 - 2026-04-23: Customer journey redesigned from single `customer_journey_stage` varchar to structured JSONB with 5 stages (awareness → consideration → decision → service → advocacy), each with thinking/feeling/doing/pushToNext. Gets its own tab (Journey). Generated on-demand after core offer is saved, not during initial creation.
 - 2026-04-23: "Content" tab renamed to "Value Gen". Related Content tab added back as 5th tab (stub).
 - 2026-04-23: `customer_journey_stage` column to be dropped — replaced by `customer_journey` JSONB.
+- 2026-04-28: Build complete. Migration 0019 applied (added `voc_mapping` + `customer_journey` JSONB, dropped `customer_journey_stage`). Full stack built: types, query layer, server actions, prompts, generation, API route (3 actions), 5 UI components (switcher, archive modal, create modal, journey panel, detail view), 4 pages. Reused VocMapping, EntityOutcomesPanel, StatusBadge from DNA-05.
+- 2026-04-28: App-wide LLM resilience added — `generateObjectWithFallback()` in `lib/llm/client.ts` wraps every `generateObject` call across the app (offer, audience-segment, knowledge-asset, platform, tone-of-voice, processing/extract, processing/cluster, processing/analyse). Falls back to `claude-opus-4-7` when primary fails. Includes auto-recovery for known response anomalies (single-key wrappers, stringified inner JSON) via schema-validated unwrapping.
+- 2026-04-28: Resumable generation — added "Generate offer" banner on detail view for draft offers with vocMapping but no LLM-populated content. Solves the failure mode where Gemini overload leaves an empty draft. API also clears pre-existing entity outcomes before insert (idempotent retry).
+- 2026-04-28: Build closed. UI/UX polish to design-system consistency raised as DNA-04a (separate backlog item).

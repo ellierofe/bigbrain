@@ -147,6 +147,9 @@ async function handleGenerate(body: Record<string, unknown>) {
       })
       .where(eq(dnaOffers.id, offerId))
 
+    // Clear any pre-existing entity outcomes for this offer (idempotent retry)
+    await db.delete(dnaEntityOutcomes).where(eq(dnaEntityOutcomes.offerId, offerId))
+
     // Save entity outcomes
     if (profile.entityOutcomes && profile.entityOutcomes.length > 0) {
       const outcomeValues = profile.entityOutcomes.map((eo, idx) => ({

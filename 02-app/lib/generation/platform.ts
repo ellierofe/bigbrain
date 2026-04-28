@@ -1,5 +1,4 @@
-import { generateObject } from 'ai'
-import { MODELS } from '@/lib/llm/client'
+import { MODELS, generateObjectWithFallback } from '@/lib/llm/client'
 import {
   PLATFORM_GENERATION_SYSTEM_PROMPT,
   PLATFORM_EVALUATION_SYSTEM_PROMPT,
@@ -73,12 +72,12 @@ export async function evaluatePlatformInputs(
 ): Promise<PlatformEvaluationResult> {
   const context = await loadBusinessContext(brandId)
 
-  const { object } = await generateObject({
+  const { object } = await generateObjectWithFallback<PlatformEvaluationResult>({
     model: MODELS.geminiFlash,
     schema: platformEvaluationSchema,
     system: PLATFORM_EVALUATION_SYSTEM_PROMPT,
     prompt: buildPlatformEvaluationUserMessage(input, context),
-  })
+  }, { tag: 'DNA-07 evaluate' })
 
   return {
     ready: object.ready,
@@ -96,31 +95,12 @@ export async function generatePlatformStrategy(
 ): Promise<PlatformGenerationOutput> {
   const context = await loadBusinessContext(brandId)
 
-  const systemPrompt = PLATFORM_GENERATION_SYSTEM_PROMPT
-  const userMessage = buildPlatformGenerationUserMessage(input, context)
+  const { object } = await generateObjectWithFallback<PlatformGenerationOutput>({
+    model: MODELS.geminiPro,
+    schema: platformGenerationSchema,
+    system: PLATFORM_GENERATION_SYSTEM_PROMPT,
+    prompt: buildPlatformGenerationUserMessage(input, context),
+  }, { tag: 'DNA-07 generate' })
 
-  // Try Gemini Pro first, fall back to Claude Sonnet on failure
-  try {
-    console.log('[GEN-PLATFORM] Attempting Gemini Pro...')
-    const { object } = await generateObject({
-      model: MODELS.geminiPro,
-      schema: platformGenerationSchema,
-      system: systemPrompt,
-      prompt: userMessage,
-      maxRetries: 1,
-    })
-    return object
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    console.log(`[GEN-PLATFORM] Gemini Pro failed: ${msg}`)
-    console.log('[GEN-PLATFORM] Falling back to Claude Sonnet...')
-
-    const { object } = await generateObject({
-      model: MODELS.primary,
-      schema: platformGenerationSchema,
-      system: systemPrompt,
-      prompt: userMessage,
-    })
-    return object
-  }
+  return object
 }

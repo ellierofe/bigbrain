@@ -1,5 +1,4 @@
-import { generateObject } from 'ai'
-import { MODELS } from '@/lib/llm/client'
+import { MODELS, generateObjectWithFallback } from '@/lib/llm/client'
 import {
   ASSET_GENERATION_SYSTEM_PROMPT,
   ASSET_EVALUATION_SYSTEM_PROMPT,
@@ -54,12 +53,12 @@ export async function evaluateAssetInputs(
 ): Promise<AssetEvaluationResult> {
   const context = await loadBusinessContext(brandId)
 
-  const { object } = await generateObject({
+  const { object } = await generateObjectWithFallback<AssetEvaluationResult>({
     model: MODELS.geminiPro,
     schema: assetEvaluationSchema,
     system: ASSET_EVALUATION_SYSTEM_PROMPT,
     prompt: buildAssetEvaluationUserMessage(input, context),
-  })
+  }, { tag: 'DNA-05 evaluate' })
 
   return {
     ready: object.ready,
@@ -77,12 +76,12 @@ export async function generateKnowledgeAsset(
 ): Promise<AssetGenerationOutput> {
   const context = await loadBusinessContext(brandId)
 
-  const { object } = await generateObject({
+  const { object } = await generateObjectWithFallback<AssetGenerationOutput>({
     model: MODELS.geminiPro,
     schema: assetGenerationSchema,
     system: ASSET_GENERATION_SYSTEM_PROMPT,
     prompt: buildAssetGenerationUserMessage(input, context),
-  })
+  }, { tag: 'DNA-05 generate' })
 
   return object
 }

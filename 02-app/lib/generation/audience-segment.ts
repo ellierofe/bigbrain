@@ -1,5 +1,4 @@
-import { generateObject } from 'ai'
-import { MODELS } from '@/lib/llm/client'
+import { MODELS, generateObjectWithFallback } from '@/lib/llm/client'
 import {
   SEGMENT_GENERATION_SYSTEM_PROMPT,
   SEGMENT_EVALUATION_SYSTEM_PROMPT,
@@ -65,12 +64,12 @@ export async function evaluateSegmentInputs(
 ): Promise<SegmentEvaluationResult> {
   const context = await loadBusinessContext(brandId)
 
-  const { object } = await generateObject({
+  const { object } = await generateObjectWithFallback<SegmentEvaluationResult>({
     model: MODELS.geminiPro,
     schema: segmentEvaluationSchema,
     system: SEGMENT_EVALUATION_SYSTEM_PROMPT,
     prompt: buildSegmentEvaluationUserMessage(input, context),
-  })
+  }, { tag: 'GEN-01 evaluate' })
 
   return {
     ready: object.ready,
@@ -88,12 +87,12 @@ export async function generateAudienceSegment(
 ): Promise<SegmentGenerationOutput> {
   const context = await loadBusinessContext(brandId)
 
-  const { object } = await generateObject({
+  const { object } = await generateObjectWithFallback<SegmentGenerationOutput>({
     model: MODELS.geminiPro,
     schema: segmentGenerationSchema,
     system: SEGMENT_GENERATION_SYSTEM_PROMPT,
     prompt: buildSegmentGenerationUserMessage(input, context),
-  })
+  }, { tag: 'GEN-01 generate' })
 
   return object
 }

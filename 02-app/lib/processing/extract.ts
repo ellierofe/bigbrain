@@ -1,6 +1,5 @@
-import { generateObject } from 'ai'
 import { randomUUID } from 'crypto'
-import { MODELS } from '@/lib/llm/client'
+import { MODELS, generateObjectWithFallback } from '@/lib/llm/client'
 import { SYSTEM_PROMPTS } from '@/lib/llm/system-prompts'
 import {
   extractionResultSchema,
@@ -44,17 +43,17 @@ export async function extractFromText(
 
 async function runExtraction(text: string) {
   const t0 = Date.now()
-  const { object } = await generateObject({
+  const { object } = await generateObjectWithFallback<unknown>({
     model: MODELS.geminiFlash,
     system: SYSTEM_PROMPTS.processing,
     prompt: text,
     schema: extractionResultSchema,
-  })
+  }, { tag: 'INP-03 extract' })
 
   // Ensure stable ids across chunks by prefixing with a short random token
   console.log(`[extractFromText] LLM call took ${Date.now() - t0}ms (${text.length} chars)`)
   const prefix = randomUUID().slice(0, 8)
-  return prefixIds(object, prefix)
+  return prefixIds(object as Parameters<typeof prefixIds>[0], prefix)
 }
 
 function prefixIds(

@@ -1,5 +1,4 @@
-import { generateObject } from 'ai'
-import { MODELS } from '@/lib/llm/client'
+import { MODELS, generateObjectWithFallback } from '@/lib/llm/client'
 import {
   TOV_GENERATION_SYSTEM_PROMPT,
   buildTovGenerationUserMessage,
@@ -28,12 +27,12 @@ export async function generateToneOfVoiceFromSamples(
     sourceContext: s.sourceContext,
   }))
 
-  const { object } = await generateObject({
+  const { object } = await generateObjectWithFallback<TovGenerationOutput>({
     model: MODELS.primary,
     schema: tovGenerationSchema,
     system: TOV_GENERATION_SYSTEM_PROMPT,
     prompt: buildTovGenerationUserMessage(promptInput),
-  })
+  }, { tag: 'DNA-09 ToV generate' })
 
   return object
 }

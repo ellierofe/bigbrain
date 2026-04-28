@@ -1,5 +1,4 @@
-import { generateObject } from 'ai'
-import { MODELS } from '@/lib/llm/client'
+import { MODELS, generateObjectWithFallback } from '@/lib/llm/client'
 import { SYSTEM_PROMPTS } from '@/lib/llm/system-prompts'
 import {
   batchAnalysisSchema,
@@ -38,12 +37,12 @@ export async function runBatchAnalysis(
   const t0 = Date.now()
   const prompt = buildCorpusPrompt(sources, `Analyse the following ${sources.length} source documents as a corpus.`)
 
-  const { object } = await generateObject({
+  const { object } = await generateObjectWithFallback<BatchAnalysis>({
     model: MODELS.geminiPro,
     system: SYSTEM_PROMPTS.batchAnalysis,
     prompt,
     schema: batchAnalysisSchema,
-  })
+  }, { tag: 'INP-11 batch' })
 
   console.log(`[runBatchAnalysis] LLM call took ${Date.now() - t0}ms (${sources.length} sources, ${prompt.length} chars)`)
   return object
@@ -62,12 +61,12 @@ export async function runReflectiveAnalysis(
     `Analyse the following ${sources.length} sessions in chronological order. These are from the same recurring context.`
   )
 
-  const { object } = await generateObject({
+  const { object } = await generateObjectWithFallback<ReflectiveAnalysis>({
     model: MODELS.geminiPro,
     system: SYSTEM_PROMPTS.reflectiveAnalysis,
     prompt,
     schema: reflectiveAnalysisSchema,
-  })
+  }, { tag: 'INP-11 reflective' })
 
   console.log(`[runReflectiveAnalysis] LLM call took ${Date.now() - t0}ms (${sources.length} sources, ${prompt.length} chars)`)
   return object
@@ -87,12 +86,12 @@ export async function runProjectSynthesis(
 
   const prompt = buildCorpusPrompt(sources, preamble)
 
-  const { object } = await generateObject({
+  const { object } = await generateObjectWithFallback<ProjectSynthesis>({
     model: MODELS.geminiPro,
     system: SYSTEM_PROMPTS.projectSynthesis,
     prompt,
     schema: projectSynthesisSchema,
-  })
+  }, { tag: 'INP-11 synthesis' })
 
   console.log(`[runProjectSynthesis] LLM call took ${Date.now() - t0}ms (${sources.length} sources, ${prompt.length} chars)`)
   return object
