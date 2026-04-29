@@ -1,6 +1,6 @@
 # Knowledge Assets Brief
 Feature ID: DNA-05
-Status: approved
+Status: complete
 Last updated: 2026-04-23
 
 ## Summary
@@ -250,3 +250,4 @@ None — all decisions resolved.
 - 2026-04-23: "Cannot archive last active" rule flagged for review — unlike segments, zero active assets may be a valid state.
 - 2026-04-23: Brief approved.
 - 2026-04-23: Layout design approved. Status badge moved to header (template-level change). Sources moved from left panel to dedicated tab with SourceMaterialsTable molecule. Extras tab removed — visual prompt deferred, FAQs merged into Value tab. Five tabs: Overview, Components & Flow, Audience & VOC, Value, Sources. New molecules: OrderedCardList, SourceMaterialsTable, SourceDocPicker, VOCMapping, StatusBadge.
+- 2026-04-24: Feature built and tested end-to-end. Migration 0016 applied. 9 new molecules + creation/archive modals + 3 page routes + generation API + source upload. Bugs fixed during testing: empty state CTA missing, modal width, generate-from-draft, source linking, OrderedCardList edits, VOC uncheck, FAQ delete icon, prompt minimum-length enforcement (split into outcomes/benefits/advantages with zod `.min()`). Graph linking deferred from UI (action retained). Source upload added ad-hoc to `/inputs/sources` to unblock testing — UX-09 raised. Universal generate-from-draft pattern raised as UX-10. Tab/scroll consistency raised as UX-11. Session: `2026-04-24-dna05-knowledge-assets-build-q3p`. Status → complete.

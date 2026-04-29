@@ -264,7 +264,8 @@
 - **Size:** M
 - **Depends on:** DNA-01, KG-02, DASH-01
 - **Enables:** OUT-02, CLIENT-01, DNA-04
-- **Status:** in-progress
+- **Status:** done
+- **Implementation:** 5-phase creation modal, 5-tab detail view (Overview, Components & Flow, Audience & VOC, Value, Sources), generation via Gemini Pro with intelligent interlocutor (1-3 follow-up questions). Migration `0016` added `voc_mapping` jsonb + `source_document_ids` uuid[]. New molecules: StatusBadge, OrderedCardList, SourceMaterialsTable, SourceDocPicker, VocMapping, EntityOutcomesPanel, KnowledgeAssetSwitcher, CreateAssetModal, ArchiveAssetModal. Source upload added to `/inputs/sources` ad-hoc to unblock testing (UX-09 raised for proper consolidation). Graph linking deferred from UI; server action retained. Session: `2026-04-24-dna05-knowledge-assets-build-q3p`.
 
 ### DNA-06: Plural DNA elements — Content pillars
 - **What:** CRUD for content pillars. Each: topic, framing, formats, media types, angles, approach, how-you're-different.
