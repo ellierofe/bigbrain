@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Brain, Heart, Activity, ArrowRight, RefreshCw, Loader2, Sparkles } from 'lucide-react'
+import { Brain, Heart, Activity, ArrowRight, RefreshCw, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ActionButton } from '@/components/action-button'
 import { InlineField } from '@/components/inline-field'
 import { SectionCard } from '@/components/section-card'
 import { EmptyState } from '@/components/empty-state'
@@ -94,23 +95,13 @@ export function CustomerJourneyPanel({
     return (
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-end">
-          <Button
+          <ActionButton
+            icon={Sparkles}
             onClick={handleGenerate}
-            disabled={generating}
-            size="sm"
+            loading={generating}
           >
-            {generating ? (
-              <>
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                Generating…
-              </>
-            ) : (
-              <>
-                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                Generate journey
-              </>
-            )}
-          </Button>
+            {generating ? 'Generating…' : 'Generate journey'}
+          </ActionButton>
         </div>
         <EmptyState
           heading="No customer journey yet"
@@ -123,24 +114,14 @@ export function CustomerJourneyPanel({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-end">
-        <Button
+        <ActionButton
+          icon={RefreshCw}
           variant="outline"
-          size="sm"
           onClick={handleGenerate}
-          disabled={generating}
+          loading={generating}
         >
-          {generating ? (
-            <>
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              Regenerating…
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-              Regenerate journey
-            </>
-          )}
-        </Button>
+          {generating ? 'Regenerating…' : 'Regenerate journey'}
+        </ActionButton>
       </div>
 
       {localJourney.map((stage, idx) => (

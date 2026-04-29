@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/modal'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { createNewOffer } from '@/app/actions/offers'
 import { OFFER_TYPE_LABELS } from '@/lib/types/offers'
 import type { VocMapping as VocMappingType } from '@/lib/types/knowledge-assets'
@@ -27,7 +28,6 @@ interface AudienceSegmentOption {
 interface CreateOfferModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  brandId: string
   segments: AudienceSegmentOption[]
 }
 
@@ -36,12 +36,8 @@ type Phase = 'form' | 'voc' | 'generate' | 'generating' | 'followup' | 'error'
 export function CreateOfferModal({
   open,
   onOpenChange,
-  brandId,
   segments,
 }: CreateOfferModalProps) {
-  const router = useRouter()
-
-  // Phase state
   const [phase, setPhase] = useState<Phase>('form')
 
   // Phase 1: Quick form
@@ -226,6 +222,9 @@ export function CreateOfferModal({
             const item = stmt as Record<string, string>
             const text = item[textKey] ?? ''
             const isSelected = selected.includes(idx)
+            const hue = item.category && item.category in VOC_MAPPING_KIND_HUES
+              ? VOC_MAPPING_KIND_HUES[item.category as VocMappingKind]
+              : 'neutral' as const
 
             return (
               <CheckboxField
@@ -236,15 +235,7 @@ export function CreateOfferModal({
                 label={
                   <span className="flex items-start gap-2">
                     <span className="flex-1">{text}</span>
-                    {item.category && (
-                      item.category in VOC_MAPPING_KIND_HUES ? (
-                        <TypeBadge hue={VOC_MAPPING_KIND_HUES[item.category as VocMappingKind]} label={item.category} />
-                      ) : (
-                        <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                          {item.category}
-                        </span>
-                      )
-                    )}
+                    {item.category && <TypeBadge hue={hue} label={item.category} />}
                   </span>
                 }
               />
@@ -261,17 +252,28 @@ export function CreateOfferModal({
 
   if (phase === 'form') {
     return (
-      <Modal open={open} onOpenChange={handleClose} title="New Offer" size="lg">
+      <Modal
+        open={open}
+        onOpenChange={handleClose}
+        title="New Offer"
+        size="lg"
+        footer={
+          <>
+            <Button variant="outline" size="sm" onClick={() => handleClose(false)}>Cancel</Button>
+            <Button size="sm" disabled={!canProceedForm()} onClick={handleFormNext}>Next →</Button>
+          </>
+        }
+      >
         <div className="flex flex-col gap-4">
           <p className="text-xs text-muted-foreground">Step 1 of 3</p>
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium">Offer name *</label>
-            <input
+            <Input
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="e.g. Positioning Intensive"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              autoFocus
             />
           </div>
 
@@ -308,11 +310,6 @@ export function CreateOfferModal({
             />
           )}
         </div>
-
-        <div className="mt-6 flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => handleClose(false)}>Cancel</Button>
-          <Button size="sm" disabled={!canProceedForm()} onClick={handleFormNext}>Next →</Button>
-        </div>
       </Modal>
     )
   }
@@ -326,7 +323,18 @@ export function CreateOfferModal({
     const hasSelection = vocMapping.problems.length > 0 || vocMapping.desires.length > 0
 
     return (
-      <Modal open={open} onOpenChange={handleClose} title="VOC Mapping" size="lg">
+      <Modal
+        open={open}
+        onOpenChange={handleClose}
+        title="VOC Mapping"
+        size="lg"
+        footer={
+          <>
+            <Button variant="outline" size="sm" onClick={() => setPhase('form')}>← Back</Button>
+            <Button size="sm" onClick={() => setPhase('generate')}>Next →</Button>
+          </>
+        }
+      >
         <div className="flex flex-col gap-4">
           <p className="text-xs text-muted-foreground">Step 2 of 3</p>
           <p className="text-sm">
@@ -345,11 +353,6 @@ export function CreateOfferModal({
             {seg && renderVocGroup('Beliefs', 'beliefs', seg.sharedBeliefs as unknown[])}
           </div>
         </div>
-
-        <div className="mt-6 flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => setPhase('form')}>← Back</Button>
-          <Button size="sm" onClick={() => setPhase('generate')}>Next →</Button>
-        </div>
       </Modal>
     )
   }
@@ -360,7 +363,18 @@ export function CreateOfferModal({
 
   if (phase === 'generate') {
     return (
-      <Modal open={open} onOpenChange={handleClose} title="Generate Offer" size="lg">
+      <Modal
+        open={open}
+        onOpenChange={handleClose}
+        title="Generate Offer"
+        size="lg"
+        footer={
+          <>
+            <Button variant="outline" size="sm" onClick={() => setPhase('voc')}>← Back</Button>
+            <Button size="sm" onClick={handleEvaluateAndGenerate}>Generate offer</Button>
+          </>
+        }
+      >
         <div className="flex flex-col gap-4">
           <p className="text-xs text-muted-foreground">Step 3 of 3</p>
           <div className="rounded-md border border-border bg-muted/30 p-4 text-sm flex flex-col gap-2">
@@ -372,11 +386,6 @@ export function CreateOfferModal({
           <p className="text-sm text-muted-foreground">
             The AI will review your inputs and may ask a follow-up question before generating the full offer profile.
           </p>
-        </div>
-
-        <div className="mt-6 flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => setPhase('voc')}>← Back</Button>
-          <Button size="sm" onClick={handleEvaluateAndGenerate}>Generate offer</Button>
         </div>
       </Modal>
     )
@@ -404,7 +413,18 @@ export function CreateOfferModal({
 
   if (phase === 'followup') {
     return (
-      <Modal open={open} onOpenChange={handleClose} title="A few more details" size="lg">
+      <Modal
+        open={open}
+        onOpenChange={handleClose}
+        title="A few more details"
+        size="lg"
+        footer={
+          <>
+            <Button variant="outline" size="sm" onClick={() => setPhase('generate')}>← Back</Button>
+            <Button size="sm" onClick={handleFollowUpSubmit}>Continue</Button>
+          </>
+        }
+      >
         <div className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">
             The AI needs a bit more context to generate a strong offer profile.
@@ -412,19 +432,13 @@ export function CreateOfferModal({
           {followUpQuestions.map((q, i) => (
             <div key={i} className="flex flex-col gap-1.5">
               <label className="text-sm font-medium">{q}</label>
-              <textarea
+              <Textarea
                 value={followUpAnswers[i] ?? ''}
                 onChange={e => setFollowUpAnswers(prev => ({ ...prev, [i]: e.target.value }))}
                 rows={3}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring resize-none"
               />
             </div>
           ))}
-        </div>
-
-        <div className="mt-6 flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => setPhase('generate')}>← Back</Button>
-          <Button size="sm" onClick={handleFollowUpSubmit}>Continue</Button>
         </div>
       </Modal>
     )
@@ -436,17 +450,23 @@ export function CreateOfferModal({
 
   if (phase === 'error') {
     return (
-      <Modal open={open} onOpenChange={handleClose} title="Generation failed" size="lg">
+      <Modal
+        open={open}
+        onOpenChange={handleClose}
+        title="Generation failed"
+        size="lg"
+        footer={
+          <>
+            <Button variant="outline" size="sm" onClick={() => handleClose(false)}>Close</Button>
+            <Button size="sm" onClick={() => setPhase('generate')}>Try again</Button>
+          </>
+        }
+      >
         <div className="flex flex-col gap-4">
           <p className="text-sm text-destructive">{error}</p>
           <p className="text-sm text-muted-foreground">
             You can try again or close this modal. Any draft offer that was created will be in the list.
           </p>
-        </div>
-
-        <div className="mt-6 flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => handleClose(false)}>Close</Button>
-          <Button size="sm" onClick={() => setPhase('generate')}>Try again</Button>
         </div>
       </Modal>
     )

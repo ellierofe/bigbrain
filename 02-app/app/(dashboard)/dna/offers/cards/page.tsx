@@ -1,8 +1,9 @@
 import Link from 'next/link'
-import { Package, LayoutGrid } from 'lucide-react'
+import { Package, LayoutList } from 'lucide-react'
 import { PageChrome } from '@/components/page-chrome'
 import { ContentPane } from '@/components/content-pane'
 import { EmptyState } from '@/components/empty-state'
+import { IconButton } from '@/components/icon-button'
 import { listAllOffers } from '@/lib/db/queries/offers'
 import { getSegmentById } from '@/lib/db/queries/audience-segments'
 import { CreateOfferButtonRoot } from '../create-offer-button-root'
@@ -46,15 +47,13 @@ export default async function OffersCardsPage() {
         action={
           <div className="flex items-center gap-2">
             {offers.length > 0 && (
-              <Link
+              <IconButton
+                icon={LayoutList}
+                label="List view"
                 href={`/dna/offers/${offers[0].id}`}
-                className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Link>
+              />
             )}
             <CreateOfferButtonRoot
-              brandId={BRAND_ID}
               segments={segments.map(s => ({
                 id: s.id,
                 segmentName: s.segmentName,
@@ -76,7 +75,6 @@ export default async function OffersCardsPage() {
             action={
               <CreateOfferButtonRoot
                 label="Create your first offer"
-                brandId={BRAND_ID}
                 segments={segments.map(s => ({
                   id: s.id,
                   segmentName: s.segmentName,

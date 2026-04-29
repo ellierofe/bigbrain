@@ -7,7 +7,7 @@ import {
   Gem, MessageSquare, MousePointerClick, Image, CircleDollarSign, Banknote,
   Tag, StickyNote, RefreshCw, Shield, Type, FileText, Scale, AlertTriangle,
   Clock, Filter, Plus, Archive, LayoutGrid, LinkIcon, Unlink, ExternalLink,
-  Sparkles, Loader2,
+  Sparkles,
 } from 'lucide-react'
 import { PageChrome } from '@/components/page-chrome'
 import { ContentPane } from '@/components/content-pane'
@@ -26,7 +26,10 @@ import { checkOfferDependents, archiveOfferAction } from '@/app/actions/offers'
 import { SectionDivider } from '@/components/section-divider'
 import { EmptyState } from '@/components/empty-state'
 import { ActionButton } from '@/components/action-button'
+import { IconButton } from '@/components/icon-button'
+import { ListItem } from '@/components/list-item'
 import { Modal } from '@/components/modal'
+import { TypeBadge } from '@/components/type-badge'
 import {
   saveOfferField,
   saveOfferJsonField,
@@ -73,7 +76,7 @@ export function OfferDetailView({
   allSegments,
 }: OfferDetailViewProps) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
   const [createOpen, setCreateOpen] = useState(false)
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [assetPickerOpen, setAssetPickerOpen] = useState(false)
@@ -217,7 +220,7 @@ export function OfferDetailView({
       />
       <div className="flex-1 flex flex-col gap-8 min-w-0">
         <section id="value-prop">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Value Proposition</h3>
+          <SectionHeading>Value Proposition</SectionHeading>
           <div className="flex flex-col gap-3">
             <InlineField variant="textarea" value={offer.usp ?? ''} onSave={v => handleSaveText('usp', v)} label="USP" icon={Gem} rows={3} />
             <InlineField variant="textarea" value={offer.uspExplanation ?? ''} onSave={v => handleSaveText('uspExplanation', v)} label="USP Explanation" icon={MessageSquare} rows={3} />
@@ -227,7 +230,7 @@ export function OfferDetailView({
         <SectionDivider />
 
         <section id="cta">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Call to Action</h3>
+          <SectionHeading>Call to Action</SectionHeading>
           <div className="flex flex-col gap-3">
             <InlineField variant="input" value={offer.cta ?? ''} onSave={v => handleSaveText('cta', v)} label="CTA" icon={MousePointerClick} />
             <InlineField variant="textarea" value={offer.visualPrompt ?? ''} onSave={v => handleSaveText('visualPrompt', v)} label="Visual Prompt" icon={Image} rows={3} />
@@ -237,7 +240,7 @@ export function OfferDetailView({
         <SectionDivider />
 
         <section id="audience-alignment">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Audience Alignment</h3>
+          <SectionHeading>Audience Alignment</SectionHeading>
           <VocMapping
             segment={audienceSegment as Parameters<typeof VocMapping>[0]['segment']}
             mapping={offer.vocMapping}
@@ -267,7 +270,7 @@ export function OfferDetailView({
       />
       <div className="flex-1 flex flex-col gap-8 min-w-0">
         <section id="pricing">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Pricing</h3>
+          <SectionHeading>Pricing</SectionHeading>
           <div className="flex flex-col gap-3">
             <InlineField variant="input" value={localPricing.currency ?? ''} onSave={v => handlePricingFieldChange('currency', v)} label="Currency" icon={CircleDollarSign} placeholder="GBP" />
             <InlineField variant="input" value={localPricing.mainPrice?.toString() ?? ''} onSave={v => handlePricingFieldChange('mainPrice', v ? Number(v) : null)} label="Price" icon={Banknote} placeholder="3500" />
@@ -280,7 +283,7 @@ export function OfferDetailView({
         <SectionDivider />
 
         <section id="guarantee">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Guarantee</h3>
+          <SectionHeading>Guarantee</SectionHeading>
           <div className="flex flex-col gap-3">
             <InlineField variant="input" value={localGuarantee.type ?? ''} onSave={v => handleGuaranteeFieldChange('type', v)} label="Guarantee Type" icon={Shield} placeholder="satisfaction" />
             <InlineField variant="input" value={localGuarantee.headline ?? ''} onSave={v => handleGuaranteeFieldChange('headline', v)} label="Headline" icon={Type} />
@@ -293,7 +296,7 @@ export function OfferDetailView({
         <SectionDivider />
 
         <section id="funnel">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Funnel</h3>
+          <SectionHeading>Funnel</SectionHeading>
           <div className="flex flex-col gap-3">
             <InlineField variant="textarea" value={offer.scarcity ?? ''} onSave={v => handleSaveText('scarcity', v)} label="Scarcity / Urgency" icon={Clock} rows={2} />
             <InlineField variant="textarea" value={offer.salesFunnelNotes ?? ''} onSave={v => handleSaveText('salesFunnelNotes', v)} label="Sales Funnel Notes" icon={Filter} rows={3} />
@@ -362,21 +365,10 @@ export function OfferDetailView({
         title="Offers"
         action={
           <div className="flex items-center gap-2">
-            <StatusBadge
-              status={offer.status}
-              onChange={handleStatusChange}
-              options={OFFER_STATUS_OPTIONS}
-            />
-            <Link
-              href="/dna/offers/cards"
-              className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Link>
+            <IconButton icon={LayoutGrid} label="Cards view" href="/dna/offers/cards" />
             <CreateOfferModal
               open={createOpen}
               onOpenChange={setCreateOpen}
-              brandId={BRAND_ID}
               segments={allSegments}
             />
             <ActionButton icon={Plus} onClick={() => setCreateOpen(true)}>
@@ -411,129 +403,137 @@ export function OfferDetailView({
           </div>
         }
         subheader={
-          <ItemSwitcher
-            items={allOffers}
-            currentId={offer.id}
-            label="Offer"
-            getHref={(o) => `/dna/offers/${o.id}`}
-            getLabel={(o) => o.name}
-          />
+          <div className="flex items-center gap-3">
+            <ItemSwitcher
+              items={allOffers}
+              currentId={offer.id}
+              label="Offer"
+              getHref={(o) => `/dna/offers/${o.id}`}
+              getLabel={(o) => o.name}
+            />
+            <StatusBadge
+              status={offer.status}
+              onChange={handleStatusChange}
+              options={OFFER_STATUS_OPTIONS}
+            />
+          </div>
         }
       />
 
-      {needsGeneration && (
-        <div className="mx-4 mb-3 flex items-center gap-3 rounded-md border border-primary/30 bg-primary/5 px-4 py-3">
-          <Sparkles className="h-4 w-4 shrink-0 text-primary" />
-          <div className="flex-1 text-sm">
-            <p className="font-medium">This offer is ready to generate.</p>
-            <p className="text-muted-foreground text-xs mt-0.5">
-              Your inputs are saved. The AI will use the audience and VOC mapping to fill in the rest.
-            </p>
+      <ContentPane padding={false} className="flex flex-col">
+        {needsGeneration && (
+          <div className="mx-6 mt-4 flex items-center gap-3 rounded-md border border-primary/30 bg-primary/5 px-4 py-3">
+            <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+            <div className="flex-1 text-sm">
+              <p className="font-medium">This offer is ready to generate.</p>
+              <p className="text-muted-foreground text-xs mt-0.5">
+                Your inputs are saved. The AI will use the audience and VOC mapping to fill in the rest.
+              </p>
+            </div>
+            <ActionButton
+              icon={Sparkles}
+              onClick={handleGenerateFromInputs}
+              loading={generating}
+            >
+              {generating ? 'Generating…' : 'Generate offer'}
+            </ActionButton>
           </div>
-          <ActionButton
-            icon={generating ? Loader2 : Sparkles}
-            onClick={handleGenerateFromInputs}
-            disabled={generating}
-          >
-            {generating ? 'Generating…' : 'Generate offer'}
-          </ActionButton>
-        </div>
-      )}
+        )}
 
-      <div className="flex flex-1 min-h-0 gap-0">
-        {/* Left sticky panel */}
-        <div className="w-[220px] shrink-0 self-start sticky top-0 flex flex-col gap-4 p-4 border-r border-border/40 bg-muted/30">
-          <InlineField
-            variant="input"
-            value={offer.name}
-            onSave={v => handleSaveText('name', v)}
-            label="Name"
-            icon={Tag}
-            labelBg="bg-muted/30"
-          />
+        <div className="flex flex-1 min-h-0">
+          <aside className="w-64 shrink-0 flex flex-col gap-4 overflow-y-auto border-r border-border/40 bg-muted/30 px-6 py-6">
+            <InlineField
+              variant="input"
+              value={offer.name}
+              onSave={v => handleSaveText('name', v)}
+              label="Name"
+              icon={Tag}
+              labelBg="bg-muted/30"
+            />
 
-          <SelectField
-            label="Type"
-            icon={Tag}
-            labelBg="bg-muted/30"
-            value={offer.offerType}
-            options={Object.entries(OFFER_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
-            onSave={async (v) => {
-              await handleSaveJson('offerType', v)
-              return { ok: true }
-            }}
-          />
+            <SelectField
+              label="Type"
+              icon={Tag}
+              labelBg="bg-muted/30"
+              value={offer.offerType}
+              options={Object.entries(OFFER_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
+              onSave={async (v) => {
+                await handleSaveJson('offerType', v)
+                return { ok: true }
+              }}
+            />
 
-          <InlineField
-            variant="textarea"
-            value={offer.overview ?? ''}
-            onSave={v => handleSaveText('overview', v)}
-            label="Overview"
-            icon={FileText}
-            rows={4}
-            labelBg="bg-muted/30"
-          />
+            <InlineField
+              variant="textarea"
+              value={offer.overview ?? ''}
+              onSave={v => handleSaveText('overview', v)}
+              label="Overview"
+              icon={FileText}
+              rows={4}
+              labelBg="bg-muted/30"
+            />
 
-          <SectionDivider />
+            <SectionDivider />
 
-          {/* Primary audience link */}
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Audience</span>
-            {audienceSegment ? (
-              <Link
-                href={`/dna/audience-segments/${audienceSegment.id}`}
-                className="text-sm hover:underline underline-offset-2 flex items-center gap-1"
-              >
-                {audienceSegment.segmentName}
-                <ExternalLink className="h-3 w-3 text-muted-foreground" />
-              </Link>
-            ) : (
-              <span className="text-sm text-muted-foreground italic">No audience linked</span>
-            )}
-          </div>
-
-          {/* Knowledge asset link */}
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Knowledge Asset</span>
-            {linkedAsset ? (
-              <div className="flex items-center gap-1">
+            {/* Primary audience link */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-semibold capitalize tracking-wide text-muted-foreground">Audience</span>
+              {audienceSegment ? (
                 <Link
-                  href={`/dna/knowledge-assets/${linkedAsset.id}`}
-                  className="text-sm hover:underline underline-offset-2 flex items-center gap-1 flex-1 min-w-0"
+                  href={`/dna/audience-segments/${audienceSegment.id}`}
+                  className="text-sm hover:underline underline-offset-2 flex items-center gap-1"
                 >
-                  <span className="truncate">{linkedAsset.name}</span>
-                  <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
+                  {audienceSegment.segmentName}
+                  <ExternalLink className="h-3 w-3 text-muted-foreground" />
                 </Link>
-                <button
-                  type="button"
-                  onClick={handleUnlinkAsset}
-                  className="text-muted-foreground hover:text-destructive transition-colors p-0.5"
-                  title="Unlink"
+              ) : (
+                <span className="text-sm text-muted-foreground italic">No audience linked</span>
+              )}
+            </div>
+
+            {/* Knowledge asset link */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-semibold capitalize tracking-wide text-muted-foreground">Knowledge Asset</span>
+              {linkedAsset ? (
+                <div className="flex items-center gap-1">
+                  <Link
+                    href={`/dna/knowledge-assets/${linkedAsset.id}`}
+                    className="text-sm hover:underline underline-offset-2 flex items-center gap-1 flex-1 min-w-0"
+                  >
+                    <span className="truncate">{linkedAsset.name}</span>
+                    <ExternalLink className="h-3 w-3 text-muted-foreground shrink-0" />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleUnlinkAsset}
+                    className="text-muted-foreground hover:text-destructive transition-colors p-0.5"
+                    title="Unlink"
+                  >
+                    <Unlink className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <ActionButton
+                  icon={LinkIcon}
+                  variant="outline"
+                  className="w-full justify-start text-xs"
+                  onClick={() => setAssetPickerOpen(true)}
                 >
-                  <Unlink className="h-3 w-3" />
-                </button>
-              </div>
-            ) : (
-              <ActionButton
-                icon={LinkIcon}
-                variant="outline"
-                className="w-full justify-start text-xs"
-                onClick={() => setAssetPickerOpen(true)}
-              >
-                Link IP
-              </ActionButton>
-            )}
+                  Link IP
+                </ActionButton>
+              )}
+            </div>
+          </aside>
+
+          <div className="flex-1 min-w-0 flex flex-col min-h-0 px-6 py-6">
+            <TabbedPane
+              className="flex-1 min-h-0"
+              tabs={tabs}
+              defaultTab={defaultTab ?? 'positioning'}
+            />
           </div>
         </div>
-
-        {/* Content pane with tabs */}
-        <div className="flex-1 flex flex-col min-h-0">
-          <TabbedPane
-            tabs={tabs}
-            defaultTab={defaultTab ?? 'positioning'}
-          />
-        </div>
-      </div>
+      </ContentPane>
 
       {/* Knowledge asset picker modal */}
       <Modal open={assetPickerOpen} onOpenChange={setAssetPickerOpen} title="Link Knowledge Asset">
@@ -546,19 +546,19 @@ export function OfferDetailView({
             .
           </p>
         ) : (
-          <div className="flex flex-col gap-1 max-h-[300px] overflow-y-auto">
+          <div className="flex flex-col max-h-[300px] overflow-y-auto">
             {knowledgeAssets.map(asset => (
-              <button
+              <ListItem
                 key={asset.id}
-                type="button"
+                as="button"
                 onClick={() => handleLinkAsset(asset.id)}
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-left hover:bg-muted transition-colors"
+                divider={false}
+                trailing={
+                  <TypeBadge hue="neutral" label={asset.kind} />
+                }
               >
-                <span className="flex-1">{asset.name}</span>
-                <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                  {asset.kind}
-                </span>
-              </button>
+                <span className="text-sm">{asset.name}</span>
+              </ListItem>
             ))}
           </div>
         )}
@@ -584,5 +584,13 @@ export function OfferDetailView({
         }}
       />
     </div>
+  )
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+      {children}
+    </h3>
   )
 }

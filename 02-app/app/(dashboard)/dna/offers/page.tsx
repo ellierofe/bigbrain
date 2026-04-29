@@ -44,7 +44,6 @@ export default async function OffersIndexPage() {
           action={
             <CreateOfferButtonRoot
               label="Create your first offer"
-              brandId={BRAND_ID}
               segments={segments.map(s => ({
                 id: s.id,
                 segmentName: s.segmentName,

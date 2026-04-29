@@ -141,6 +141,10 @@ export function VocMapping({ segment, mapping, onToggle }: VocMappingProps) {
               )
             }
 
+            const hue = stmt.category && stmt.category in VOC_MAPPING_KIND_HUES
+              ? VOC_MAPPING_KIND_HUES[stmt.category as VocMappingKind]
+              : 'neutral' as const
+
             return (
               <CheckboxField
                 key={idx}
@@ -151,18 +155,7 @@ export function VocMapping({ segment, mapping, onToggle }: VocMappingProps) {
                 label={
                   <span className="flex items-start gap-2">
                     <span className="flex-1">{text}</span>
-                    {stmt.category && (
-                      stmt.category in VOC_MAPPING_KIND_HUES ? (
-                        <TypeBadge
-                          hue={VOC_MAPPING_KIND_HUES[stmt.category as VocMappingKind]}
-                          label={stmt.category}
-                        />
-                      ) : (
-                        <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                          {stmt.category}
-                        </span>
-                      )
-                    )}
+                    {stmt.category && <TypeBadge hue={hue} label={stmt.category} />}
                   </span>
                 }
               />

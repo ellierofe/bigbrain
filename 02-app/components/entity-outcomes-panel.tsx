@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { Plus, Trash2, ChevronDown } from 'lucide-react'
 import { ActionButton } from '@/components/action-button'
 import { ActionMenu } from '@/components/action-menu'
+import { InPageNav } from '@/components/in-page-nav'
 import { SectionDivider } from '@/components/section-divider'
 import { InlineCellSelect } from '@/components/inline-cell-select'
 import {
@@ -39,9 +40,10 @@ export function EntityOutcomesPanel({
   brandId,
 }: EntityOutcomesPanelProps) {
   const [outcomes, setOutcomes] = useState(initialOutcomes)
-  const [isPending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [addingKind, setAddingKind] = useState<EntityOutcomeKind | null>(null)
+  const [activeSection, setActiveSection] = useState<EntityOutcomeKind>('outcome')
 
   function outcomesByKind(kind: EntityOutcomeKind) {
     return outcomes.filter(o => o.kind === kind)
@@ -95,6 +97,12 @@ export function EntityOutcomesPanel({
     })
   }
 
+  function handleSectionSelect(id: string) {
+    setActiveSection(id as EntityOutcomeKind)
+    const el = document.getElementById(`value-gen-${id}`)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   function renderKindSection(kind: EntityOutcomeKind, label: string) {
     const items = outcomesByKind(kind)
     const showCategory = kind === 'outcome' || kind === 'benefit'
@@ -102,11 +110,11 @@ export function EntityOutcomesPanel({
     const isBonus = kind === 'bonus'
 
     return (
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <section id={`value-gen-${kind}`} className="flex flex-col gap-2">
+        <div className="mb-1 flex items-center gap-2">
+          <h3 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
             {label}
-          </h4>
+          </h3>
           <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
             {items.length}
           </span>
@@ -215,36 +223,48 @@ export function EntityOutcomesPanel({
             </button>
           </div>
         ))}
-      </div>
+      </section>
     )
   }
 
-  return (
-    <div className="flex flex-col gap-6">
-      {/* Add dropdown */}
-      <div className="self-end">
-        <ActionMenu
-          trigger={
-            <ActionButton variant="outline" disabled={!!addingKind}>
-              <Plus className="mr-1 h-3.5 w-3.5" />
-              Add
-              <ChevronDown className="ml-1 h-3 w-3" />
-            </ActionButton>
-          }
-          minWidth="140px"
-          items={OUTCOME_KINDS.map((kind) => ({
-            type: 'action' as const,
-            label: kind.label.slice(0, -1),
-            onClick: () => handleAdd(kind.value),
-          }))}
-        />
-      </div>
+  const navItems = OUTCOME_KINDS.map(kind => ({
+    id: kind.value,
+    label: `${kind.label} (${outcomesByKind(kind.value).length})`,
+  }))
 
-      {OUTCOME_KINDS.map(kind => (
-        <div key={kind.value}>
-          {renderKindSection(kind.value, kind.label)}
+  return (
+    <div className="flex gap-6">
+      <InPageNav
+        items={navItems}
+        activeId={activeSection}
+        onSelect={handleSectionSelect}
+      />
+      <div className="flex-1 min-w-0 flex flex-col gap-8">
+        <div className="self-end">
+          <ActionMenu
+            trigger={
+              <ActionButton variant="outline" disabled={!!addingKind}>
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                Add
+                <ChevronDown className="ml-1 h-3 w-3" />
+              </ActionButton>
+            }
+            minWidth="140px"
+            items={OUTCOME_KINDS.map((kind) => ({
+              type: 'action' as const,
+              label: kind.label.slice(0, -1),
+              onClick: () => handleAdd(kind.value),
+            }))}
+          />
         </div>
-      ))}
+
+        {OUTCOME_KINDS.map((kind, idx) => (
+          <div key={kind.value} className="flex flex-col gap-6">
+            {idx > 0 && <SectionDivider />}
+            {renderKindSection(kind.value, kind.label)}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
