@@ -178,9 +178,48 @@ Every `prompt_fragments` row has a `version` integer. `generation_runs` stores `
 ## Open questions deferred to Phase 1 implementation
 
 - Exact shape of `topic_context_config` jsonb (provisional shape sketched in `01-design/content-creation-architecture.md` Part 5).
-- `topic_paths` storage model (tree table vs jsonb config).
+- ~~`topic_paths` storage model (tree table vs jsonb config).~~ **Resolved 2026-04-29 — see Addendum A.**
 - Variant streaming pattern (parallel vs sequential).
-- TTL on unsaved `generation_runs` drafts (suggested 30 days).
+- ~~TTL on unsaved `generation_runs` drafts (suggested 30 days).~~ **Resolved 2026-04-29 — see Addendum B (locked at 30 days alongside the three-table split).**
+
+---
+
+## Addendum A — `topic_paths` storage = tree table (resolved 2026-04-29)
+
+**Decision:** `topic_paths` is a tree-shaped table — `parent_id` self-FK (`ON DELETE CASCADE`) plus a materialised `path` column (`varchar(200)`, unique) that carries the dotted path from root (e.g. `audience.segment.problems.item`). The `path` is the natural key for seeds and deeplinks; the tree structure handles cascade walks.
+
+**Why tree over single-jsonb config:**
+- New step-1 categories can be added one row at a time — incremental growth without rewriting a config blob.
+- The runtime query pattern is "fetch children of X" — a `WHERE parent_id = ?` query is the natural fit. JSONB-config equivalents need application-side tree-walking.
+- The materialised `path` column gives cheap prefix queries (`WHERE path LIKE 'audience.%'`) for impact-analysis or sub-tree filtering — the only place jsonb would have been faster.
+- Serialised refs from `generation_runs.inputs.topic_chain` use the `path` string, which is stable across re-seeding and survives catalogue evolution.
+
+**Implementation:** migration 0025 (2026-04-29). Schema doc at `01-design/schemas/topic-paths.md`. Drizzle file at `02-app/lib/db/schema/content/topic-paths.ts`.
+
+---
+
+## Addendum B — Three-table persistence: `generation_runs` + `generation_logs` + `library_items` (resolved 2026-04-29)
+
+**Decision:** Content-creation persistence uses three distinct tables, not one. Each table has a single, focused role:
+
+| Table | Role | Lifetime |
+|---|---|---|
+| `generation_runs` | Operational state for in-flight + recently-generated runs. Holds variants jsonb (mutable, edited in place pre-save), assembled prompt, full inputs snapshot, status. | 30-day TTL on unsaved drafts; `kept = true` once any variant is saved (sweep-disabled). |
+| `generation_logs` | Permanent analytics record. One row per run at completion. Captures cost, tokens, latency, model, status, error class. **No prompt text, no variant text.** | Forever — never swept. Survives `generation_runs` sweeps via `ON DELETE SET NULL`. |
+| `library_items` | Opt-in registry of saved variants. Markdown text snapshot, structured tags jsonb, first-class publish metadata. | Forever — user-managed. |
+
+**Why split rather than collapse:**
+
+1. **Different access patterns.** Operational state mutates frequently during streaming (`variants` jsonb gets fat). Analytics are append-only and queried in aggregate. Saved keepers are read frequently and edited rarely. One table forces every query to drag the heaviest jsonb across the wire.
+2. **Different retention.** Drafts are transient; analytics are forever; saved keepers are forever. A unified table needs a status column AND a soft-delete pattern AND a TTL pattern — three concerns layered on one shape. Three tables let each concern live cleanly.
+3. **Analytics surface size.** Without `generation_logs`, "what did I spend this month" requires scanning every (large, jsonb-heavy) `generation_runs` row that hasn't been swept yet — losing analytics on swept errored runs entirely. With `generation_logs`, the dashboard is a cheap aggregate over a thin table.
+4. **Survival under TTL sweep.** When `generation_runs` is swept after 30 days, the analytics record persists (FK is `SET NULL`), and saved library items persist (FK is `SET NULL`). The user keeps both their costs history and their saved content even though the operational state is gone.
+
+**REG-01 superseded.** The previously planned `content_registry` table was scoped to "track every piece of content created with platform/DNA/source refs and performance data." That role is fully covered by `library_items` (saved keepers + tags) and `generation_logs` (performance/cost metrics). REG-01 is marked superseded; REG-02 (the content browser UI) now depends on OUT-02 directly.
+
+**TTL value (30 days)** is locked alongside this split. Daily Vercel cron sweep: `DELETE FROM generation_runs WHERE expires_at < now() AND kept = false`.
+
+**Implementation:** migrations 0026 (`generation_runs`), 0027 (`generation_logs`), 0028 (`library_items`) — all applied 2026-04-29. Schema docs at `01-design/schemas/{generation-runs,generation-logs,library-items}.md`.
 
 ---
 
@@ -189,4 +228,4 @@ Every `prompt_fragments` row has a `version` integer. `generation_runs` stores `
 - Architecture doc: `01-design/content-creation-architecture.md`
 - Brief: `01-design/briefs/OUT-02-content-creator-single-step.md`
 - Backlog: OUT-02 (in-progress), OUT-02a (planned)
-- Supersedes scope-wise: GEN-PROMPTS-01 (closed 2026-04-26)
+- Supersedes scope-wise: GEN-PROMPTS-01 (closed 2026-04-26), REG-01 (superseded 2026-04-29 — folded into `library_items`)

@@ -406,20 +406,15 @@
 ## STORAGE — CONTENT REGISTRY
 
 ### REG-01: Content registry schema
-- **What:** Track every piece of content created: what it is, when, which platform, which DNA elements/source knowledge it used, performance data (optional).
-- **Layer:** data
-- **Problems:** P1
-- **Size:** M
-- **Depends on:** INF-02
-- **Enables:** REG-02, PROV-01
-- **Status:** planned
+- **Status:** superseded — folded into OUT-02 as `library_items` (migration 0028, applied 2026-04-29). The OUT-02 architecture made REG-01's separate registry redundant: `library_items` holds the saved-content snapshot + tags + publish metadata that REG-01 was scoped to track. Schema doc at `01-design/schemas/library-items.md`.
+- **Note:** Same supersession pattern as GEN-PROMPTS-01 (closed when OUT-02's eight-layer architecture replaced its scope). Performance/analytics data lives in the sibling `generation_logs` table (migration 0027) — also part of OUT-02.
 
 ### REG-02: Content registry UI
 - **What:** Browse created content. Filter by platform, pillar, date. See provenance chain for each item.
 - **Layer:** output
 - **Problems:** P1 (also design rule 4: visibility)
 - **Size:** M
-- **Depends on:** REG-01, DASH-01
+- **Depends on:** OUT-02 (`library_items` schema; REG-01 superseded), DASH-01
 - **Enables:** User understanding of output patterns
 - **Status:** planned
 
@@ -609,14 +604,14 @@
 - **Size:** XL
 - **Depends on:** DNA-01 (all DNA types), DNA-07b (channel taxonomy — done 2026-04-27), DNA-09 (tone), SRC-01, INF-06, RET-01, OUT-01 (chat infra reuse)
 - **Enables:** OUT-02a
-- **Status:** in-progress — Phase 1 batch 1 complete 2026-04-28. Architecture doc approved 2026-04-26.
+- **Status:** in-progress — Phase 1 batch 2 complete 2026-04-29. Architecture doc approved 2026-04-26.
 - **Architecture:** `01-design/content-creation-architecture.md` (approved 2026-04-26)
 - **Reference:**
   - `04-documentation/reference/channel-taxonomy.md` — authoritative vocabulary for `content_types.platform_type` (channel) and `format_type`/`subtype` selection. TS source of truth: `02-app/lib/types/channels.ts`.
   - `04-documentation/reference/prompt-vocabulary.md` (added 2026-04-28) — canonical `${...}` placeholder vocabulary (3 groups, 21 placeholders) + bundle slug vocabulary (11 V1 slugs for `topic_context_config.dna_pulls`). TS source of truth lands at `02-app/lib/llm/content/types.ts` + `bundles.ts` (latter not yet created).
 - **Note:** Supersedes GEN-PROMPTS-01 (dead — DNA generation prompts shipped via DNA-03/04/05/07/09 builds; content-output prompt work lands here in the new architecture).
   - **Phase 1 batch 1 (shipped 2026-04-27 → 2026-04-28):** `prompt_fragments` (migration 0021), `content_types` (0023), `prompt_stages` (0024). Eight-layer assembler sketch at `02-app/lib/llm/content/{types,assemble}.ts` validated all four jsonb shapes (`prerequisites`, `strategy_fields`, `topic_context_config`, `craft_fragment_config`) — no schema changes needed.
-  - **Phase 1 batch 2 (next pickup):** `topic_paths` (open question: tree table vs jsonb config), `generation_runs` (use `GenerationInputs` shape from `lib/llm/content/types.ts` for `inputs` jsonb), `library_items` (may fold REG-01 in).
+  - **Phase 1 batch 2 (shipped 2026-04-28 → 2026-04-29):** `topic_paths` (0025, tree table — `parent_id` self-FK + materialised `path` natural key), `generation_runs` (0026, transient state, `expires_at` + `kept` flag drive the 30-day TTL sweep), `generation_logs` (0027, **new table** added in batch — permanent analytics record per run; covers the role of legacy `creation_logs` so cost/token/latency stats live forever even after run sweeps), `library_items` (0028, supersedes REG-01 — markdown snapshot, structured tags jsonb with 8 V1 kinds, GIN index for tag-containment queries, first-class publish metadata).
   - **Phase 2 (later):** real assembler (skeleton async pre-pass, `bundles.ts` BUNDLE_RESOLVERS map, real fragment lookups).
   - **Phase 3 (later):** seed 38 legacy fragments + 5 V1 content types + topic_paths rows.
 
