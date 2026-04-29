@@ -187,8 +187,9 @@ export function CreateOfferModal({
 
       toast.success('Offer generated')
       handleClose(false)
-      router.push(`/dna/offers/${offerId}`)
-      router.refresh()
+      // Hard navigate — router.refresh() doesn't reliably pick up DB changes
+      // made directly inside the API route.
+      window.location.href = `/dna/offers/${offerId}`
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Generation failed')
       setPhase('error')
