@@ -9,6 +9,9 @@
     "lint": "eslint",
     "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
+    "db:seed:out02-fragments": "dotenv -e .env.local -- tsx lib/db/seed/seed-out02-fragments.ts",
+    "db:seed:out02-content-types": "dotenv -e .env.local -- tsx lib/db/seed/seed-out02-content-types.ts",
+    "db:seed:out02-topic-paths": "dotenv -e .env.local -- tsx lib/db/seed/seed-out02-topic-paths.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "check:design-system": "tsx scripts/check-design-system.ts"
