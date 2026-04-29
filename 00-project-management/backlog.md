@@ -248,14 +248,14 @@
 - **Implementation:** Migration 0019 added `voc_mapping` + `customer_journey` JSONB, dropped `customer_journey_stage`. Reused VocMapping, EntityOutcomesPanel, StatusBadge from DNA-05. New molecules: `OfferDetailView`, `CreateOfferModal`, `ArchiveOfferModal`, `OfferSwitcher`, `CustomerJourneyPanel`. App-wide LLM resilience added during this build via `generateObjectWithFallback()` in `lib/llm/client.ts` — wraps every `generateObject` call across the app, falls back to `claude-opus-4-7` when primary fails, with auto-recovery for known response anomalies (single-key wrappers, stringified inner JSON).
 
 ### DNA-04a: Offers — design system polish
-- **What:** UI/UX polish pass on offers — currently not using the design system properly or consistently. Audit and fix: token-only styling (no hardcoded colours/spacing), no appearance classes in organism layer, all atom imports through the molecule layer (e.g. native `<select>` and `<input>` in detail view + create modal should use `SelectField` / proper input molecules), spacing and field treatment consistency with audience segments and knowledge assets.
+- **What:** UI/UX polish pass on offers — align offer surfaces with the canonical plural-DNA template (audience segments). Token-only styling, no appearance classes in organism layer, atom imports through the molecule layer, spacing and field treatment consistency with audience segments and knowledge assets.
 - **Layer:** output
 - **Problems:** All (visual consistency)
 - **Size:** S
 - **Depends on:** DNA-04 (done)
 - **Enables:** Consistent DNA item experience
-- **Status:** planned
-- **Note:** Build session focused on functional completeness; design polish deferred to a fresh context.
+- **Status:** done — closed 2026-04-29
+- **Implementation:** Code-comparison audit against `segment-detail-view.tsx` (canonical) produced an 11-item punch list. All shipped. Detail view: ContentPane wrap, `<aside>` + `w-64` + `px-6 py-6` left panel, status badge moved from action slot → subheader, Cards-view `<Link>` → `IconButton`, `SectionHeading` helper extracted, asset-picker rows → `ListItem` + neutral `TypeBadge`, `needsGeneration` banner uses `ActionButton loading` prop, linked-item labels aligned with InlineField. Create-offer-modal: 6 hand-rolled footers → `Modal footer` prop, native `<input>`/`<textarea>` → `Input`/`Textarea` atoms, hand-rolled type-badge fallback → `TypeBadge hue="neutral"`. Customer-journey-panel: Generate/Regenerate `Button` → `ActionButton`. **Value Gen tab refactor:** sticky `InPageNav` with live counts per kind + smooth scroll to anchored sections — addresses unwieldy stacked-sections problem (master-detail considered for future when feature gets heavier use). **TypeBadge molecule extension:** `hue: TagHue | 'neutral'` — absorbs the same hand-rolled fallback in `voc-mapping.tsx` (knowledge-asset detail also benefits via shared panel).
 
 ### DNA-05: Plural DNA elements — Knowledge Assets
 - **What:** Full CRUD for knowledge assets (methodologies, frameworks, processes, tools, templates). Source-doc-driven creation with VOC mapping and interlocutor generation. Entity outcomes (value gen). Manual graph linking for methodology kind. Brief: `01-design/briefs/DNA-05-knowledge-assets.md`.
@@ -605,7 +605,7 @@
 - **Size:** XL
 - **Depends on:** DNA-01 (all DNA types), DNA-07b (channel taxonomy — done 2026-04-27), DNA-09 (tone), SRC-01, INF-06, RET-01, OUT-01 (chat infra reuse)
 - **Enables:** OUT-02a
-- **Status:** in-progress — Phase 1 batch 2 complete 2026-04-29. Architecture doc approved 2026-04-26.
+- **Status:** in-progress — Phase 3 (seeds) complete 2026-04-29. Phase 1 (storage layer) closed earlier same day. Phase 2 (assembler code + topic-engine query layer + cron sweep) is next. Architecture doc approved 2026-04-26.
 - **Architecture:** `01-design/content-creation-architecture.md` (approved 2026-04-26)
 - **Reference:**
   - `04-documentation/reference/channel-taxonomy.md` — authoritative vocabulary for `content_types.platform_type` (channel) and `format_type`/`subtype` selection. TS source of truth: `02-app/lib/types/channels.ts`.
@@ -778,6 +778,16 @@
 - **Brief:** `01-design/briefs/DS-09-page-chrome-switcher-unification.md` (complete 2026-04-27)
 - **Layout:** `01-design/wireframes/DS-09-layout.md`
 - **Priority:** Medium — sequence: DS-04 → DS-09 → DS-03. **Done.**
+
+### DS-10: Compact status pill molecule
+- **What:** Build a `StatusPill` (or extend `StatusBadge` with a `size` prop) for the smaller status-pill use case found on cards/list views, where the existing `StatusBadge` (`px-2.5 py-0.5 text-xs`) is too big and consumers hand-roll smaller `bg-warning-bg`/`bg-info-bg`/`bg-muted` pills with `px-1.5 py-0.5 text-[10px]`. Migrate hand-rolled pills on the offers cards page (Draft / Paused / Retired — `02-app/app/(dashboard)/dna/offers/cards/page.tsx:113-125`) and audit other cards/list pages for the same pattern.
+- **Layer:** cross
+- **Problems:** All (visual consistency)
+- **Size:** XS
+- **Depends on:** DS-02 (semantic state tokens — already in use by the hand-rolled pills, no new tokens needed)
+- **Enables:** Consistent status-pill treatment across cards/list contexts. Closes a small drift surfaced during DNA-04a (2026-04-29).
+- **Status:** planned
+- **Note:** Surfaced during DNA-04a code audit. Not pulled into DNA-04a because StatusBadge's read-only mode renders at a noticeably different size — a proper smaller variant is the right call. Likely a small extension to StatusBadge (add `size?: 'sm' | 'xs'`) rather than a new molecule.
 
 ### DASH-02: Brand DNA overview
 - **What:** Single view showing all DNA elements at a glance. Status indicators (complete/draft/empty). Drill-in to edit.
