@@ -1,22 +1,38 @@
-// Eight-layer prompt assembler — SKETCH (OUT-02 Phase 1, ADR-006).
+// Eight-layer prompt assembler — OUT-02 Phase 2 implementation (ADR-006).
 //
-// This is a pressure-test of the jsonb shapes on `content_types` and
-// `prompt_stages` before the rest of Batch 2 ships. Bundle resolvers, fragment
-// lookups, and DNA reads are stubbed — the goal is to walk all eight layers
-// against real schema shapes and surface any awkwardness in the contracts.
+// Walks the eight layers in order, resolves all ${...} substitutions, and
+// returns the final prompt text plus an audit-ready breakdown. Every fragment
+// version actually used is recorded for persistence on
+// generation_runs.fragment_versions.
 //
 // The eight layers (ADR-006):
-//   1. Persona              — `prompt_stages.persona_fragment_id`
-//   2. Worldview            — `prompt_stages.worldview_fragment_id` (nullable)
-//   3. Task framing         — `prompt_stages.task_framing` (text)
-//   4. Brand context        — invariant; brand_context_v1 bundle
-//   5. Topic context        — `content_types.topic_context_config` drives it
-//   6. Structural skeleton  — `prompt_stages.structural_skeleton` (with placeholders)
-//   7. Craft directives     — `prompt_stages.craft_fragment_config`
-//   8. Output contract      — `prompt_stages.output_contract_fragment_id` + extras
+//   1. Persona              — prompt_stages.persona_fragment_id
+//   2. Worldview            — prompt_stages.worldview_fragment_id (nullable)
+//   3. Task framing         — prompt_stages.task_framing (text)
+//   4. Brand context        — invariant; assembled from DNA placeholders
+//   5. Topic context        — content_types.topic_context_config drives it
+//   6. Structural skeleton  — prompt_stages.structural_skeleton
+//   7. Craft directives     — prompt_stages.craft_fragment_config
+//   8. Output contract      — prompt_stages.output_contract_fragment_id +
+//                             optional output_contract_extras
+//
+// Substitution model (per Ellie's spec — two fragment expansion passes):
+//   pass 1: substitute ${fragment_slug} with fragment content
+//   pass 2: substitute ${fragment_slug} again, picking up nested fragment refs
+//   pass 3: substitute ${placeholder} from inputs / DNA / settings
+//
+// Anything still matching ${...} after pass 3 is unresolved → throw.
+// Fail-closed by design (vocab doc, "Resolution rules" section).
 
-import type { ContentType } from '@/lib/db/schema'
-import type { PromptStage } from '@/lib/db/schema'
+import type { ContentType, PromptStage } from '@/lib/db/schema'
+import { BUNDLE_RESOLVERS, isKnownBundleSlug } from './bundles'
+import { type FragmentVersionsMap, getFragmentById, getFragmentsBySlugs } from './fragments'
+import {
+  type AssemblerCtx,
+  createAssemblerCtx,
+  isKnownPlaceholder,
+  resolvePlaceholder,
+} from './placeholders'
 import type {
   CraftFragmentConfig,
   GenerationInputs,
@@ -28,6 +44,7 @@ import type {
 // ---------------------------------------------------------------------------
 
 export type AssembleArgs = {
+  brandId: string
   contentType: ContentType
   stage: PromptStage
   inputs: GenerationInputs
@@ -36,9 +53,9 @@ export type AssembleArgs = {
 export type AssembledPrompt = {
   /** Final prompt sent to the model. */
   text: string
-  /** Map of fragment slug → version used. Persisted on generation_runs.fragment_versions. */
-  fragmentVersions: Record<string, number>
-  /** Layer-by-layer breakdown for audit/debug. */
+  /** Map of fragment slug → version used. Persist on generation_runs.fragment_versions. */
+  fragmentVersions: FragmentVersionsMap
+  /** Layer-by-layer breakdown for audit / debug. */
   layers: AssembledLayers
 }
 
@@ -54,47 +71,144 @@ export type AssembledLayers = {
 }
 
 /**
- * Walks the eight layers in order and produces a final prompt string.
- * SKETCH: bundle resolvers and fragment lookups are stubbed.
+ * Walks the eight layers, resolves every ${...}, returns final prompt.
+ * Throws on unresolved tokens, missing fragments, or missing required DNA.
  */
 export async function assemble(args: AssembleArgs): Promise<AssembledPrompt> {
-  const { contentType, stage, inputs } = args
-  const fragmentVersions: Record<string, number> = {}
+  const { brandId, contentType, stage, inputs } = args
+  const versions: FragmentVersionsMap = {}
+  const ctx = createAssemblerCtx(
+    brandId,
+    inputs,
+    {
+      slug: contentType.slug,
+      platformType: contentType.platformType,
+      formatType: contentType.formatType,
+      subtype: contentType.subtype,
+    },
+    {
+      defaultMinChars: contentType.defaultMinChars,
+      defaultMaxChars: contentType.defaultMaxChars,
+    },
+  )
 
-  // Layer 1 — Persona
-  const persona = await resolveFragmentById(stage.personaFragmentId, fragmentVersions)
+  // Layer 1 — Persona (FK ref, pinned to a specific fragment row)
+  const personaFrag = await getFragmentById(stage.personaFragmentId, versions)
 
-  // Layer 2 — Worldview (nullable)
-  const worldview = stage.worldviewFragmentId
-    ? await resolveFragmentById(stage.worldviewFragmentId, fragmentVersions)
+  // Layer 2 — Worldview (optional FK ref)
+  const worldviewFrag = stage.worldviewFragmentId
+    ? await getFragmentById(stage.worldviewFragmentId, versions)
     : null
 
-  // Layer 3 — Task framing (literal text)
-  const taskFraming = stage.taskFraming
+  // Layer 8 — Output contract fragment (FK ref)
+  const outputContractFrag = await getFragmentById(stage.outputContractFragmentId, versions)
 
-  // Layer 4 — Brand context (invariant bundle, not on this stage)
-  const brandContext = await resolveBrandContextBundle()
+  // Now resolve all four templated layers (3, 6, 7, 8-extras) — each may carry
+  // ${fragment_slug} refs that we want to batch-fetch in one round-trip.
+  const taskFramingTemplate = stage.taskFraming
+  const skeletonTemplate = stage.structuralSkeleton
+  const outputExtrasTemplate = stage.outputContractExtras ?? ''
+  const craftTemplate = await composeCraftTemplate(stage.craftFragmentConfig as CraftFragmentConfig)
 
-  // Layer 5 — Topic context (config-driven)
-  const topicContext = await resolveTopicContext(
+  // Pass 1 prep: gather all fragment slugs referenced by these templates +
+  // by the FK fragments themselves (their content may contain refs too).
+  const slugsToFetch = new Set<string>()
+  for (const tpl of [
+    taskFramingTemplate,
+    skeletonTemplate,
+    outputExtrasTemplate,
+    craftTemplate,
+    personaFrag.content,
+    worldviewFrag?.content ?? '',
+    outputContractFrag.content,
+  ]) {
+    for (const t of extractTokens(tpl)) {
+      if (!isKnownPlaceholder(t)) slugsToFetch.add(t)
+    }
+  }
+
+  let fragmentMap = await getFragmentsBySlugs(Array.from(slugsToFetch), versions)
+
+  // Pass 1 + 2: fragment-slug substitution, twice, to expand one level of
+  // nested refs. After pass 1 we may discover NEW slugs in the expanded text
+  // (fragments that themselves reference other fragments) — fetch those too,
+  // then run pass 2.
+  const pass1 = (s: string): string => substituteFragments(s, fragmentMap)
+
+  const allTexts = [
+    taskFramingTemplate,
+    skeletonTemplate,
+    outputExtrasTemplate,
+    craftTemplate,
+    personaFrag.content,
+    worldviewFrag?.content ?? '',
+    outputContractFrag.content,
+  ].map(pass1)
+
+  // Discover any new fragment refs introduced by pass 1 expansions.
+  const newSlugs = new Set<string>()
+  for (const s of allTexts) {
+    for (const t of extractTokens(s)) {
+      if (!isKnownPlaceholder(t) && !fragmentMap.has(t)) newSlugs.add(t)
+    }
+  }
+  if (newSlugs.size > 0) {
+    const more = await getFragmentsBySlugs(Array.from(newSlugs), versions)
+    fragmentMap = new Map([...fragmentMap, ...more])
+  }
+
+  const pass2 = (s: string): string => substituteFragments(s, fragmentMap)
+  const [
+    taskFramingP2,
+    skeletonP2,
+    outputExtrasP2,
+    craftP2,
+    personaP2,
+    worldviewP2,
+    outputContractP2,
+  ] = allTexts.map(pass2)
+
+  // Anything still matching ${slug} that's not a known placeholder is a
+  // missing fragment beyond depth-2 nesting — fail-closed.
+  for (const s of [
+    taskFramingP2,
+    skeletonP2,
+    outputExtrasP2,
+    craftP2,
+    personaP2,
+    worldviewP2,
+    outputContractP2,
+  ]) {
+    for (const t of extractTokens(s)) {
+      if (!isKnownPlaceholder(t)) {
+        throw new Error(
+          `Unresolved fragment ref \${${t}} after 2 expansion passes — nesting too deep or fragment missing`,
+        )
+      }
+    }
+  }
+
+  // Pass 3: placeholder substitution. Async because some placeholders read DNA.
+  const persona = await substitutePlaceholders(personaP2, ctx)
+  const worldview = worldviewFrag ? await substitutePlaceholders(worldviewP2, ctx) : null
+  const taskFraming = await substitutePlaceholders(taskFramingP2, ctx)
+  const structuralSkeleton = await substitutePlaceholders(skeletonP2, ctx)
+  const craftDirectives = await substitutePlaceholders(craftP2, ctx)
+  const outputContractFragText = await substitutePlaceholders(outputContractP2, ctx)
+  const outputExtrasText = outputExtrasP2 ? await substitutePlaceholders(outputExtrasP2, ctx) : ''
+  const outputContract = outputExtrasText
+    ? `${outputContractFragText}\n\n${outputExtrasText}`
+    : outputContractFragText
+
+  // Layer 4 — Brand context (invariant per call). Assembled from a fixed
+  // template that pulls Group B placeholders only. Lives here, not on the
+  // stage, per ADR-006 ("brand context is uniform across every content type").
+  const brandContext = await assembleBrandContext(ctx)
+
+  // Layer 5 — Topic context (config-driven; depends on inputs + bundles).
+  const topicContext = await assembleTopicContext(
     contentType.topicContextConfig as TopicContextConfig,
-    inputs,
-  )
-
-  // Layer 6 — Structural skeleton (with inline ${slug} fragment refs + placeholder substitution)
-  const structuralSkeleton = await resolveSkeleton(stage.structuralSkeleton, inputs, fragmentVersions)
-
-  // Layer 7 — Craft directives (list / tiered / empty)
-  const craftDirectives = await resolveCraft(
-    stage.craftFragmentConfig as CraftFragmentConfig,
-    fragmentVersions,
-  )
-
-  // Layer 8 — Output contract (fragment + per-stage extras)
-  const outputContract = await resolveOutputContract(
-    stage.outputContractFragmentId,
-    stage.outputContractExtras,
-    fragmentVersions,
+    ctx,
   )
 
   const layers: AssembledLayers = {
@@ -109,8 +223,7 @@ export async function assemble(args: AssembleArgs): Promise<AssembledPrompt> {
   }
 
   const text = composeLayers(layers)
-
-  return { text, fragmentVersions, layers }
+  return { text, fragmentVersions: versions, layers }
 }
 
 function composeLayers(l: AssembledLayers): string {
@@ -129,223 +242,123 @@ function composeLayers(l: AssembledLayers): string {
 }
 
 // ---------------------------------------------------------------------------
-// Layer 5 — topic_context_config resolver
+// Substitution primitives
 // ---------------------------------------------------------------------------
 
-async function resolveTopicContext(
-  config: TopicContextConfig,
-  inputs: GenerationInputs,
-): Promise<string> {
-  const parts: string[] = []
+const TOKEN_RE = /\$\{([a-z0-9_]+)\}/g
 
-  // Topic Engine sentence (Layer 5's primary input when enabled)
-  if (config.uses_topic_engine && inputs.topic_chain) {
-    parts.push(inputs.topic_chain.prompt_template_resolved)
-  }
+function extractTokens(s: string): string[] {
+  const out: string[] = []
+  for (const m of s.matchAll(TOKEN_RE)) out.push(m[1])
+  return out
+}
 
-  // DNA bundle pulls (e.g. offer_full, audience_voc)
-  for (const slug of config.dna_pulls) {
-    const bundle = await resolveDnaBundle(slug, inputs)
-    if (bundle) parts.push(bundle)
-  }
+function substituteFragments(
+  s: string,
+  fragmentMap: Map<string, { content: string }>,
+): string {
+  return s.replace(TOKEN_RE, (match, name: string) => {
+    if (isKnownPlaceholder(name)) return match // leave for pass 3
+    const frag = fragmentMap.get(name)
+    if (!frag) return match // leave for pass 2 retry / final error check
+    return frag.content
+  })
+}
 
-  // Platform metadata injection
-  if (config.platform_metadata === 'always') {
-    const meta = await resolvePlatformMetadata(null)
-    if (meta) parts.push(meta)
-  } else if (config.platform_metadata === 'when_platform_selected') {
-    // V1: every content type has a NOT NULL platform_type, so this branch is
-    // effectively identical to 'always'. Kept distinct for V2 (multi-platform
-    // content types may need conditional injection). See content-types.md notes.
-    const meta = await resolvePlatformMetadata(null)
-    if (meta) parts.push(meta)
-  }
-
-  // Fallback if nothing else fired
-  if (parts.length === 0) {
-    if (config.fallback === 'free_text_only' && inputs.free_text_augments.length > 0) {
-      parts.push(inputs.free_text_augments.join('\n'))
-    } else if (config.fallback === 'dna_only') {
-      // Already handled above via dna_pulls — fallback is a no-op here.
-    }
-    // 'none' fallback → empty Layer 5 is allowed
-  }
-
-  // Free-text augments are additive even when Topic Engine fired
-  if (parts.length > 0 && inputs.free_text_augments.length > 0 && config.uses_topic_engine) {
-    parts.push(...inputs.free_text_augments)
-  }
-
-  return parts.join('\n\n')
+async function substitutePlaceholders(s: string, ctx: AssemblerCtx): Promise<string> {
+  // Collect all unique placeholder tokens, resolve in parallel, then sync replace.
+  const tokens = Array.from(new Set(extractTokens(s)))
+  const resolutions = new Map<string, string>()
+  await Promise.all(
+    tokens.map(async (name) => {
+      if (!isKnownPlaceholder(name)) {
+        throw new Error(`Unknown placeholder \${${name}} in prompt — not in vocabulary`)
+      }
+      resolutions.set(name, await resolvePlaceholder(name, ctx))
+    }),
+  )
+  return s.replace(TOKEN_RE, (_match, name: string) => resolutions.get(name) ?? '')
 }
 
 // ---------------------------------------------------------------------------
-// Layer 7 — craft_fragment_config resolver
+// Layer 7 — craft directives composer (no substitution yet; just template)
 // ---------------------------------------------------------------------------
 
-async function resolveCraft(
-  config: CraftFragmentConfig,
-  fragmentVersions: Record<string, number>,
-): Promise<string> {
-  if (!('mode' in config)) {
-    // Empty config — Layer 7 is delivered entirely by inline ${slug} refs in the skeleton (Layer 6)
-    return ''
-  }
+async function composeCraftTemplate(config: CraftFragmentConfig): Promise<string> {
+  // Mode 'list'   — concatenate fragments by slug.
+  // Mode 'tiered' — group fragments under tier labels.
+  // Empty {}      — Layer 7 entirely delivered via inline ${slug} refs in Layer 6.
+  if (!('mode' in config)) return ''
 
   if (config.mode === 'list') {
-    const fragments = await Promise.all(
-      config.fragment_ids.map((slug) => resolveFragmentBySlug(slug, fragmentVersions)),
-    )
-    return fragments.join('\n\n')
+    return config.slugs.map((s) => `\${${s}}`).join('\n\n')
   }
 
   if (config.mode === 'tiered') {
-    const tierBlocks: string[] = []
-    for (const tier of config.tiers) {
-      const fragments = await Promise.all(
-        tier.fragment_ids.map((slug) => resolveFragmentBySlug(slug, fragmentVersions)),
-      )
-      tierBlocks.push(`### ${tier.label}\n\n${fragments.join('\n\n')}`)
-    }
-    return tierBlocks.join('\n\n')
+    return Object.entries(config.tiers)
+      .map(([label, slugs]) => `### ${label}\n\n${slugs.map((s) => `\${${s}}`).join('\n\n')}`)
+      .join('\n\n')
   }
 
-  // Exhaustiveness — if a new mode is added without updating this branch, fail loudly.
   throw new Error(`Unknown craft_fragment_config mode: ${JSON.stringify(config)}`)
 }
 
 // ---------------------------------------------------------------------------
-// Layer 6 — structural skeleton resolver
+// Layer 4 — Brand context (invariant bundle)
 // ---------------------------------------------------------------------------
 
-async function resolveSkeleton(
-  skeleton: string,
-  inputs: GenerationInputs,
-  fragmentVersions: Record<string, number>,
-): Promise<string> {
-  // Two kinds of ${...} substitutions live inline in the skeleton:
-  //  (a) ${fragment_slug} → fetch from prompt_fragments and inline
-  //  (b) ${placeholder}   → resolve from inputs / DNA / etc.
-  // The resolver tries fragment-slug match first, then placeholder.
-  return skeleton.replace(/\$\{([a-z0-9_]+)\}/g, (_match, name) => {
-    // Fragment-slug refs are resolved synchronously here — in production this
-    // would be batched up-front by parsing the skeleton, fetching all referenced
-    // slugs in one query, and substituting from a map. For the sketch, just
-    // surface that this layer needs that pre-pass.
-    // FRICTION FLAG (#2): replace() is sync but resolveFragmentBySlug is async.
-    // The real implementation must do a parse-then-fetch pre-pass, then a sync
-    // substitution pass. Worth modelling explicitly in the production version.
+async function assembleBrandContext(ctx: AssemblerCtx): Promise<string> {
+  // Fixed template; same shape every call. Pulls Group B placeholders that
+  // resolve to DNA business overview + tone-of-voice. Required fields fail
+  // closed — a brand without business_overview can't generate content.
+  const template = `***BRAND CONTEXT***
 
-    // Try placeholder substitution first (cheaper)
-    const placeholderValue = resolvePlaceholder(name, inputs)
-    if (placeholderValue !== undefined) return placeholderValue
+\${business_context_short}
 
-    // Otherwise treat as fragment slug — return a marker for the pre-pass
-    return `<<FRAGMENT:${name}>>` // placeholder; pre-pass would substitute real fragment text
-  })
-  // (In production: walk the result, replace `<<FRAGMENT:slug>>` markers with
-  // pre-fetched fragment content, populate fragmentVersions for each.)
+Tone of voice: \${tov_core}`
+  return substitutePlaceholders(template, ctx)
 }
 
-function resolvePlaceholder(name: string, inputs: GenerationInputs): string | undefined {
-  // Picks values out of inputs.strategy and inputs.topic_chain by name.
-  // Real implementation has a richer placeholder vocabulary (e.g.
-  // ${brand_name}, ${voc_problems}, ${selected}). Stub: return undefined to
-  // signal "not a placeholder, treat as fragment slug".
-  if (name === 'selected' && inputs.topic_chain) {
-    // Best-effort — the Topic Engine resolver should already have substituted
-    // ${selected} into prompt_template_resolved. This is here for skeletons
-    // that reference ${selected} directly.
-    return inputs.topic_chain.prompt_template_resolved
+// ---------------------------------------------------------------------------
+// Layer 5 — Topic context (config-driven)
+// ---------------------------------------------------------------------------
+
+async function assembleTopicContext(
+  config: TopicContextConfig,
+  ctx: AssemblerCtx,
+): Promise<string> {
+  const parts: string[] = []
+
+  // Topic Engine sentence is the primary input when enabled.
+  if (config.uses_topic_engine && ctx.inputs.topic_chain) {
+    parts.push(ctx.inputs.topic_chain.prompt_template_resolved)
   }
-  // Canonical placeholder vocabulary lives at
-  // 04-documentation/reference/prompt-vocabulary.md. Returning undefined here
-  // signals "not a known placeholder" — the caller falls through to fragment-slug
-  // resolution. Production version reads from a constant map of placeholder
-  // resolvers keyed by name.
-  return undefined
+
+  // DNA bundle pulls — resolved in declared order.
+  for (const slug of config.dna_pulls ?? []) {
+    if (!isKnownBundleSlug(slug)) {
+      throw new Error(`Unknown bundle slug "${slug}" in topic_context_config.dna_pulls`)
+    }
+    const block = await BUNDLE_RESOLVERS[slug](ctx)
+    if (block) parts.push(block)
+  }
+
+  // Platform metadata injection — V1 always-or-when-selected collapse to the
+  // same branch (every V1 content type has NOT NULL platformType). Deferred
+  // until bundles ship; nothing to add here for now.
+
+  // Free-text augments are additive.
+  if (ctx.inputs.free_text_augments && ctx.inputs.free_text_augments.length > 0) {
+    parts.push(...ctx.inputs.free_text_augments)
+  }
+
+  // Fallback when nothing fired.
+  if (parts.length === 0) {
+    if (config.fallback === 'free_text_only') {
+      // Already captured above; an empty result here just means user gave nothing.
+    }
+    // 'dna_only' / 'none' / null — empty Layer 5 is allowed.
+  }
+
+  return parts.join('\n\n')
 }
-
-// ---------------------------------------------------------------------------
-// Layer 8 — output contract resolver
-// ---------------------------------------------------------------------------
-
-async function resolveOutputContract(
-  fragmentId: string,
-  extras: string | null,
-  fragmentVersions: Record<string, number>,
-): Promise<string> {
-  const fragment = await resolveFragmentById(fragmentId, fragmentVersions)
-  if (!extras) return fragment
-  return `${fragment}\n\n${extras}`
-}
-
-// ---------------------------------------------------------------------------
-// Stubs — to be implemented properly in Batch 2 / 3
-// ---------------------------------------------------------------------------
-
-async function resolveFragmentById(
-  id: string,
-  fragmentVersions: Record<string, number>,
-): Promise<string> {
-  // Real impl: SELECT slug, version, content FROM prompt_fragments WHERE id = $1
-  // Then: fragmentVersions[slug] = version
-  fragmentVersions[`__by_id:${id}`] = 1
-  return `<<FRAGMENT-BY-ID:${id}>>`
-}
-
-async function resolveFragmentBySlug(
-  slug: string,
-  fragmentVersions: Record<string, number>,
-): Promise<string> {
-  // Real impl: SELECT version, content FROM prompt_fragments
-  // WHERE slug = $1 AND status = 'active' ORDER BY version DESC LIMIT 1
-  fragmentVersions[slug] = 1
-  return `<<FRAGMENT:${slug}>>`
-}
-
-async function resolveBrandContextBundle(): Promise<string> {
-  // Real impl: pulls a fixed set of DNA records (business_overview short,
-  // value_proposition core, audience summary) and concatenates per a static
-  // template. This is the invariant bundle — same for every content type.
-  return '<<BRAND_CONTEXT_BUNDLE>>'
-}
-
-async function resolveDnaBundle(
-  slug: string,
-  _inputs: GenerationInputs,
-): Promise<string | null> {
-  // Canonical bundle slug vocabulary lives at
-  // 04-documentation/reference/prompt-vocabulary.md. Production version reads
-  // from a BUNDLE_RESOLVERS map in 02-app/lib/llm/content/bundles.ts (one
-  // resolver per slug). Stub returns the slug for visibility.
-  return `<<BUNDLE:${slug}>>`
-}
-
-async function resolvePlatformMetadata(_channelKey: string | null): Promise<string | null> {
-  // Real impl: SELECT relevant cols FROM dna_platforms WHERE channel = $1
-  // AND is_active = true, format per channel-taxonomy.md per-category field-relevance matrix.
-  return '<<PLATFORM_METADATA>>'
-}
-
-// ---------------------------------------------------------------------------
-// Sketch outcome
-// ---------------------------------------------------------------------------
-//
-// All four jsonb shapes survived the eight-layer walk. No schema changes:
-//
-//   ✅ content_types.prerequisites    — { channels, lead_magnets, dna }
-//   ✅ content_types.strategy_fields  — [{ id, required }]
-//   ✅ content_types.topic_context_config — { uses_topic_engine, dna_pulls,
-//                                            platform_metadata, fallback }
-//   ✅ prompt_stages.craft_fragment_config — discriminated by `mode`, `{}` empty
-//
-// Vocabulary docs resolved:
-//   - Placeholder + bundle slug vocabularies live at
-//     04-documentation/reference/prompt-vocabulary.md.
-//   - V1 simplification of platform_metadata enum documented inline above.
-//
-// Outstanding for the production build (not blocking schema work):
-//   - Skeleton resolution must do an async pre-pass: parse → batch-fetch →
-//     sync substitute. The sync regex.replace pattern in resolveSkeleton is a
-//     sketch shortcut and won't work at runtime.

@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# .env.example is the documented list of required env vars (no real values).
+# Track it so future setups have a single reference for what to populate.
+!.env.example
 
 # vercel
 .vercel

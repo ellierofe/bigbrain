@@ -72,16 +72,23 @@ export type TopicContextConfig = {
 // prompt_stages.craft_fragment_config — Layer 7
 // ---------------------------------------------------------------------------
 
-/** Three usage modes: list (most common), tiered (sales AIDA copy), or empty (skeleton-inline only). */
+/**
+ * Three usage modes: list (most common), tiered (sales AIDA copy), or empty
+ * (skeleton-inline only).
+ *
+ * Storage shape (seed canonical):
+ *   list   → { mode: 'list', slugs: string[] }
+ *   tiered → { mode: 'tiered', tiers: Record<label, string[]> }
+ *   empty  → {}
+ *
+ * Slugs here are fragment slugs; the assembler injects them as
+ * ${slug} placeholders to flow through the same substitution pipeline as
+ * any other inline ref.
+ */
 export type CraftFragmentConfig =
-  | { mode: 'list'; fragment_ids: string[] }
-  | { mode: 'tiered'; tiers: CraftTier[] }
+  | { mode: 'list'; slugs: string[] }
+  | { mode: 'tiered'; tiers: Record<string, string[]> }
   | Record<string, never> // empty {}
-
-export type CraftTier = {
-  label: string
-  fragment_ids: string[]
-}
 
 // ---------------------------------------------------------------------------
 // generation_runs.inputs — assembler input shape
@@ -115,3 +122,65 @@ export type GenerationSettings = {
   /** ToV variation slug (maps to dna_tov.tonalTags). */
   tone_variation: string | null
 }
+
+// ---------------------------------------------------------------------------
+// Placeholder vocabulary — must match 04-documentation/reference/prompt-vocabulary.md
+// ---------------------------------------------------------------------------
+
+/** Group A — strategy / topic-chain selections. Filled from GenerationInputs. */
+export const PLACEHOLDERS_GROUP_A = [
+  'selected',
+  'selected_items_joined',
+  'segment_name',
+  'offer_name',
+  'platform_name',
+  'asset_name',
+  'aspect_label',
+  'value',
+  'cta_url',
+  'sales_page_angle',
+  'customer_journey_stage',
+] as const
+
+/** Group B — DNA reads. Cached per-request. */
+export const PLACEHOLDERS_GROUP_B = [
+  'brand_name',
+  'business_context_short',
+  'tov_core',
+  'voc_problems',
+  'voc_desires',
+  'voc_objections',
+  'value_proposition_core',
+  'offer_benefits',
+] as const
+
+/** Group C — assembler/stage state. Constants per call. */
+export const PLACEHOLDERS_GROUP_C = [
+  'variant_count',
+  'min_chars',
+  'max_chars',
+] as const
+
+export const ALL_PLACEHOLDERS = [
+  ...PLACEHOLDERS_GROUP_A,
+  ...PLACEHOLDERS_GROUP_B,
+  ...PLACEHOLDERS_GROUP_C,
+] as const
+
+export type PlaceholderName = (typeof ALL_PLACEHOLDERS)[number]
+
+/** Bundle slug vocabulary — must match prompt-vocabulary.md. V1 = 10 slugs (competitor_context deferred). */
+export const BUNDLE_SLUGS_V1 = [
+  'offer_full',
+  'offer_summary',
+  'audience_voc',
+  'audience_summary',
+  'tov_frame',
+  'topic_intro',
+  'value_proposition',
+  'brand_meaning',
+  'knowledge_asset',
+  'recent_research',
+] as const
+
+export type BundleSlug = (typeof BUNDLE_SLUGS_V1)[number]

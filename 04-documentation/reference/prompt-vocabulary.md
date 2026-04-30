@@ -37,6 +37,7 @@ Filled from `GenerationInputs.strategy` and `GenerationInputs.topic_chain`.
 | `${value}` | for single-value aspects (USP, Guarantee, Pricing, CTA), the field value | `$2,400 one-time` |
 | `${cta_url}` | `strategy.cta_url` (freetext strategy field) | `https://nicelyput.co/sprint` |
 | `${sales_page_angle}` | `strategy.sales_page_angle` (freetext strategy field) | `For founders who've outgrown DIY branding` |
+| `${customer_journey_stage}` | `strategy.customer_journey_stage` (enum strategy field) | `consideration` |
 
 ### Group B — Brand DNA
 
@@ -44,9 +45,9 @@ Filled from singular DNA tables. Resolved per generation (cached within a reques
 
 | Placeholder | Source |
 |---|---|
-| `${brand_name}` | `dna_business_overview.brand_name` |
+| `${brand_name}` | `dna_business_overview.business_name` |
 | `${business_context_short}` | brand-context bundle (Layer 4) — short version |
-| `${tov_core}` | `dna_tone_of_voice.core_descriptors` rendered as a block |
+| `${tov_core}` | `dna_tone_of_voice.summary` (human-readable ToV essence) |
 | `${voc_problems}` | DNA-aggregate: all `dna_audience_segments.problems` joined (or filtered by selected segment when one is set) |
 | `${voc_desires}` | parallel — `desires` jsonb |
 | `${voc_objections}` | parallel — `objections` jsonb |

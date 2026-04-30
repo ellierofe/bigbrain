@@ -46,12 +46,32 @@ async function main() {
 
   // ------------------------------------------------------------------------
   // Step 2: build slug → id map for fragment resolution
+  //
+  // A slug can have multiple rows (one per version). Stages reference fragments
+  // by slug — always resolve to the latest ACTIVE version. Archived rows are
+  // skipped so historical pins do not leak into new stage rows.
   // ------------------------------------------------------------------------
   const allFragments = await db
-    .select({ id: promptFragments.id, slug: promptFragments.slug })
+    .select({
+      id: promptFragments.id,
+      slug: promptFragments.slug,
+      version: promptFragments.version,
+      status: promptFragments.status,
+    })
     .from(promptFragments)
 
-  const fragmentIdBySlug = new Map(allFragments.map((f) => [f.slug, f.id]))
+  const fragmentIdBySlug = new Map<string, string>()
+  for (const f of allFragments) {
+    if (f.status !== 'active') continue
+    const existing = fragmentIdBySlug.get(f.slug)
+    if (!existing) {
+      fragmentIdBySlug.set(f.slug, f.id)
+      continue
+    }
+    // Prefer higher version among active rows
+    const existingVersion = allFragments.find((x) => x.id === existing)?.version ?? 0
+    if (f.version > existingVersion) fragmentIdBySlug.set(f.slug, f.id)
+  }
 
   function resolve(slug: string): string {
     const id = fragmentIdBySlug.get(slug)

@@ -131,8 +131,10 @@ export const out02ContentTypeSeeds: ContentTypeWithStage[] = [
         { id: 'customer_journey_stage', required: false },
       ],
       topicContextConfig: {
+        uses_topic_engine: true,
         dna_pulls: ['audience_summary', 'tov_frame'],
-        fallback: null,
+        platform_metadata: 'when_platform_selected',
+        fallback: 'free_text_only',
       },
       seo: false,
       customerJourneyStage: null,
@@ -215,8 +217,10 @@ SPECIFIC TECHNIQUES
         { id: 'platform', required: true },
       ],
       topicContextConfig: {
+        uses_topic_engine: true,
         dna_pulls: ['audience_summary', 'tov_frame'],
-        fallback: null,
+        platform_metadata: 'always',
+        fallback: 'dna_only',
       },
       seo: false,
       customerJourneyStage: null,
@@ -238,7 +242,7 @@ The goal is to write an effective, engaging newsletter that will bring value to 
       structuralSkeleton: `***FORMAT & STRUCTURE***
 Follow the key data you have about this platform in your topic & context information.
 
-\${contentplatformstring}
+\${platform_name}
 
 Remember this is for an email so it should be highly readable and engaging in a digital format, and it must grab attention fast.
 
@@ -288,8 +292,10 @@ If fitting for this platform strategy, include a CTA at the end and a PS after t
         { id: 'platform', required: false },
       ],
       topicContextConfig: {
+        uses_topic_engine: true,
         dna_pulls: ['audience_summary'],
-        fallback: null,
+        platform_metadata: 'when_platform_selected',
+        fallback: 'free_text_only',
       },
       seo: false,
       customerJourneyStage: null,

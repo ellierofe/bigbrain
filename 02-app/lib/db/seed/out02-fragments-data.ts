@@ -851,12 +851,31 @@ Use \${brand_language} for all spelling, punctuation and grammar, and use \${per
     usage: `used in the briefing notes for topic-based content`,
     content: `***TOPIC / STRATEGY***:
 
-The specific topic for the posts is \${post_topic}. 
+The specific topic for the posts is \${post_topic}.
 
-The target audience is \${audiencepromptstring}. 
+The target audience is \${audiencepromptstring}.
 
 They are at this stage of their customer journey: \${customer_journey}`,
     placeholders: ["audiencepromptstring", "customer_journey", "post_topic"],
+    version: 1,
+    status: `archived`,
+    notes: `Superseded by v2 — placeholders renamed to match prompt-vocabulary.md.`,
+  },
+  {
+    slug: `topic`,
+    kind: `context`,
+    name: `Topic`,
+    purpose: `to give key context on a topic for a specific piece of content.`,
+    usage: `used in the briefing notes for topic-based content`,
+    content: `***TOPIC / STRATEGY***:
+
+The specific topic for the posts is \${selected}.
+
+The target audience is \${segment_name}.
+
+They are at this stage of their customer journey: \${customer_journey_stage}`,
+    placeholders: ["selected", "segment_name", "customer_journey_stage"],
+    version: 2,
     status: `active`,
     notes: null,
   },
@@ -890,10 +909,29 @@ They are at this stage of their customer journey: \${customer_journey}`,
 
 The platform strategy is: \${contentplatformstring}
 
-The specific topic to consider is \${post_topic}. 
+The specific topic to consider is \${post_topic}.
 
 The target audience is \${audiencepromptstring}.`,
     placeholders: ["audiencepromptstring", "contentplatformstring", "post_topic"],
+    version: 1,
+    status: `archived`,
+    notes: `Superseded by v2 — placeholders renamed to match prompt-vocabulary.md.`,
+  },
+  {
+    slug: `topic_platform`,
+    kind: `context`,
+    name: `Topic Platform`,
+    purpose: `to give key context on a content platform (e.g. strategy, structure, features, themes etc) as well as the topic for a specific piece of content.`,
+    usage: `used in the briefing notes when creating content for podcasts, blogs, email newsletters and video platforms (e.g. YouTube)`,
+    content: `***TOPIC / STRATEGY***:
+
+The platform strategy is: \${platform_name}
+
+The specific topic to consider is \${selected}.
+
+The target audience is \${segment_name}.`,
+    placeholders: ["platform_name", "selected", "segment_name"],
+    version: 2,
     status: `active`,
     notes: null,
   },
