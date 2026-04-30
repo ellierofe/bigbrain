@@ -221,10 +221,10 @@
 - **Layer:** output
 - **Problems:** P2 (also design rule 4: visibility)
 - **Size:** M
-- **Depends on:** DNA-01, DASH-01
+- **Depends on:** DNA-01, DASH-01; AI generation flows additionally depend on OUT-01a, OUT-01b, OUT-01c, UX-14
 - **Enables:** OUT-02, OUT-03
 - **Status:** in-progress
-- **Implementation:** Auto-saving edit views for business overview (two-column with summary card), brand meaning (featured statement blocks with accent border), value proposition (featured statements + SectionCard grouping). Query layer: `lib/db/queries/dna-singular.ts`. Server actions: `app/actions/dna-singular.ts`. Remaining: AI-driven generate/refresh flows (see `01-design/briefs/DNA-02-singular-dna-intake.md` — generation pattern being established on DNA-03 first).
+- **Implementation:** Auto-saving edit views for business overview (two-column with summary card), brand meaning (featured statement blocks with accent border), value proposition (featured statements + SectionCard grouping). Query layer: `lib/db/queries/dna-singular.ts`. Server actions: `app/actions/dna-singular.ts`. Remaining: AI-driven generate/refresh flows — re-architected 2026-04-30 to run as chat skills (see `01-design/briefs/DNA-02-singular-dna-intake.md`). Now blocked on OUT-01a (chat skills infrastructure), OUT-01b (adaptive context pane), OUT-01c (LLM database write tool), and UX-14 (generation gating).
 
 ### DNA-03: Plural DNA elements — Audience segments
 - **What:** CRUD for audience segments. Each segment: name, demographics, psychographics, voice-of-customer statements across problems, desires, objections, beliefs (VOCs), notes, overview, avatar.
@@ -331,6 +331,7 @@
 - **Status:** done — closed 2026-04-27
 - **Implementation:** 3-table schema (base record, samples library, per-format applications) — tables exist since M1. Generation prompt built and tested (Gemini Flash, structured JSON output). 14 writing samples seeded (8 blog, 6 social). Base ToV record generated with dimensions, summary, linguistic notes, emotional resonance, vocabulary. Review/edit UI at `/dna/tone-of-voice` — two-column layout with left summary panel + tabbed right content (linguistics, dimensions, vocabulary, samples, applications). Applications tab built 2026-04-27 (manual create + edit, archive, dimension delta sliders with base→effective readout, do-not-use list). Establishes `tab-master-detail` pattern. **Closed 2026-04-27:** sample add UI shipped (two-step `AddSamplesModal` reusing `SourceDocPicker` for browse/upload then a per-source format/subtype categorise step; pulls `extractedText` into the sample row), and regeneration flow shipped (`Regenerate from samples` button next to Active pill — generates a fresh draft via `generateObject` against the current samples, inserts as `status='draft'` alongside the active row; `Approve draft` promotes draft → active and archives the previous active; `Discard draft` deletes the draft). Generate-from-samples for applications tracked separately as GEN-02.
 - **Deferred from DNA-09 scope:** `tonalTags` editing UI on samples and applications, and sample `embedding` generation. Schema fields exist but no UI or write path. Both are used at generation time (per schema: filter samples by `formatType` then `tonalTags` overlap; `embedding` is fallback when tag filtering leaves too many candidates). Revisit when OUT-02 retrieval is wired — decide then whether to add editing UI here, AI-suggest at sample intake, or leave as seed-only curation.
+- **Sample coverage gap (surfaced 2026-04-30 by OUT-02 Phase 2):** ToV sample library currently has 14 samples covering only `social_short` (6) and `blog` (8). The newsletter content type has no `newsletter`/`email` samples to cascade against, so `tov_frame` Layer 5 ships without sample writing for newsletter generations. Two options when picked up: (a) add `newsletter`/`email` samples to the library; (b) add `newsletter → blog` to `FORMAT_FALLBACKS` in `02-app/lib/llm/content/bundles.ts` if newsletter rhythm matches blog samples closely enough. Content judgement, not a code issue.
 
 ### GEN-PROMPTS-01: Generation prompt design and review
 - **What:** Design, review, and refine the LLM prompts used to generate structured DNA records from raw inputs.
@@ -589,14 +590,35 @@
 - **Brief:** `01-design/briefs/OUT-01-chat-interface.md` (approved 2026-04-21, complete 2026-04-22)
 - **Implementation:** Custom React chat hook (AI SDK v6 has no useChat). Full page at `/chat` + `/chat/[id]` with conversation history panel. Slide-out drawer from top toolbar. Streaming with tool call indicators. Image attach via vision. Markdown rendering. Auto-title via fast model. DB: `conversations` + `messages` tables (migration 0013). Nav restructured: "Content" → "Ask BigBrain".
 
-### OUT-01a: Chat recipes / skills
-- **What:** Predefined operations runnable from chat. E.g. "generate a LinkedIn post about [topic] for [audience]", "update my value proposition", "what do I know about [X]?"
+### OUT-01a: Chat skills infrastructure
+- **What:** Skills as a first-class chat primitive. A skill = system prompt + brief + end-goal + structured output schemas (per stage) + optional tool access. Conversations gain `skillType` and `gatheredData` fields so any chat can be resumed in-skill with state intact. Skill registry + runtime that loads the skill brief into the system prompt. Replaces the legacy "specialists"/"recipes" concepts with a single primitive that subsumes both. First consumer: DNA-02 generation flows. Future consumers: DNA refresh flows, OUT-03 strategy generation, OUT-05 coherence check.
+- **Layer:** cross
+- **Problems:** P2, P5
+- **Size:** L
+- **Depends on:** OUT-01 (chat infra), INF-06
+- **Enables:** OUT-01b (context pane), OUT-01c (DB-write tool), DNA-02 generation, OUT-03, OUT-05
+- **Status:** in-progress
+- **Brief:** `01-design/briefs/OUT-01a-chat-skills-infrastructure.md` (approved 2026-04-30)
+- **Note:** ADR-008 (2026-04-30) confirms skills are a distinct primitive from OUT-02's content-creation prompt architecture. Independent runtime; shared LLM client only. Future bridge (skills calling content-creation pipelines as tools) is parked.
+
+### OUT-01b: Adaptive chat context pane
+- **What:** Right-side pane in the chat UI that holds adaptive content per conversation: e.g. a "captured so far" summary during a skill conversation, a referenced topic, content being discussed, etc. Pluggable contract — v1 ships with a single content type (skill state summary), the framework supports more without rewrites. Built so it's adaptive, not exhaustive.
 - **Layer:** output
-- **Problems:** P5
+- **Problems:** P5 (also design rule 4: visibility — gathered state must be visible)
 - **Size:** M
-- **Depends on:** OUT-01, DNA-01
-- **Enables:** Structured use of the chat beyond freeform
+- **Depends on:** OUT-01a
+- **Enables:** DNA-02 generation flows, OUT-03, OUT-02 (potentially — chat-mode variant picker context)
 - **Status:** planned
+
+### OUT-01c: LLM database write tool
+- **What:** LLM-callable tool for writing to DNA tables (and later: ideas, source knowledge, etc.) with schema awareness — knows table shapes, validates inputs, surfaces required-field gaps. Reusable across chat: used by skills (e.g. brand meaning save) and by ad-hoc chat ("update my value proposition to say…"). Scopes: per-table allowlist + per-field write rules + user confirmation contract for each write.
+- **Layer:** cross
+- **Problems:** P2 (single source of truth), P5
+- **Size:** M
+- **Depends on:** OUT-01a, DNA-01
+- **Enables:** DNA-02 generation, in-chat DNA editing, OUT-03 strategy update
+- **Status:** planned
+- **Note:** Security-sensitive — needs scoping rules and a confirmation contract worked out at brief time. Reuses the lessons from existing auto-save on edit views (DS-06 save contract).
 
 ### OUT-02: Content creator — single-step
 - **What:** Parameter-driven content generation built on the eight-layer prompt model. User picks a content type (filterable catalogue), fills a content-type-specific Strategy panel, drills the Infinite Prompt Engine (1–4 step cascade with multi-select on item steps + free-text augment at any depth), tunes Settings (model, person override, tone variation, variant count), and generates N variants. Variants can be edited inline, saved to library (auto-tagged from selections + user tags), chatted with via inline modal, or regenerated. Saved items appear in `/chat` context picker. Architecture: `content_types` carry catalogue metadata + `topic_context_config`; `prompt_stages` (FK) carry per-stage prompt config across the eight layers; `prompt_fragments` is the unified library (six kinds: persona, worldview, craft, context, proofing, output_contract); `topic_paths` declares the 1–4 step cascade. `generation_runs` is the system-of-record for in-flight + recently-generated work; `library_items` is opt-in registry of explicitly-saved variants.
@@ -605,7 +627,7 @@
 - **Size:** XL
 - **Depends on:** DNA-01 (all DNA types), DNA-07b (channel taxonomy — done 2026-04-27), DNA-09 (tone), SRC-01, INF-06, RET-01, OUT-01 (chat infra reuse)
 - **Enables:** OUT-02a
-- **Status:** in-progress — Phase 3 (seeds) complete 2026-04-29. Phase 1 (storage layer) closed earlier same day. Phase 2 (assembler code + topic-engine query layer + cron sweep) is next. Architecture doc approved 2026-04-26.
+- **Status:** in-progress — Phases 1 (storage), 2 (runtime), and 3 (seeds) all closed by 2026-04-30. Runtime stack is live and smoke-tested end-to-end against real DNA. Phase 4 (picker + variant editor + library UI) is the remaining workstream. Architecture doc approved 2026-04-26.
 - **Architecture:** `01-design/content-creation-architecture.md` (approved 2026-04-26)
 - **Reference:**
   - `04-documentation/reference/channel-taxonomy.md` — authoritative vocabulary for `content_types.platform_type` (channel) and `format_type`/`subtype` selection. TS source of truth: `02-app/lib/types/channels.ts`.
@@ -614,7 +636,17 @@
   - **Phase 1 batch 1 (shipped 2026-04-27 → 2026-04-28):** `prompt_fragments` (migration 0021), `content_types` (0023), `prompt_stages` (0024). Eight-layer assembler sketch at `02-app/lib/llm/content/{types,assemble}.ts` validated all four jsonb shapes (`prerequisites`, `strategy_fields`, `topic_context_config`, `craft_fragment_config`) — no schema changes needed.
   - **Phase 1 batch 2 (shipped 2026-04-28 → 2026-04-29):** `topic_paths` (0025, tree table — `parent_id` self-FK + materialised `path` natural key), `generation_runs` (0026, transient state, `expires_at` + `kept` flag drive the 30-day TTL sweep), `generation_logs` (0027, **new table** added in batch — permanent analytics record per run; covers the role of legacy `creation_logs` so cost/token/latency stats live forever even after run sweeps), `library_items` (0028, supersedes REG-01 — markdown snapshot, structured tags jsonb with 8 V1 kinds, GIN index for tag-containment queries, first-class publish metadata).
   - **Phase 3 (shipped 2026-04-29):** seed data — 38 legacy `prompt_fragments` ported verbatim from `Centralised Prompt Data Live.csv` + 4 new fragments authored (2 personas, 2 worldviews); 3 V1 single-step `content_types` (`instagram-caption`, `newsletter-edition`, `brainstorm-blog-posts`) with their stages; 101 `topic_paths` rows covering all 12 step-1 categories from architecture doc Part 3. Blog post + sales page hook deferred to OUT-02a (long-form is multi-step). TS seeders at `02-app/lib/db/seed/seed-out02-{fragments,content-types,topic-paths}.ts`, all idempotent. Phase 2 placeholder-rename punchlist at `04-documentation/reference/legacy-fragment-placeholder-drift.md` (9 of 38 fragments use legacy `${...}` names not in new vocabulary; verbatim port per the brief).
-  - **Phase 2 (next):** real assembler (skeleton async pre-pass, `bundles.ts` BUNDLE_RESOLVERS map, real fragment lookups), topic-engine query layer (`02-app/lib/content/topic-engine.ts` interpreting `topic_paths.dataQuery` jsonb), Vercel cron sweep for expired generation_runs.
+  - **Phase 2 (shipped 2026-04-30):** runtime layer.
+    - Real assembler at `02-app/lib/llm/content/assemble.ts` — 8-layer walk + parse→batch-fetch→2-pass-fragment-expand→placeholder pipeline, fail-closed.
+    - Fragment registry at `02-app/lib/llm/content/fragments.ts` — by-id (FK pins) + by-slugs (latest active version), batched query.
+    - Placeholder resolvers at `02-app/lib/llm/content/placeholders.ts` — 22 placeholders across vocab Groups A/B/C, per-call DNA cache, content-type meta on `AssemblerCtx`.
+    - DNA bundle resolvers at `02-app/lib/llm/content/bundles.ts` — all 10 V1 slugs (offer_full/summary, audience_voc/summary, tov_frame, topic_intro, value_proposition, brand_meaning, knowledge_asset, recent_research). `tov_frame` does the channel-taxonomy cascade (subtype → format_type → cross-bucket fallback).
+    - Topic engine at `02-app/lib/content/topic-engine.ts` — picker-facing API (`listCategories` / `listChildren` / `checkHasData` / `resolveChain` / `resolveFreeText`); executes all 5 dataQuery kinds; whitelisted filter parser (no SQL eval); per-table label/placeholder projections.
+    - Cron sweep at `02-app/app/api/cron/sweep-generation-runs/route.ts` + `02-app/vercel.json` — daily 03:15 UTC delete of expired non-kept runs. Auth via `Authorization: Bearer ${CRON_SECRET}` (added to `.env.example`; must be set in Vercel project env before first scheduled run).
+    - Smoke tests at `02-app/lib/llm/content/__smoke__/assemble-smoke.ts`, `02-app/lib/content/__smoke__/topic-engine-smoke.ts`, `02-app/lib/db/__smoke__/sweep-generation-runs-smoke.ts` — all passing. Final prompts: instagram-caption 25,573 / newsletter-edition 9,021 / brainstorm-blog-posts 5,030 chars.
+    - Drift fixes shipped during build: `topic` + `topic_platform` fragments to v=2; newsletter skeleton placeholder rename; `${customer_journey_stage}` added to vocab Group A. Remaining drift in 5 unused fragments — see `04-documentation/reference/legacy-fragment-placeholder-drift.md`.
+    - Phase 2 punchlist: OUT-02-PL1 (cascade smoke coverage), OUT-02-PL2 (StrategyFieldId vocab tightening), DNA-09 sample-coverage gap (newsletter/email).
+  - **Phase 4 (next):** picker UI on top of `topic-engine.ts`, Strategy panel, variant editor, library. Architecture doc Part 4 covers the UX. Now unblocked by Phase 2.
 
 ### OUT-02a: Content creator — long-form / multi-step
 - **What:** Two-step generation flow for long-form content (sales pages, web pages, proposals). Stage 1 produces a structured blueprint (`{purpose, rationale, messaging, provenance}` per section). User reviews and edits in a richer-than-legacy editor (reorder, per-section regenerate, lock sections, swap DNA per section). Stage 2 generates copy section-by-section. Stage 3 (optional, required for sales pages) is a synthesis pass that reconciles flow against the blueprint. Same eight-layer prompt model and `content_types`/`prompt_stages` schema as OUT-02 — this just enables `is_multi_step = true` and adds the editor + stage handoff. Also includes V2 smarts: AI suggestion from one-line goal in picker, project/mission-aware ranking, retrieval-aware step 4 ranking, cost guardrails.
@@ -625,6 +657,26 @@
 - **Enables:** Complex content production
 - **Status:** planned
 - **Architecture:** `01-design/content-creation-architecture.md` (approved 2026-04-26)
+
+### OUT-02-PL1: Topic engine cascade coverage tests
+- **What:** Phase 2 punchlist — only the audience cascade has a smoke test (`02-app/lib/content/__smoke__/topic-engine-smoke.ts`). The offer / knowledge_asset / mission / own_research / source_material / brand_proof cascades use the same code paths but have not been verified against real data. Add cascade walkthrough tests for each step-1 category that has data, asserting `prompt_template_resolved` resolves cleanly and feeds the assembler without unresolved `${...}` tokens. Optional: parameterise the existing audience smoke to drive the other cascades.
+- **Layer:** output
+- **Problems:** P5
+- **Size:** S
+- **Depends on:** OUT-02 Phase 2 (done)
+- **Enables:** Confidence when adding offer-driven / methodology-led content types in OUT-02 Phase 4 or beyond
+- **Status:** planned
+- **Origin:** OUT-02 Phase 2 session 2026-04-30 (`2026-04-30-out02-phase2-runtime-x4q`).
+
+### OUT-02-PL2: StrategyFieldId vocabulary tightening
+- **What:** Phase 2 punchlist — `02-app/lib/llm/content/types.ts`'s `StrategyFieldId` union is missing the `platform` value used by seed `content_types.strategy_fields` (newsletter-edition, brainstorm-blog-posts). The placeholder resolver for `${platform_name}` works around it via a type cast on `inputs.strategy`. Decide between: (a) extend the union to include `platform` (simplest); (b) rename to `platform_id` to match other `*_id` fields and update the seeds. Either way, drop the cast in `placeholders.ts`.
+- **Layer:** output
+- **Problems:** P5
+- **Size:** XS
+- **Depends on:** OUT-02 Phase 2 (done)
+- **Enables:** Type-safe strategy field handling
+- **Status:** planned
+- **Origin:** OUT-02 Phase 2 session 2026-04-30 (`2026-04-30-out02-phase2-runtime-x4q`).
 
 ### OUT-03: Strategy generation and update
 - **What:** Generate or refine DNA elements. Multiple trigger paths: (a) via chat — "help me rethink my positioning for [audience]", (b) via forms/dashboard — structured input, (c) **retrieval-informed** — system pulls relevant source knowledge, research, and graph context to suggest or draft strategy updates. E.g. new research on a topic could surface a prompt to revisit a methodology or content pillar. All paths: generates a draft → you approve → DNA updates with version history.
@@ -1042,12 +1094,12 @@
 | Data (Registry) | 2 | 2 | 0 |
 | Input | 7 | 7 | 0 |
 | Automation | 4 | 4 | 0 |
-| Output | 8 | 6 | 2 |
+| Output | 10 | 8 | 2 |
 | Dashboard | 2 | 2 | 0 |
-| Cross-cutting | 2 | 2 | 0 |
+| Cross-cutting | 3 | 3 | 0 |
 | Client (future) | 2 | 0 | 2 |
 | Development skills | 12 | 12 | 0 |
-| **Total** | **65** | **61** | **4** |
+| **Total** | **68** | **64** | **4** |
 
 ---
 
@@ -1201,3 +1253,13 @@ That's the thinnest vertical slice: infra → storage → processing → retriev
 - **Depends on:** None
 - **Enables:** Consistent UX across all DNA detail views
 - **Status:** planned
+
+### UX-14: Generation gating (DNA prerequisites)
+- **What:** App-level rules for which DNA items can be generated based on what upstream DNA already exists. v1 minimum graph: business overview + at least one audience segment + tone of voice required before generating downstream DNA (offers, value proposition, content, etc.). When blocked, the UI surfaces what's missing with a direct path to fill it. Cross-cutting — applies to every DNA generation entry point.
+- **Layer:** cross
+- **Problems:** P2, P5
+- **Size:** S
+- **Depends on:** DNA-01
+- **Enables:** Every DNA generation flow — DNA-02 onward
+- **Status:** planned
+- **Note:** Pairs with UX-01 (dependency-aware empty states) — same underlying knowledge graph, different surfaces.
