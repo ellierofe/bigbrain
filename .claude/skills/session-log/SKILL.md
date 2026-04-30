@@ -66,6 +66,8 @@ If one or more decisions meet the bar, draft the relevant ADR(s) now (before dra
 
 Reference any new or updated ADRs in the session log's "Decisions made" section.
 
+**Parallel-session ADRs:** if the working tree contains an unstaged ADR file authored by another session (running concurrently or earlier the same day), do NOT claim it as a session decision. Mention it in "What came up that wasn't planned" with the originating session ID, and reference it in "Decisions made" only if this session genuinely depended on or updated it. Step I will surface the dual-session commit boundary separately.
+
 ### Step D: Draft the log
 
 Produce a draft in this structure:
