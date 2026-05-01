@@ -124,7 +124,7 @@ export const navEntries: NavEntry[] = [
     icon: BrainCircuit,
     items: [
       { title: 'Chat',   href: '/chat',           icon: MessageSquare },
-      { title: 'Create', href: '/content/create',  icon: Sparkles },
+      { title: 'Create', href: '/content',  icon: Sparkles },
     ],
   },
   { type: 'divider' },

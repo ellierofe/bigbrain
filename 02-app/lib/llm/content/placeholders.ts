@@ -210,12 +210,7 @@ const RESOLVERS: Record<PlaceholderName, PlaceholderResolver> = {
     return offer.name
   },
   platform_name: async (ctx) => {
-    // Not yet on the StrategyFieldId union — newsletter-edition uses
-    // 'platform' as a strategy field id (see seed). Read from either.
-    const id =
-      (ctx.inputs.strategy as Record<string, string | null>).platform ??
-      (ctx.inputs.strategy as Record<string, string | null>).platform_id ??
-      null
+    const id = ctx.inputs.strategy.platform
     if (!id) throw new Error('Placeholder ${platform_name} requires strategy.platform')
     const platform = await getPlatform(ctx, id)
     if (!platform) throw new Error(`Platform not found: ${id}`)

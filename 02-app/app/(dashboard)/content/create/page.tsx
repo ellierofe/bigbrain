@@ -1,15 +1,11 @@
-import { PageHeader } from '@/components/page-header'
+import { redirect } from 'next/navigation'
 
-export default function ContentCreatePage() {
-  return (
-    <>
-      <PageHeader
-        title="Create"
-        subtitle="Generate content using your DNA, knowledge base, and tone of voice."
-      />
-      <div className="mt-8 text-sm text-muted-foreground">
-        Content creator coming in M5.
-      </div>
-    </>
-  )
+/**
+ * `/content/create` index — redirects to the picker. The actual generation
+ * surface lives at `/content/create/[slug]`. Bare `/content/create` has no
+ * meaning on its own; redirect rather than 404 so the legacy sidebar link
+ * (pre-OUT-02-P4a) keeps working until everyone's nav-config caches refresh.
+ */
+export default function ContentCreateIndex() {
+  redirect('/content')
 }

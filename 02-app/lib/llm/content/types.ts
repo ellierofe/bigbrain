@@ -47,6 +47,7 @@ export type StrategyFieldId =
   | 'offer'
   | 'audience_segment'
   | 'knowledge_asset'
+  | 'platform'
   | 'sales_page_angle'
   | 'cta_url'
   | 'tone_variation'
