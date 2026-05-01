@@ -63,6 +63,23 @@ Ask structured questions across these categories. Adapt the questions to what yo
 - What does it connect to in Postgres (foreign keys, joins)?
 - What other features depend on this one being in place?
 
+**Output / readout** *(skip if the feature has no generated/computed output — pure CRUD doesn't need this)*
+- What does the user see *after* the action runs? (variants, document, prompt, query result, render, etc.)
+- Information density: list of cards, single artifact, structured fields, raw text, table?
+- Inline actions on the readout: copy, save, edit, regenerate, discard, share, export?
+- Toolbar / metadata shown alongside (run id, timestamp, cost estimate, source citations)?
+- Is the readout disposable (next run replaces it) or persistent (history accrues)?
+- Empty state before the first run, loading state during, error state on failure
+- Note: this seeds layout-design's right-pane / output-region spec — don't defer with "TBD layout phase" unless density and shape are genuinely undecided.
+
+**Skill / structured-extraction shape** *(skip if the feature isn't a chat skill or doesn't extract structured state from LLM turns)*
+- What's the `gathered` shape? (per-skill Zod schema — list every field, type, required/optional)
+- What's the `checklist`? (id + label per item — each item names what "filled" means)
+- For staged skills: what are the stages? Which checklist items must be filled to advance from each?
+- **Checklist ↔ gathered mapping** (must be explicit, not inferred): for each checklist item, which `gathered` field(s) satisfy it? The state-extraction prompt needs this spelled out — without it, the LLM populates `gathered` correctly but leaves checklist items unfilled, breaking advancement gates for staged skills. (Caught during OUT-01a build — adding to brief template.)
+- Sub-agents this skill needs access to (`retrieval_bot`, `db_update_bot`, future)?
+- `onComplete` action: does the skill save to a DB table, write to the graph, both, neither?
+
 **Edge cases**
 - Empty state: what does the user see when there's no data yet?
 - Error states: what can go wrong and how should it be handled?

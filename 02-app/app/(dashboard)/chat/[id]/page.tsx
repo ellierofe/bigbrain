@@ -6,6 +6,8 @@ import {
   getMessages,
   getFirstUserMessage,
 } from '@/lib/db/queries/chat'
+import { getSkill, isSkillId } from '@/lib/skills/registry'
+import type { SkillState } from '@/lib/skills/types'
 import { ChatArea } from '../chat-area'
 
 const BRAND_ID = 'ea444c72-d332-4765-afd5-8dda97f5cf6f'
@@ -32,13 +34,23 @@ export default async function ConversationPage({ params }: Props) {
   }))
 
   const conversations = await Promise.all(
-    convs.map(async (c) => ({
-      id: c.id,
-      title: c.title,
-      preview: await getFirstUserMessage(c.id),
-      updatedAt: c.updatedAt,
-    }))
+    convs.map(async (c) => {
+      const cSkillState = (c.skillState as SkillState | null) ?? null
+      return {
+        id: c.id,
+        title: c.title,
+        preview: await getFirstUserMessage(c.id),
+        updatedAt: c.updatedAt,
+        skillId: c.skillId,
+        skillCompletedAt: cSkillState?.completedAt ?? null,
+        skillInRegistry: isSkillId(c.skillId),
+      }
+    })
   )
+
+  const skill = conversation.skillId ? getSkill(conversation.skillId) : null
+  const skillState = (conversation.skillState as SkillState | null) ?? null
+  const skillInRegistry = !conversation.skillId || skill !== null
 
   return (
     <div className="flex h-full -mx-8 -mb-8 -mt-2">
@@ -46,6 +58,11 @@ export default async function ConversationPage({ params }: Props) {
         conversationId={id}
         initialMessages={initialMessages}
         conversations={conversations}
+        skillState={skillState}
+        skillName={skill?.name ?? null}
+        skillMode={skill?.mode ?? null}
+        skillInRegistry={skillInRegistry}
+        conversationHasMessages={dbMessages.length > 0}
       />
     </div>
   )

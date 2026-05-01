@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { conversations, messages } from '@/lib/db/schema/chat'
 import { eq, and, isNull, desc, asc } from 'drizzle-orm'
+import type { SkillState } from '@/lib/skills/types'
 
 // ---------------------------------------------------------------------------
 // Conversations
@@ -13,6 +14,8 @@ export async function getConversations(brandId: string) {
       title: conversations.title,
       createdAt: conversations.createdAt,
       updatedAt: conversations.updatedAt,
+      skillId: conversations.skillId,
+      skillState: conversations.skillState,
     })
     .from(conversations)
     .where(
@@ -33,10 +36,18 @@ export async function getConversation(id: string) {
   return conv ?? null
 }
 
-export async function createConversation(brandId: string) {
+export async function createConversation(
+  brandId: string,
+  opts?: { title?: string; skillId?: string; skillState?: SkillState }
+) {
   const [conv] = await db
     .insert(conversations)
-    .values({ brandId })
+    .values({
+      brandId,
+      title: opts?.title,
+      skillId: opts?.skillId,
+      skillState: opts?.skillState,
+    })
     .returning({ id: conversations.id })
   return conv
 }

@@ -339,9 +339,9 @@ export const componentRegistry: ComponentEntry[] = [
     path: "@/components/action-button",
     category: "form",
     description:
-      "Icon (optional) + label primary action. Used for top-of-page CTAs (`+ New X`, `Generate`), confirmation buttons, and other primary/secondary actions. Wraps Button atom. Accepts `href` to render as Next.js Link. Optional `loading` shows a spinner inline with the label and disables the button. Optional `tooltip` for explanation (works on disabled).",
-    props: "icon? (LucideIcon), children (label content), onClick?, href?, variant? ('default'|'outline'|'ghost'|'destructive', default 'default'), size? ('sm'|'default', default 'sm'), disabled?, loading?, tooltip? (string), type? ('button'|'submit', default 'button'), data-testid?, className?",
-    usedIn: ["DS-05"],
+      "Icon (optional, leading or trailing) + label primary action. Used for top-of-page CTAs (`+ New X`, `Generate`), confirmation buttons, and other primary/secondary actions. Wraps Button atom. Accepts `href` to render as Next.js Link. Optional `loading` shows a spinner inline with the label and disables the button. Optional `tooltip` for explanation (works on disabled). Optional `trailingIcon` renders to the right of the label (hidden while loading).",
+    props: "icon? (LucideIcon), trailingIcon? (LucideIcon), children (label content), onClick?, href?, variant? ('default'|'outline'|'ghost'|'destructive', default 'default'), size? ('sm'|'default', default 'sm'), disabled?, loading?, tooltip? (string), type? ('button'|'submit', default 'button'), data-testid?, className?",
+    usedIn: ["DS-05", "OUT-01a"],
     spec: "molecule-specifications/actionbutton",
   },
   {
@@ -718,5 +718,168 @@ export const componentRegistry: ComponentEntry[] = [
       "label?, value, onChange, options (FilterPillOption[] — { value, label, count?, icon? })",
     usedIn: ["DS-07"],
     spec: "molecule-specifications/filterpillgroup",
+  },
+  {
+    name: "MultiFilterPillGroup",
+    path: "@/components/multi-filter-pill-group",
+    category: "form",
+    description:
+      "Multi-select state container for FilterPill. Promised by FilterPillGroup spec. Click any pill toggles inclusion in `values`.",
+    props: "label?, values (string[]), onChange, options (MultiFilterPillOption[])",
+    usedIn: ["OUT-02-P4a"],
+    spec: "molecule-specifications/multifilterpillgroup",
+  },
+  {
+    name: "ContentTypeCard",
+    path: "@/components/content-type-card",
+    category: "layout",
+    description:
+      "Picker tile for one content type — icon, title, description, category/channel TypeBadges, favourite-star toggle, locked-state with LockBadge + MissingPrereqDeeplink. Whole card is a Link when unlocked.",
+    props: "data (ContentTypeCardData), onToggleFavourite",
+    usedIn: ["OUT-02-P4a"],
+    spec: "molecule-specifications/contenttypecard",
+  },
+  {
+    name: "PickerFilterBar",
+    path: "@/components/picker-filter-bar",
+    category: "form",
+    description:
+      "Top filter bar for the launch-picker-grid pattern. Two MultiFilterPillGroups (categories, channels) + favourites toggle + Clear all.",
+    props:
+      "categories, channels, activeCategories, activeChannels, favouritesOnly, onCategoriesChange, onChannelsChange, onFavouritesChange, onClearAll",
+    usedIn: ["OUT-02-P4a"],
+    spec: "molecule-specifications/pickerfilterbar",
+  },
+  {
+    name: "LockBadge",
+    path: "@/components/lock-badge",
+    category: "feedback",
+    description:
+      "Tiny 'Needs an X' pill with leading lock icon. Inline-flex, bg-muted + text-muted-foreground.",
+    props: "label",
+    usedIn: ["OUT-02-P4a"],
+    spec: "molecule-specifications/lockbadge",
+  },
+  {
+    name: "MissingPrereqDeeplink",
+    path: "@/components/missing-prereq-deeplink",
+    category: "feedback",
+    description:
+      "Inline '+ Add ${label} →' link styled for empty-state affordances under cards or cascade steps.",
+    props: "label, href",
+    usedIn: ["OUT-02-P4a"],
+    spec: "molecule-specifications/missingprereqdeeplink",
+  },
+  {
+    name: "StrategyField",
+    path: "@/components/strategy-field",
+    category: "form",
+    description:
+      "Declarative widget registry for content-creator Strategy panel fields. Switches on field.id to render Select (audience_segment / offer / knowledge_asset / platform / customer_journey_stage / tone_variation) or Input (sales_page_angle / cta_url).",
+    props:
+      "field ({ id: StrategyFieldId, required }), value, onChange, options? (StrategyFieldOption[]), placeholder?",
+    usedIn: ["OUT-02-P4a"],
+    spec: "molecule-specifications/strategyfield",
+  },
+  {
+    name: "TopicCascadeStep",
+    path: "@/components/topic-cascade-step",
+    category: "form",
+    description:
+      "Single step in the topic engine cascade — single-select dropdown or multi-select checkbox list. Locked options dimmed with inline MissingPrereqDeeplink.",
+    props:
+      "label, required, allowMultiSelect, options (TopicCascadeStepOption[]), selectedKeys, onChange, loading?",
+    usedIn: ["OUT-02-P4a"],
+    spec: "molecule-specifications/topiccascadestep",
+  },
+  {
+    name: "TopicCascade",
+    path: "@/components/topic-cascade",
+    category: "form",
+    description:
+      "Orchestrates 1..4 step Topic Engine cascade. Owns option fetching via server actions, step reveal, free-text branch, leaf-augment toggle, and the topic-clear confirm modal.",
+    props: "value (TopicCascadeState), onChange",
+    usedIn: ["OUT-02-P4a"],
+    spec: "molecule-specifications/topiccascade",
+  },
+  {
+    name: "NumberStepper",
+    path: "@/components/number-stepper",
+    category: "form",
+    description:
+      "Three-segment − / value / + stepper. IconButton bookends + read-only numeric display. Used for variant-count and other bounded numeric inputs.",
+    props: "value, onChange, min?, max?, step?, label?",
+    usedIn: ["OUT-02-P4a"],
+    spec: "molecule-specifications/numberstepper",
+  },
+  {
+    name: "AssembledPromptInspector",
+    path: "@/components/assembled-prompt-inspector",
+    category: "feedback",
+    description:
+      "Right-pane debug viewer for the assembled prompt — OUT-02-P4a only. Toolbar with run-id pill + Copy IconButton; <pre> body with monospace, whitespace-pre-wrap. Replaced by variant cards in 4b.",
+    props: "runId, assembledPrompt",
+    usedIn: ["OUT-02-P4a"],
+    spec: "molecule-specifications/assembledpromptinspector",
+  },
+  {
+    name: "ContentTypeSwitcher",
+    path: "@/components/content-type-switcher",
+    category: "form",
+    description:
+      "Compact dropdown switcher for the content-creator generation surface. Lists active content types; on change, consumer navigates to /content/create/[slug].",
+    props: "currentSlug, options (ContentTypeSwitcherOption[]), onChange",
+    usedIn: ["OUT-02-P4a"],
+    spec: "molecule-specifications/contenttypeswitcher",
+  },
+  {
+    name: "GenerationSettingsStrip",
+    path: "@/components/generation-settings-strip",
+    category: "form",
+    description:
+      "Inline Settings strip for the creator-workspace-three-region pattern. Compact Model + I/we + Tone + Variants controls in a bg-muted/40 row.",
+    props: "value, onChange, aiModels, toneOptions, variantMin?, variantMax?",
+    usedIn: ["OUT-02-P4a"],
+    spec: "molecule-specifications/generationsettingsstrip",
+  },
+  {
+    name: "SearchInput",
+    path: "@/components/search-input",
+    category: "form",
+    description:
+      "Search input atom-wrapper with leading magnifier icon. Use wherever a free-text search field needs the icon affordance.",
+    props: "value, onChange, placeholder?, widthClass?",
+    usedIn: ["OUT-02-P4a"],
+    spec: "molecule-specifications/searchinput",
+  },
+  {
+    name: "ConversationListRowIcon",
+    path: "@/components/conversation-list-row-icon",
+    category: "feedback",
+    description:
+      "Fixed-width icon slot for chat conversation list rows. MessageCircle for freeform conversations, Brain for skill conversations, with a Check or AlertTriangle adornment for completed/registry-miss states. Keeps title baselines aligned across the list.",
+    props: "state ('freeform' | 'skill-active' | 'skill-completed' | 'registry-miss')",
+    usedIn: ["OUT-01a"],
+    spec: "molecule-specifications/conversationlistrowicon",
+  },
+  {
+    name: "InlineWarningBanner",
+    path: "@/components/inline-warning-banner",
+    category: "feedback",
+    description:
+      "Single-line warning bar that sits above content in a page region — not a toast, not a centred empty state. Used for persistent state visibility (e.g. registry-miss warnings, state-extraction failures). Optional dismiss button when an onDismiss handler is provided.",
+    props: "title, subtitle?, onDismiss?",
+    usedIn: ["OUT-01a"],
+    spec: "molecule-specifications/inlinewarningbanner",
+  },
+  {
+    name: "SkillContinueBar",
+    path: "@/components/skill-continue-bar",
+    category: "form",
+    description:
+      "Staged-skill advance affordance below the latest assistant message: Continue button (with trailing arrow) plus a missing-items hint when the checklist isn't filled. Wraps ActionButton; consumes the runtime's missingItems list.",
+    props: "missingItems (string[]), loading (boolean), onAdvance (() => void)",
+    usedIn: ["OUT-01a"],
+    spec: "molecule-specifications/skillcontinuebar",
   },
 ]

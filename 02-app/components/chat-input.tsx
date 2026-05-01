@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect, type KeyboardEvent } from 'react'
 import { Paperclip, ArrowUp, X, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { parseSlashCommand } from '@/lib/chat/slash-command'
 
 interface ChatInputProps {
   onSend: (text: string, files?: File[]) => void
@@ -14,6 +15,13 @@ interface ChatInputProps {
   /** Externally-set value (e.g. from prompt starters). Populates input without sending. */
   pendingValue?: string
   onPendingValueConsumed?: () => void
+  /**
+   * Optional slash-command interceptor. Returns true if the command was
+   * handled (e.g. attached a skill, opened a confirm modal); the input is
+   * cleared and onSend is NOT called. Returning false (or undefined) lets
+   * the message flow through as a normal chat turn.
+   */
+  onSlashCommand?: (skillId: string) => boolean | Promise<boolean>
 }
 
 export function ChatInput({
@@ -25,6 +33,7 @@ export function ChatInput({
   onPendingValueConsumed,
   compact,
   placeholder = 'Ask BigBrain anything...',
+  onSlashCommand,
 }: ChatInputProps) {
   const [text, setText] = useState('')
   const [files, setFiles] = useState<File[]>([])
@@ -41,23 +50,37 @@ export function ChatInput({
     }
   }, [pendingValue, onPendingValueConsumed])
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     const trimmed = text.trim()
     if (!trimmed && files.length === 0) return
+
+    // Slash-command interception (no popover — pure parse-on-submit).
+    if (onSlashCommand && files.length === 0) {
+      const parsed = parseSlashCommand(trimmed)
+      if (parsed) {
+        const handled = await onSlashCommand(parsed.skillId)
+        if (handled) {
+          setText('')
+          if (textareaRef.current) textareaRef.current.style.height = 'auto'
+          return
+        }
+        // handled === false → fall through and send as normal chat turn.
+      }
+    }
+
     onSend(trimmed, files.length > 0 ? files : undefined)
     setText('')
     setFiles([])
-    // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
-  }, [text, files, onSend])
+  }, [text, files, onSend, onSlashCommand])
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       if (!isStreaming && !disabled) {
-        handleSend()
+        void handleSend()
       }
     }
   }
@@ -162,7 +185,7 @@ export function ChatInput({
           ) : (
             <Button
               size="icon"
-              onClick={handleSend}
+              onClick={() => void handleSend()}
               disabled={!hasContent || disabled}
               className={`h-7 w-7 shrink-0 rounded-full transition-colors ${
                 hasContent && !disabled

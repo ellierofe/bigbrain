@@ -4,12 +4,25 @@ import { useState } from 'react'
 import { Plus, PanelLeftClose, PanelLeftOpen, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { archiveConversationAction } from '@/app/actions/chat'
+import { ConversationListRowIcon } from '@/components/conversation-list-row-icon'
 
 interface ConversationSummary {
   id: string
   title: string | null
   preview: string | null
   updatedAt: Date | string
+  skillId: string | null
+  skillCompletedAt: string | null
+  skillInRegistry: boolean
+}
+
+function rowIconState(
+  conv: ConversationSummary
+): 'freeform' | 'skill-active' | 'skill-completed' | 'registry-miss' {
+  if (!conv.skillId) return 'freeform'
+  if (!conv.skillInRegistry) return 'registry-miss'
+  if (conv.skillCompletedAt) return 'skill-completed'
+  return 'skill-active'
 }
 
 interface ConversationListProps {
@@ -100,7 +113,8 @@ export function ConversationList({
                       : 'text-foreground/80 hover:bg-muted/50'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <ConversationListRowIcon state={rowIconState(conv)} />
                     <span className="text-sm font-medium truncate flex-1">
                       {conv.title ?? 'New conversation'}
                     </span>
@@ -116,7 +130,7 @@ export function ConversationList({
                     </span>
                   </div>
                   {conv.preview && (
-                    <span className="text-xs text-muted-foreground truncate">
+                    <span className="ml-6 text-xs text-muted-foreground truncate">
                       {conv.preview}
                     </span>
                   )}

@@ -146,9 +146,19 @@ For each major view, what does the user see when there's no data?
 **Mobile considerations**
 Desktop-first but note anything that would break or need significant adaptation on smaller screens. This isn't a mobile design spec — just flag if the layout makes specific assumptions about viewport width.
 
+**Keyboard interactions** *(skip when no shortcuts beyond browser defaults are warranted — pure CRUD often won't need this)*
+- Primary action shortcut: is there a "submit / generate / run" key combo? (e.g. `Cmd+Enter` in workspaces, `Cmd+S` autosave fields)
+- Navigation: any list / cascade / tab traversal via arrow keys?
+- Dismiss: how does `Esc` behave in modals / drawers / overlay panels?
+- Focus management: where does focus land on view entry, on modal open, on cascade-step reveal? Where does it return after modal close?
+- Discoverability: any visible hint of the shortcut (button tooltip, footer hint)?
+- Accessibility floor: tab-order is correct, focus rings are visible (token-driven), all interactive elements reachable without a mouse — assume yes unless you have a reason to flag otherwise.
+
 **Molecule composition** *(mandatory — feeds the `feature-build` plan gate)*
 
 This section is what `feature-build` Step B reads to seed its "Molecules to use / molecules to create" subsection. Be specific. The plan gate cannot proceed if any "new" molecule listed here lacks a one-line spec sketch.
+
+**Hint, label, or indicator detection (catch missing molecules early):** when describing the visual contract for any feature, if you find yourself reaching for `text-*`, `bg-*`, `border-*`, or `shadow-*` classes for a *non-trivial supporting element next to a molecule* — a hint line under a button, a status indicator, an inline label, an "X items remaining" caption, an inline warning row — that's a missing molecule. Organisms can't carry appearance classes (DS-01 rule), so anything you'd write inline that needs styling has to become a molecule. Surface it here, at layout-design time, not later in `feature-build`. Common signals: "below the button is a small grey hint", "next to the icon is a label saying X", "above the list is a one-line warning". Each of these is a candidate molecule. Layout classes (`flex`, `gap-*`, `min-h-0`) on the organism wrapper are fine — the rule is about appearance, not layout.
 
 ```
 ### Existing molecules used

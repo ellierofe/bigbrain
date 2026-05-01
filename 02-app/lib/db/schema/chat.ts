@@ -17,9 +17,14 @@ export const conversations = pgTable(
     archivedAt: timestamp('archived_at', { withTimezone: true }),
     /** v2 branching: the message this conversation branches from */
     parentMessageId: uuid('parent_message_id'),
+    /** Skill registry ID, validated at runtime. Null = freeform chat. */
+    skillId: text('skill_id'),
+    /** In-flight skill state (gathered, checklist, currentStage, etc.). Per-skill shape. */
+    skillState: jsonb('skill_state'),
   },
   (table) => [
     index('conversations_brand_updated_idx').on(table.brandId, table.updatedAt),
+    index('conversations_skill_id_idx').on(table.skillId),
   ]
 )
 

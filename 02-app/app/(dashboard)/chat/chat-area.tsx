@@ -3,18 +3,32 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Brain } from 'lucide-react'
+import { toast } from 'sonner'
 import type { UIMessage } from 'ai'
 import { useChat } from '@/lib/chat/use-chat'
 import { ChatMessage } from '@/components/chat-message'
 import { ChatInput } from '@/components/chat-input'
 import { PromptStarter } from '@/components/prompt-starter'
 import { ConversationList } from '@/components/conversation-list'
+import { InlineWarningBanner } from '@/components/inline-warning-banner'
+import { SkillContinueBar } from '@/components/skill-continue-bar'
+import { Modal } from '@/components/modal'
+import { ActionButton } from '@/components/action-button'
+import {
+  attachSkillAction,
+  createConversationWithSkillAction,
+  advanceStageAction,
+} from '@/app/actions/skills'
+import type { SkillState } from '@/lib/skills/types'
 
 interface ConversationSummary {
   id: string
   title: string | null
   preview: string | null
   updatedAt: Date | string
+  skillId: string | null
+  skillCompletedAt: string | null
+  skillInRegistry: boolean
 }
 
 interface ChatAreaProps {
@@ -22,6 +36,11 @@ interface ChatAreaProps {
   initialMessages: UIMessage[]
   conversations: ConversationSummary[]
   compact?: boolean
+  skillState: SkillState | null
+  skillName: string | null
+  skillMode: 'discursive' | 'staged' | null
+  skillInRegistry: boolean
+  conversationHasMessages: boolean
 }
 
 const PROMPT_STARTERS = [
@@ -36,11 +55,18 @@ export function ChatArea({
   initialMessages,
   conversations,
   compact,
+  skillState,
+  skillName,
+  skillMode,
+  skillInRegistry,
+  conversationHasMessages,
 }: ChatAreaProps) {
   const router = useRouter()
   const scrollRef = useRef<HTMLDivElement>(null)
   const shouldAutoScroll = useRef(true)
   const [pendingInput, setPendingInput] = useState<string | undefined>()
+  const [pendingSkillSwitch, setPendingSkillSwitch] = useState<string | null>(null)
+  const [advancing, setAdvancing] = useState(false)
 
   const {
     messages,
@@ -52,28 +78,23 @@ export function ChatArea({
   } = useChat({
     conversationId,
     onConversationCreated: (id) => {
-      // Update URL without full navigation
       window.history.replaceState(null, '', `/chat/${id}`)
     },
     onFinish: () => {
-      // Refresh the page data (conversation list) after a response
       router.refresh()
     },
   })
 
-  // Load initial messages on mount or conversation change
   useEffect(() => {
     setMessages(initialMessages)
   }, [conversationId, initialMessages, setMessages])
 
-  // Auto-scroll to bottom on new messages
   useEffect(() => {
     if (shouldAutoScroll.current && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages])
 
-  // Track if user has scrolled up
   const handleScroll = useCallback(() => {
     const el = scrollRef.current
     if (!el) return
@@ -89,30 +110,101 @@ export function ChatArea({
     [sendMessage]
   )
 
-  const handlePromptClick = useCallback(
-    (text: string) => {
-      setPendingInput(text)
-    },
-    []
-  )
-
-  const handlePendingConsumed = useCallback(() => {
-    setPendingInput(undefined)
-  }, [])
-
+  const handlePromptClick = useCallback((text: string) => setPendingInput(text), [])
+  const handlePendingConsumed = useCallback(() => setPendingInput(undefined), [])
   const handleSelectConversation = useCallback(
-    (id: string) => {
-      router.push(`/chat/${id}`)
-    },
+    (id: string) => router.push(`/chat/${id}`),
     [router]
   )
+  const handleNewConversation = useCallback(() => router.push('/chat'), [router])
 
-  const handleNewConversation = useCallback(() => {
-    router.push('/chat')
-  }, [router])
+  const handleSlashCommand = useCallback(
+    async (skillId: string): Promise<boolean> => {
+      const isEmptyAndUnattached =
+        Boolean(conversationId) &&
+        !conversationHasMessages &&
+        !skillName &&
+        messages.length === 0
+
+      // Case A: empty current conversation, no skill — attach in place.
+      if (isEmptyAndUnattached && conversationId) {
+        try {
+          await attachSkillAction(conversationId, skillId)
+          router.refresh()
+          return true
+        } catch {
+          toast.error('Could not start that skill.')
+          return false
+        }
+      }
+
+      // Special case: brand-new chat with no conversationId yet (truly empty) —
+      // create a new conversation with the skill and route to it.
+      if (!conversationId) {
+        try {
+          const { conversationId: newId } = await createConversationWithSkillAction(skillId)
+          router.push(`/chat/${newId}`)
+          return true
+        } catch {
+          toast.error('Could not start that skill.')
+          return false
+        }
+      }
+
+      // Case B: conversation has messages or an existing skill — confirm switch.
+      setPendingSkillSwitch(skillId)
+      return true
+    },
+    [conversationId, conversationHasMessages, skillName, messages.length, router]
+  )
+
+  const handleConfirmSkillSwitch = useCallback(async () => {
+    if (!pendingSkillSwitch) return
+    try {
+      const { conversationId: newId } = await createConversationWithSkillAction(pendingSkillSwitch)
+      setPendingSkillSwitch(null)
+      router.push(`/chat/${newId}`)
+    } catch {
+      toast.error('Could not start that skill.')
+      setPendingSkillSwitch(null)
+    }
+  }, [pendingSkillSwitch, router])
+
+  const handleAdvance = useCallback(async () => {
+    if (!conversationId) return
+    setAdvancing(true)
+    try {
+      const result = await advanceStageAction(conversationId)
+      if (result.ok) {
+        toast.success(`Stage advanced to ${result.nextStageLabel}`)
+        router.refresh()
+      } else if ('missing' in result && result.missing) {
+        toast.error(`Still gathering: ${result.missing.join(', ')}`)
+      } else {
+        toast.error("Couldn't advance stage. Try again.")
+      }
+    } catch {
+      toast.error("Couldn't advance stage. Try again.")
+    } finally {
+      setAdvancing(false)
+    }
+  }, [conversationId, router])
 
   const isStreaming = status === 'streaming' || status === 'submitted'
   const isEmpty = messages.length === 0
+
+  const showRegistryMissBanner =
+    Boolean(conversationId) && Boolean(skillState) && !skillInRegistry
+  const showContinueBar =
+    Boolean(skillState) &&
+    skillMode === 'staged' &&
+    skillState?.readyToAdvance === true &&
+    !isStreaming
+
+  const continueMissingItems = (() => {
+    if (!showContinueBar || !skillState?.currentStage) return []
+    return skillState.checklist.filter((c) => !c.filled).map((c) => c.label)
+  })()
 
   if (compact) {
     return (
@@ -150,6 +242,14 @@ export function ChatArea({
         onNew={handleNewConversation}
       />
       <div className="flex flex-1 min-w-0 flex-col">
+        {showRegistryMissBanner && (
+          <div className="px-6 pt-3">
+            <InlineWarningBanner
+              title="This conversation used a skill that's no longer available."
+              subtitle="Messages remain readable; the skill cannot be resumed."
+            />
+          </div>
+        )}
         <ChatMessageList
           messages={messages}
           isEmpty={isEmpty}
@@ -158,6 +258,15 @@ export function ChatArea({
           scrollRef={scrollRef}
           onScroll={handleScroll}
           onPromptClick={handlePromptClick}
+          continueBar={
+            showContinueBar ? (
+              <SkillContinueBar
+                missingItems={continueMissingItems}
+                loading={advancing}
+                onAdvance={handleAdvance}
+              />
+            ) : null
+          }
         />
         <div className="shrink-0 border-t border-border px-6 py-4">
           <ChatInput
@@ -166,9 +275,29 @@ export function ChatArea({
             isStreaming={isStreaming}
             pendingValue={pendingInput}
             onPendingValueConsumed={handlePendingConsumed}
+            onSlashCommand={handleSlashCommand}
           />
         </div>
       </div>
+
+      <Modal
+        open={pendingSkillSwitch !== null}
+        onOpenChange={(open) => !open && setPendingSkillSwitch(null)}
+        title="Start a new conversation?"
+        description="Skills can only run in a fresh conversation. Start a new one?"
+        footer={
+          <>
+            <ActionButton variant="ghost" onClick={() => setPendingSkillSwitch(null)}>
+              Cancel
+            </ActionButton>
+            <ActionButton onClick={handleConfirmSkillSwitch}>
+              Start new conversation
+            </ActionButton>
+          </>
+        }
+      >
+        <div />
+      </Modal>
     </div>
   )
 }
@@ -182,6 +311,7 @@ function ChatMessageList({
   onScroll,
   onPromptClick,
   compact,
+  continueBar,
 }: {
   messages: UIMessage[]
   isEmpty: boolean
@@ -191,6 +321,7 @@ function ChatMessageList({
   onScroll: () => void
   onPromptClick: (text: string) => void
   compact?: boolean
+  continueBar?: React.ReactNode
 }) {
   const padding = compact ? 'px-4 py-4' : 'px-6 py-4'
   const gap = compact ? 'gap-4' : 'gap-6'
@@ -226,14 +357,14 @@ function ChatMessageList({
           <ChatMessage key={message.id} message={message} compact={compact} />
         ))}
 
-        {/* Streaming cursor */}
         {isStreaming && messages.length > 0 && messages[messages.length - 1]?.role !== 'assistant' && (
           <div className="flex justify-start">
             <div className="h-5 w-1 animate-pulse rounded-full bg-foreground/30" />
           </div>
         )}
 
-        {/* Error state */}
+        {continueBar}
+
         {error && (
           <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             Something went wrong. Try again.

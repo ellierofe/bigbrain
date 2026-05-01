@@ -1,4 +1,4 @@
-import { streamText, stepCountIs, convertToModelMessages, type UIMessage } from "ai"
+import { streamText, generateObject, stepCountIs, convertToModelMessages, type UIMessage } from "ai"
 import { MODELS, SYSTEM_PROMPTS } from "@/lib/llm"
 import { createRetrievalTools } from "@/lib/llm/tools"
 import { auth } from "@/lib/auth"
@@ -13,8 +13,17 @@ import {
   getConversation,
 } from "@/lib/db/queries/chat"
 import { generateText } from "ai"
-
-const BRAND_ID = "ea444c72-d332-4765-afd5-8dda97f5cf6f"
+import { getSkill } from "@/lib/skills/registry"
+import { getSkillContext, saveSkillState } from "@/lib/skills/state"
+import {
+  assembleSystemPrompt,
+  applyTurnExtraction,
+  turnExtractionSchema,
+  markComplete,
+  type TurnExtraction,
+} from "@/lib/skills/runtime"
+import { createSubAgentTools } from "@/lib/skills/sub-agent-tools"
+import type { SkillState } from "@/lib/skills/types"
 
 export async function POST(req: Request) {
   if (process.env.NODE_ENV !== "development") {
@@ -46,6 +55,12 @@ export async function POST(req: Request) {
     activeConversationId = conv.id
     isNewConversation = true
   }
+
+  // Resolve any skill attached to this conversation. Registry miss falls
+  // through to freeform — the client renders the warning banner.
+  const skillCtx = await getSkillContext(activeConversationId)
+  const skill = skillCtx?.skillId ? getSkill(skillCtx.skillId) : null
+  const skillState = (skillCtx?.skillState as SkillState | null) ?? null
 
   // Persist the user message (last message in the array)
   const lastMessage = messages[messages.length - 1]
@@ -90,11 +105,26 @@ export async function POST(req: Request) {
     }
   }
 
+  // Branch: skill-aware chat vs freeform chat. Skill needs the assembled
+  // brief in the system prompt and sub-agent tools instead of the flat
+  // retrieval set.
+  const skillCtxForRun = skill && skillState
+    ? { brandId: brand.id, conversationId: activeConversationId }
+    : null
+
+  const systemPrompt = skill && skillState
+    ? assembleSystemPrompt(skill, skillState)
+    : SYSTEM_PROMPTS.chat
+
+  const tools = skill && skillState && skillCtxForRun
+    ? createSubAgentTools(skill, skillCtxForRun)
+    : createRetrievalTools(brand.id)
+
   const result = streamText({
     model: MODELS.geminiPro,
-    system: SYSTEM_PROMPTS.chat,
+    system: systemPrompt,
     messages: modelMessages,
-    tools: createRetrievalTools(brand.id),
+    tools,
     stopWhen: stepCountIs(5),
     onFinish: async ({ text, toolCalls, usage }) => {
       // Persist assistant message
@@ -108,11 +138,83 @@ export async function POST(req: Request) {
         tokenCount: usage?.totalTokens,
       })
 
-      // Update conversation timestamp
       await touchConversation(activeConversationId)
 
-      // Auto-generate title for new conversations
-      if (isNewConversation || !(await getConversation(activeConversationId))?.title) {
+      // Skill-aware: extract structured state from the turn via a second
+      // generateObject call. Defensive fallback: if extraction fails, leave
+      // state unchanged (the OUT-01b context pane will render a warning row
+      // once that build lands).
+      if (skill && skillState) {
+        try {
+          const extractionSchema = turnExtractionSchema(skill)
+          const transcript = modelMessages
+            .map((m) => {
+              const content = typeof m.content === 'string'
+                ? m.content
+                : Array.isArray(m.content)
+                  ? m.content
+                      .filter((p: any) => p.type === 'text')
+                      .map((p: any) => p.text)
+                      .join('\n')
+                  : ''
+              return `${m.role}: ${content}`
+            })
+            .join('\n\n')
+
+          const checklistDescription = skill.checklist
+            .map((c) => `- "${c.id}" — ${c.label}`)
+            .join('\n')
+
+          const { object } = await generateObject({
+            model: MODELS.fast,
+            schema: extractionSchema,
+            system: [
+              'Extract structured state from the most recent assistant turn of this skill conversation. Use the schema strictly.',
+              '',
+              "The skill's checklist items are:",
+              checklistDescription,
+              '',
+              'Rules:',
+              '- For every checklist item whose underlying value is now present in `gathered` (either captured this turn or in the prior conversation), include its ID in `checklistFilledIds`.',
+              '- Be inclusive: if the item appears satisfied by anything captured so far, include it. The runtime treats `filled` as monotonic — once true, it stays true.',
+              skill.mode === 'staged'
+                ? '- Set `readyToAdvance: true` only if the latest assistant turn signalled the current stage is complete and the user should advance.'
+                : '- Set `readyToAdvance: false` — this skill is discursive and has no advancement gates.',
+            ].join('\n'),
+            prompt: `Conversation so far:\n\n${transcript}\n\nLatest assistant turn:\n${text}\n\nExtract the state.`,
+          })
+
+          let nextState = applyTurnExtraction(
+            skill,
+            skillState,
+            object as TurnExtraction
+          )
+
+          // Discursive skills: if all checklist items are filled and not
+          // already marked complete, set completedAt.
+          if (
+            skill.mode === 'discursive' &&
+            !nextState.completedAt &&
+            nextState.checklist.every((c) => c.filled)
+          ) {
+            nextState = markComplete(nextState)
+          }
+
+          await saveSkillState(activeConversationId, nextState)
+        } catch (err) {
+          console.warn(
+            `[skills] state extraction failed for conversation ${activeConversationId}:`,
+            err instanceof Error ? err.message : err
+          )
+        }
+      }
+
+      // Auto-generate title for new freeform conversations only. Skill
+      // conversations are titled at creation as "<Skill name> · <date>".
+      if (
+        !skill &&
+        (isNewConversation || !(await getConversation(activeConversationId))?.title)
+      ) {
         const userText = lastMessage?.parts
           ?.filter((p: { type: string }) => p.type === "text")
           .map((p: { text: string }) => p.text)

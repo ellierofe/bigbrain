@@ -895,12 +895,13 @@ interface IconButtonProps {
 ### ActionButton
 
 **File:** `02-app/components/action-button.tsx`
-**Purpose:** Icon (optional) + visible label primary action. Used for top-of-page CTAs (`+ New X`, `Generate`), confirmation buttons, list-action buttons. Wraps `Button` atom + (optional) `Tooltip`. Optional Link rendering. Optional loading state for async actions.
+**Purpose:** Icon (optional, leading or trailing) + visible label primary action. Used for top-of-page CTAs (`+ New X`, `Generate`), confirmation buttons, list-action buttons. Wraps `Button` atom + (optional) `Tooltip`. Optional Link rendering. Optional loading state for async actions.
 
 **Anatomy:**
 - Wraps `Button` from `@/components/ui/button` with default `variant="default"` (sage primary), default `size="sm"`.
-- Children rendered as the visible label, with the icon (when provided) preceding via Button's gap utility.
-- When `loading=true`: leading icon (or, if no icon, prepended) is replaced by `<Loader2 className="animate-spin">`. Label stays visible. Button is disabled. `aria-busy="true"` set.
+- Children rendered as the visible label, with the leading `icon` (when provided) preceding via Button's gap utility.
+- Optional `trailingIcon` renders to the right of children. Hidden while loading (the leading-position spinner is the sole visual signal during async work).
+- When `loading=true`: leading icon (or, if no icon, prepended) is replaced by `<Loader2 className="animate-spin">`. Label stays visible. Button is disabled. `aria-busy="true"` set. Trailing icon hidden.
 - When `tooltip` (string) provided: button wrapped in `<Tooltip>...</Tooltip>` with `<span />` trigger wrapper.
 - When `href` is set: rendered as `<Button nativeButton={false} render={<Link href={href} />}>`.
 
@@ -923,6 +924,7 @@ interface IconButtonProps {
 ```ts
 interface ActionButtonProps {
   icon?: LucideIcon
+  trailingIcon?: LucideIcon           // optional — hidden while loading
   children: React.ReactNode           // visible label
   onClick?: () => void
   href?: string
@@ -2401,6 +2403,545 @@ interface ArchiveItemModalProps {
 
 ---
 
+### MultiFilterPillGroup
+
+**File:** `02-app/components/multi-filter-pill-group.tsx`
+**Purpose:** Multi-select state container for `FilterPill`. Promised by `FilterPillGroup` spec ("multi-select is a future `MultiFilterPillGroup`"). Click any pill toggles inclusion in `values`.
+
+**Anatomy:**
+- Row container: `flex items-center gap-1.5`.
+- Optional left label: `<span className="w-16 shrink-0 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</span>`.
+- Pills wrap container: `<div className="flex flex-wrap gap-1">{pills}</div>`.
+- Each option rendered via `FilterPill`; `active` = `values.includes(option.value)`.
+
+**Behaviour:**
+- Multi-select. `values` is the array of currently selected option values.
+- `onChange(values)` fires on any pill click — adds the value if not present, removes it if present.
+- No deselect-all affordance on the group itself — the parent (e.g. `PickerFilterBar`) provides "Clear all".
+
+**Props:**
+```ts
+interface MultiFilterPillOption {
+  value: string
+  label: string
+  count?: number
+  icon?: LucideIcon
+}
+
+interface MultiFilterPillGroupProps {
+  label?: string
+  values: string[]
+  onChange: (values: string[]) => void
+  options: MultiFilterPillOption[]
+}
+```
+
+**Do not:**
+- Single-select. That's `FilterPillGroup`.
+- Wrap pills onto multiple rows when only a few options. The `flex-wrap` is a safety net for high-density catalogues, not a layout default.
+
+---
+
+### ContentTypeCard
+
+**File:** `02-app/components/content-type-card.tsx`
+**Purpose:** Picker tile for one content type in the launch-picker-grid pattern. Compose-only — organisms render a grid of `ContentTypeCard`s; the card encapsulates icon + title + description + favourite-star + locked-state affordance + category/channel badges.
+
+**Anatomy:**
+- Outer: `<Link>` (unlocked) or `<div>` (locked). Class set: `group relative flex h-full flex-col rounded-lg border bg-card p-4 transition-colors`. Locked: append `opacity-60`. Unlocked: append `hover:border-foreground/20 hover:bg-muted/30`.
+- Top row: favourite-star button (left, `<button>` wrapping `<Star>`, fill applied when `isFavourite`), Lucide icon (centred, 32px, resolved via `getIconByName`), spacer.
+- Title: `<h3 className="font-medium text-base">`.
+- Description: `<p className="mt-1 line-clamp-2 text-sm text-muted-foreground">` (omitted when `null`).
+- Footer: when locked → `<LockBadge>` + `<MissingPrereqDeeplink>` stacked vertically. When unlocked → 1-2 `<TypeBadge>` chips for `pickerGroup` + `channel`.
+
+**Behavioural states:**
+- Unlocked, idle / hover.
+- Unlocked, favourited (star filled with amber accent — known DS-02 gap; uses `text-amber-500` as a temporary token until semantic state tokens land).
+- Locked (no hover effect, deeplink is the only interactive affordance).
+
+**Props:**
+```ts
+interface ContentTypeCardData {
+  id: string
+  slug: string
+  name: string
+  description: string | null
+  icon: string | null
+  pickerGroup: string
+  channel: string
+  channelHue: TagHue | 'neutral'
+  isFavourite: boolean
+  isLocked: boolean
+  missingPrereq: { label: string; href: string } | null
+}
+
+interface ContentTypeCardProps {
+  data: ContentTypeCardData
+  onToggleFavourite: (id: string) => void
+}
+```
+
+**Do not:**
+- Render a status badge — content types don't have a workflow state.
+- Make the whole card clickable when locked. Locked = card is a `<div>`, only the deeplink is interactive.
+- Inline the icon resolution. Always go through `getIconByName` so unknown icons fall back to a default rather than crashing.
+
+---
+
+### PickerFilterBar
+
+**File:** `02-app/components/picker-filter-bar.tsx`
+**Purpose:** Top filter row for the `launch-picker-grid` pattern. Two `MultiFilterPillGroup`s + favourites toggle + "Clear all" affordance.
+
+**Anatomy:**
+- Outer: `mb-6 flex flex-col gap-3 border-b pb-4`.
+- Two `MultiFilterPillGroup` rows (categories then channels). Empty option arrays cause the row to be omitted.
+- Bottom row: `flex items-center justify-between` containing `<FilterPill>` for "Favourites only" + `<button>Clear all</button>` (visible only when at least one filter is active).
+
+**Behaviour:**
+- All-of intersection across groups; multi-select within each group (handled by the children).
+- Clear all wipes categories + channels + favourites toggle in one call to the parent's `onClearAll`.
+
+**Props:**
+```ts
+interface PickerFilterBarProps {
+  categories: MultiFilterPillOption[]
+  channels: MultiFilterPillOption[]
+  activeCategories: string[]
+  activeChannels: string[]
+  favouritesOnly: boolean
+  onCategoriesChange: (vals: string[]) => void
+  onChannelsChange: (vals: string[]) => void
+  onFavouritesChange: (val: boolean) => void
+  onClearAll: () => void
+}
+```
+
+**Do not:**
+- Merge into a single multi-facet pill row. Each facet stays separate so the user can read filters at a glance.
+- Add a search input here — search lives in `PageChrome`'s action slot. Filter bar is for chip filters only.
+
+---
+
+### LockBadge
+
+**File:** `02-app/components/lock-badge.tsx`
+**Purpose:** Tiny "Needs an X" pill shown on locked content-type cards (and any future locked launch-pad surfaces). Inline-flex, low visual weight.
+
+**Anatomy:**
+- `<span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">`.
+- Lock icon 12px (Lucide `Lock`).
+- Body text from the `label` prop.
+
+**Props:**
+```ts
+interface LockBadgeProps {
+  label: string  // e.g. "Needs an Offer"
+}
+```
+
+**Do not:**
+- Take a `state` or `hue` prop. Always neutral muted — locked is a single visual concept.
+- Make it interactive. Hover/click affordances belong on `MissingPrereqDeeplink` next to it.
+
+---
+
+### MissingPrereqDeeplink
+
+**File:** `02-app/components/missing-prereq-deeplink.tsx`
+**Purpose:** Inline "+ Add ${label} →" link for empty-state affordances under cards or cascade steps. Routes to the relevant DNA/source page.
+
+**Anatomy:**
+- `<Link>` styled `inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline`.
+- Body: `+ Add {label}` + `<ArrowRight>` icon (12px trailing).
+
+**Props:**
+```ts
+interface MissingPrereqDeeplinkProps {
+  /** Object label without the leading verb. e.g. "an Offer", "a Newsletter channel". */
+  label: string
+  href: string
+}
+```
+
+**Do not:**
+- Hardcode the route. Always pass via `href` so the calling context owns the destination.
+- Add an icon prop. The plus-prefix and arrow-suffix are the contract.
+
+---
+
+### StrategyField
+
+**File:** `02-app/components/strategy-field.tsx`
+**Purpose:** Declarative widget for one strategy field in the content-creator generation surface. Switches on `field.id` to render either a `Select` (for entity ids and fixed enums) or an `Input` (for free-text fields like CTA URLs and sales angles).
+
+**Anatomy:**
+- `<div className="flex flex-col gap-1.5">`.
+- Label: `<label className="text-xs font-medium text-muted-foreground">{FIELD_LABELS[field.id]}</label>` with required asterisk in `text-destructive`.
+- Body: switch on `field.id`:
+  - `audience_segment` / `offer` / `knowledge_asset` / `platform` / `customer_journey_stage` / `tone_variation` → `Select` atom from `@/components/ui/select` with `options`.
+  - `sales_page_angle` / `cta_url` → `Input` atom.
+
+**Behaviour:**
+- Controlled. Calls `onChange(value | null)` — empty string normalises to `null`.
+- Empty `options` for a Select renders a "No options available" placeholder row inside the dropdown.
+
+**Props:**
+```ts
+interface StrategyFieldOption { value: string; label: string }
+interface StrategyFieldProps {
+  field: { id: StrategyFieldId; required: boolean }
+  value: string | null
+  onChange: (value: string | null) => void
+  options?: StrategyFieldOption[]
+  placeholder?: string
+}
+```
+
+**Do not:**
+- Hardcode an option-loader inside the molecule. The organism passes `options` after fetching from a server action — keeps the molecule pure.
+- Add ad-hoc field types. The `StrategyFieldId` union in `lib/llm/content/types.ts` is the source of truth; new ids belong there with their renderer mapped here.
+
+---
+
+### TopicCascadeStep
+
+**File:** `02-app/components/topic-cascade-step.tsx`
+**Purpose:** Single step in the topic engine cascade. Renders a single-select `Select` or a multi-select checkbox list, with locked-option dimming and inline `MissingPrereqDeeplink`.
+
+**Anatomy:**
+- Outer: `flex flex-col gap-1.5`.
+- Label row identical to `StrategyField`.
+- Single-select body: `Select` atom with options. Disabled options dim and disable the row.
+- Multi-select body: `<div className="flex flex-col gap-1.5 rounded-md border p-2">` containing `Checkbox` + `<label>` rows.
+- Loading state: animated `bg-muted` placeholder rectangle in place of the control.
+
+**Props:**
+```ts
+interface TopicCascadeStepOption {
+  key: string
+  label: string
+  isLocked?: boolean
+  missingPrereqLabel?: string
+  missingPrereqHref?: string
+}
+interface TopicCascadeStepProps {
+  label: string
+  required: boolean
+  allowMultiSelect: boolean
+  options: TopicCascadeStepOption[]
+  selectedKeys: string[]
+  onChange: (keys: string[]) => void
+  loading?: boolean
+}
+```
+
+**Do not:**
+- Mix single + multi in one step. The orchestrator (`TopicCascade`) decides per-step.
+- Owner-fetch options. `TopicCascade` owns option fetching — `TopicCascadeStep` only renders.
+
+---
+
+### TopicCascade
+
+**File:** `02-app/components/topic-cascade.tsx`
+**Purpose:** Orchestrates the 1..4 step Topic Engine cascade for the content-creator generation surface. Owns option fetching via server actions, step reveal, multi-select gating at the leaf, free-text branch (when category 1 is "Free text"), leaf-augment toggle ("+ Add a note"), and the topic-clear confirm modal.
+
+**Anatomy:**
+- Outer: `flex flex-col gap-4`.
+- A vertical stack of `TopicCascadeStep`s, one per revealed step.
+- After the leaf resolves: a "+ Add a note" button OR (when expanded) a `Textarea` for the leaf-augment.
+- When category 1 is free-text: a `Textarea` replaces steps 2..N.
+- A `Modal` (size sm) for the topic-clear confirm.
+
+**Behaviour:**
+- On mount: fetches step-1 categories via `listTopicCategoriesAction`.
+- On step selection: clears all selections at and below the changed step, refetches the next step's options via `listTopicChildrenAction`. When the new selection is a leaf, calls `resolveTopicChainAction` and stores the resulting `TopicChain` in `value.resolved`.
+- On backtrack with non-empty leaf-augment: shows the topic-clear confirm modal before clearing.
+- Multi-select leaf: collects all checked nodes into `value.selections` and resolves once.
+- Free-text branch: short-circuits the cascade; calls `resolveTopicFreeTextAction` on textarea change (debounced via `useTransition`).
+
+**Props:**
+```ts
+type TopicCascadeState = {
+  selections: TopicNode[]
+  freeTextAugment: string
+  freeTextOnly?: string
+  resolved: TopicChain | null
+}
+interface TopicCascadeProps {
+  value: TopicCascadeState
+  onChange: (state: TopicCascadeState) => void
+}
+```
+
+**Do not:**
+- Persist cascade state internally. The organism owns the `TopicCascadeState` so it can serialise into `GenerationInputs` at submit and pre-fill from URL params.
+- Resolve the leaf chain on every keystroke. Resolution happens once when a leaf is reached — leaf-augment text is appended to assembler inputs, not the resolved chain.
+
+---
+
+### NumberStepper
+
+**File:** `02-app/components/number-stepper.tsx`
+**Purpose:** Three-segment − / value / + stepper for bounded numeric inputs (variant count, future batch sizes).
+
+**Anatomy:**
+- Outer: `inline-flex items-center gap-1`.
+- Decrement: `IconButton` icon Minus, size sm, variant outline, no tooltip. Disabled when `value - step < min`.
+- Value display: `<span className="inline-flex h-8 min-w-[2.5rem] items-center justify-center rounded-md border bg-background px-2 text-sm tabular-nums">`.
+- Increment: `IconButton` icon Plus, size sm, variant outline. Disabled when `value + step > max`.
+
+**Props:**
+```ts
+interface NumberStepperProps {
+  value: number
+  onChange: (value: number) => void
+  min?: number
+  max?: number
+  step?: number  // default 1
+  label?: string
+}
+```
+
+**Do not:**
+- Allow direct numeric input in the value display (read-only by design — keeps the ±1 increment honest, prevents validation churn).
+- Take a "size" prop. One shape; different visual = different molecule.
+
+---
+
+### ContentTypeSwitcher
+
+**File:** `02-app/components/content-type-switcher.tsx`
+**Purpose:** Compact dropdown switcher for the `creator-workspace-three-region` pattern. Replaces the previous external "Switch ↗" link with an inline dropdown so the user stays in the workspace flow.
+
+**Anatomy:**
+- `Select` atom with compact trigger: `h-8 min-w-[180px] text-xs`.
+- `SelectValue` renders the current content type's label.
+- `SelectContent` lists all unlocked active content types.
+
+**Behaviour:**
+- Controlled by `currentSlug` (the content_type.slug at the route).
+- `onChange(slug)` fires on selection; consumer is responsible for navigation (typically `router.push('/content/create/[slug]')`).
+- Locked content types are filtered out by the page server component before passing options.
+
+**Props:**
+```ts
+interface ContentTypeSwitcherOption {
+  value: string  // slug
+  label: string  // display name
+}
+interface ContentTypeSwitcherProps {
+  currentSlug: string
+  options: ContentTypeSwitcherOption[]
+  onChange: (slug: string) => void
+}
+```
+
+**Do not:**
+- Bake navigation into the molecule. The consumer owns the route — keeps the molecule reusable for non-Next.js contexts.
+- Promote to a generic `ItemSwitcher` (DS-09). That molecule is for plural DNA item switchers with different ergonomics; this one is purpose-built for the launch-surface pattern.
+
+---
+
+### GenerationSettingsStrip
+
+**File:** `02-app/components/generation-settings-strip.tsx`
+**Purpose:** Lighter inline Settings strip for the `creator-workspace-three-region` pattern. Compact controls (Model + I/we override + Tone variation + Variant count) sit in a single row above the primary action button — kept lighter than a SectionCard to reduce visual weight at the bottom of the rail.
+
+**Anatomy:**
+- Outer: `flex flex-wrap items-center gap-3 rounded-md bg-muted/40 px-3 py-2`.
+- Each control wrapped in a label-above container: `flex flex-col gap-0.5` + `text-[10px] uppercase tracking-wide text-muted-foreground` label.
+- Model + I/we + Tone use compact `Select` triggers (`h-8 text-xs`, fixed width).
+- Variants uses `NumberStepper`.
+- Tone control omitted when `toneOptions` is empty.
+
+**Behaviour:**
+- Controlled. Single `onChange` returns the full `GenerationSettingsStripValue`.
+- Empty-string `modelSlug` and `toneVariation` represent "Default" / "Default (auto)".
+- Person override is a fixed three-option enum.
+
+**Props:**
+```ts
+type PersonOverride = 'default' | 'singular' | 'plural'
+interface GenerationSettingsStripValue {
+  modelSlug: string  // '' = default
+  person: PersonOverride
+  toneVariation: string  // '' = default (auto)
+  variantCount: number
+}
+interface GenerationSettingsStripProps {
+  value: GenerationSettingsStripValue
+  onChange: (value: GenerationSettingsStripValue) => void
+  aiModels: { slug: string; name: string }[]
+  toneOptions: { value: string; label: string }[]
+  variantMin?: number
+  variantMax?: number
+}
+```
+
+**Do not:**
+- Promote to a SectionCard. The strip's lightness is the contract — if a SectionCard ever feels right, that's a different molecule.
+- Add ad-hoc controls. Variant of the strip = different molecule.
+
+**Build-phase note:** Pre-approved escalation path — if the inline strip looks visually unbalanced against the SectionCards above it during build, promote to a standard `SectionCard` (titled "AI / language settings"). Promotion is a contained visual fix; not a redesign.
+
+---
+
+### SearchInput
+
+**File:** `02-app/components/search-input.tsx`
+**Purpose:** Generic search input with leading magnifier icon. Use anywhere a free-text search field needs the icon affordance — pickers, list filters, modals.
+
+**Anatomy:**
+- Outer: `relative ${widthClass}` (default `w-60`).
+- Leading `<Search>` icon (Lucide, 16px) absolutely positioned: `pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground`.
+- `<Input type="search">` atom with `pl-9` to clear the icon.
+
+**Props:**
+```ts
+interface SearchInputProps {
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  widthClass?: string
+}
+```
+
+**Do not:**
+- Take an unstyled-search variant. The icon is the contract — without it, use a plain `<Input>`.
+- Hardcode width. Pass via `widthClass` so the consumer controls layout.
+
+---
+
+### AssembledPromptInspector
+
+**File:** `02-app/components/assembled-prompt-inspector.tsx`
+**Purpose:** Right-pane debug viewer for the assembled eight-layer prompt — **OUT-02-P4a only**. Replaced wholesale by variant cards in 4b. Don't over-polish.
+
+**Anatomy:**
+- Outer: `flex h-full flex-col`.
+- Toolbar: `shrink-0 flex items-center justify-between border-b px-4 py-2` with run-id pill (`font-mono text-xs text-muted-foreground`) + Copy `IconButton`.
+- Body: `<pre className="flex-1 overflow-auto whitespace-pre-wrap break-words p-4 font-mono text-xs leading-relaxed text-foreground">`.
+
+**Behaviour:**
+- Copy button writes the full `assembledPrompt` to clipboard. Icon flips to `Check` for 1.5s on success. Silent fallback on clipboard API rejection (debug surface).
+
+**Props:**
+```ts
+interface AssembledPromptInspectorProps {
+  runId: string
+  assembledPrompt: string
+}
+```
+
+**Do not:**
+- Add syntax highlighting, line numbers, or layer-folding. This molecule exists *because* 4b will replace it; investing in polish is wasted work.
+
+---
+
+### ConversationListRowIcon
+
+**File:** `02-app/components/conversation-list-row-icon.tsx` *(planned — OUT-01a)*
+**Purpose:** Fixed-width icon slot rendered in front of every conversation list row title. Encapsulates the freeform / skill-active / skill-completed / registry-miss icon decision and adornment overlay so the row template stays branch-free. Established in OUT-01a.
+
+**Anatomy:**
+- Outer wrapper: `relative inline-flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground`.
+- Glyph: 16px Lucide icon — `MessageCircle` for `freeform`, `Brain` for the three skill states.
+- Adornment overlay (skill-completed and registry-miss only): absolute, bottom-right, 10px, `-mr-1 -mb-1`. `Check` in `--color-success` for completed; `AlertTriangle` in `--color-warning` for registry-miss.
+- The slot consumer in `ConversationList` provides the trailing `gap-2` to the title — this molecule renders only the 16px glyph + adornment, not the gap.
+
+**Behavioural states:**
+- Stateless — purely presentational. Active/inactive row colour rules belong to the row, not the icon (icon stays muted regardless).
+
+**Edge cases:**
+- **`registry-miss` AND `skill-completed` simultaneously**: not possible by construction (registry miss is a runtime check that overrides the completion state's render path), so only one adornment ever renders.
+
+**Props:**
+```ts
+interface ConversationListRowIconProps {
+  state: 'freeform' | 'skill-active' | 'skill-completed' | 'registry-miss'
+}
+```
+
+**Do not:**
+- Add a click handler. The whole row is the click target; the icon is decorative metadata.
+- Vary glyph colour to convey state (e.g. tinting `Brain` primary). The adornment is the state signal — a tinted glyph would compete with the row's active-state colour rule.
+- Extend the slot width past 16px. The conversation list's `gap-2` between icon and title is what aligns titles across the list; widening the icon shifts the alignment.
+
+---
+
+### InlineWarningBanner
+
+**File:** `02-app/components/inline-warning-banner.tsx` *(planned — OUT-01a, also consumed by OUT-01b)*
+**Purpose:** Single-line warning bar that sits above content in a page region — not a toast, not a centred empty state. Used by OUT-01a's registry-miss banner above the chat message stream and by OUT-01b's "state update failed" warning row at the top of the context pane.
+
+**Anatomy:**
+- Outer wrapper: `flex items-start gap-2 rounded-md border px-3 py-2`, with surface `bg-[var(--color-warning-bg)] border-[var(--color-warning)] text-[var(--color-warning-foreground)]`.
+- Icon: `AlertTriangle` 16px on the left, `text-[var(--color-warning)]`, `mt-0.5` to align with first line of text.
+- Text block: `flex-1 min-w-0`. Title is `text-sm`. Subtitle (optional) sits on a second line as `text-xs text-muted-foreground`.
+- Dismiss (when `onDismiss` provided): `IconButton` ghost variant with `X`, anchored right via `ml-auto`. Omitted entirely when `onDismiss` is undefined — there is no "dismissible: false" prop, the existence of the handler IS the contract.
+
+**Behavioural states:**
+- Idle (rendered).
+- Dismissed (consumer's responsibility — this molecule does not own dismiss state; the parent removes it from the tree).
+
+**Edge cases:**
+- **Long title or subtitle**: wraps. The banner is single-row by typography, not by truncation. Text wrapping is acceptable — the banner is a state, not a fixed-height chrome element.
+- **No subtitle**: the molecule renders a tighter single line; vertical padding remains `py-2`.
+
+**Props:**
+```ts
+interface InlineWarningBannerProps {
+  title: string
+  subtitle?: string
+  onDismiss?: () => void
+}
+```
+
+**Do not:**
+- Use this for success / info / error states. Add sibling molecules (`InlineSuccessBanner`, etc.) when those states are needed; do not parameterise tone via a `variant` prop and reuse this molecule. Each tone has its own token bundle and its own contract.
+- Render this as a centred empty state — that's `EmptyState`'s job. This molecule is a thin top-of-region bar.
+- Use this for transient feedback — that's the toast pattern's job. This molecule is for persistent state visibility.
+
+---
+
+### SkillContinueBar
+
+**File:** `02-app/components/skill-continue-bar.tsx` *(planned — OUT-01a)*
+**Purpose:** Surface the staged-skill advance affordance below the latest assistant message in the chat: a Continue button (with trailing arrow) plus a missing-items hint when the current stage's checklist isn't filled. Wraps `ActionButton`. The runtime decides when the molecule is rendered (i.e. when `readyToAdvance: true` and the skill is staged); the molecule itself is purely presentational and stateless.
+
+**Anatomy:**
+- Outer wrapper: `flex flex-col items-start gap-1`.
+- Top row: `ActionButton` with `trailingIcon={ArrowRight}`, label "Continue to next stage" (idle / blocked) or "Advancing…" (while loading). Disabled when `missingItems.length > 0`. Loading state takes precedence over blocked state visually.
+- Hint row (only when `missingItems.length > 0` AND not loading): `<span className="inline-flex items-center gap-1 text-xs text-muted-foreground">` containing `<AlertTriangle className="h-3 w-3" />` and the text `Still gathering: <missingItems.join(', ')>`.
+
+**Behavioural states:**
+- **Idle**: button enabled, no hint.
+- **Blocked**: button disabled, hint visible listing missing checklist labels.
+- **Loading**: button disabled with spinner + "Advancing…" label, trailing arrow hidden, hint hidden.
+- **Advanced**: parent removes the molecule from the tree; this molecule has no internal post-advance state.
+
+**Edge cases:**
+- **Both `loading` and `missingItems` set**: loading wins (button shows spinner, hint hidden). The runtime should not normally trigger advance while items are missing, but the molecule defends against the conflict.
+- **Empty `missingItems` array**: equivalent to idle.
+
+**Props:**
+```ts
+interface SkillContinueBarProps {
+  missingItems: string[]    // empty array = enabled; non-empty = disabled with hint
+  loading: boolean
+  onAdvance: () => void
+}
+```
+
+**Do not:**
+- Take a `variant` prop. The contract is a single advance affordance; variations belong in different molecules.
+- Render the hint as a tooltip on the disabled button — the missing items are persistent state the user needs to see, not a hover-only explanation.
+- Show the trailing arrow during loading. The spinner is the sole busy signal.
+
+---
+
 ## Conventions
 
 ### Cell-context input/textarea pattern *(DS-04)*
@@ -2475,3 +3016,4 @@ Before creating any new shared component:
 | 2026-04-27 | DS-09: ItemSwitcher molecule replaces 4 pill-strip switcher molecules (AudienceSegmentSwitcher, PlatformSwitcher, KnowledgeAssetSwitcher, OfferSwitcher). Long item names now handled via dropdown rather than 24-char truncation. Generic over `T`, Link-based navigation, consumer pre-filters items. Removes 4 specs from DS-03 backfill scope. |
 | 2026-04-27 | DS-03: Spec backfill complete. 38 new specs written (19 full + 18 light + 1 shared archive); 8 existing DS-01 specs rewritten in DS-02 format for consistency. Two file moves: `OfferDetailView` → `02-app/app/(dashboard)/dna/offers/[id]/` (organism layer, removed from registry); `ConfidenceBadge` → `02-app/components/` (proper molecule home). After DS-03, every registry entry has a real spec anchor — `npm run check:design-system` reports 0 missing-spec warnings. Anchor function in check script now handles `*(light)*` and `(shared pattern)` suffixes. |
 | 2026-04-27 | DS-05: IconButton + ActionButton molecules. Both wrap Button atom with optional Link rendering (`href` prop), optional tooltip, and (ActionButton only) loading state. Migrated ~21 organism files; 3 Tooltip-wrapping-Button patterns folded into IconButton. Atom-import warnings dropped 41 → 20. Remaining 20 are documented carrythrough (Badge × 4 + DropdownMenu × 3 + DropdownMenuTrigger render Buttons × 3 + DS-04-deferred form-control sites). |
+| 2026-04-30 | OUT-02-P4a: 10 new molecules — `MultiFilterPillGroup` (multi-select promised by FilterPillGroup spec), `ContentTypeCard` + `PickerFilterBar` + `LockBadge` + `MissingPrereqDeeplink` (launch-picker-grid pattern), `StrategyField` + `TopicCascadeStep` + `TopicCascade` (creator-workspace-three-region inputs), `NumberStepper` (variant count + future bounded numerics), `AssembledPromptInspector` (debug-grade right-pane viewer, replaced in 4b). Establishes `launch-picker-grid` and `creator-workspace-three-region` template patterns. Two new tables (`brand_content_type_favourites`, `ai_models`); OUT-02-PL2 closed (StrategyFieldId union extended with `platform`, dual-read removed from placeholders). |

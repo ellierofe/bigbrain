@@ -522,7 +522,19 @@
 - **Status:** done
 - **Brief:** `01-design/briefs/INP-11-multi-modal-processing.md` (approved 2026-04-17)
 - **Implementation:** Sources page at `/inputs/sources` (inbox filter, preview, delete, bulk select + process). Results page at `/inputs/results` (pending/completed split, analysis review panel). API routes: `/api/process/individual`, `/batch`, `/reflective`, `/synthesis`, `/commit-run`. Processing functions in `lib/processing/analyse.ts`. Analysis uses Gemini Pro (`gemini-3.1-pro-preview`).
-- **Remaining:** Analysis → graph commit not yet wired (analysis documents stored in `processing_runs.analysis_result` but not written to graph nodes). Individual extraction commit through `processing_runs` needs adjustment (`commitExtraction()` creates new source doc row — needs to use existing one).
+- **Remaining:** Analysis → graph commit not yet wired (analysis documents stored in `processing_runs.analysis_result` but not written to graph nodes). Individual extraction commit through `processing_runs` needs adjustment (`commitExtraction()` creates new source doc row — needs to use existing one). Both items now folded into INP-12.
+
+### INP-12: Source × Lens processing model + richer graph representation
+- **What:** Replace INP-11's hardcoded 4-mode processing with a composable Source-type × Lens model. Source documents become first-class graph citizens with LLM-generated summaries, semantic chunks (per-speaker-turn), and tags-at-ingest. Canonical Person/Organisation resolution UI with multi-select relationship types and contact cards. Per-item review/edit commit for both extraction and lens reports. Lens reports become first-class addressable artefacts. Wipe and re-ingest the existing 67 transcripts under the new model.
+- **Layer:** input + storage + cross
+- **Problems:** P1, P3, P4 (also design rules 1, 2, 3, 4)
+- **Size:** XL
+- **Depends on:** INP-11 (done), KG-04 (politics graph port — must complete first; canonical resolution needs the existing graph populated)
+- **Enables:** Meaningful retrieval at scale, AUTO-03, project synthesis quality, content creator quality, INP-05 (document ingestion can use the same source-type vocabulary), INP-08 (auto-classification slots into the source-type assignment step)
+- **Status:** in-progress (track A ungated; feature-build blocked on KG-04)
+- **Brief:** `01-design/briefs/INP-12-source-lens-processing.md` (approved 2026-04-30)
+- **Track A (ungated, in parallel with KG-04):** ADR-002 amendment, ADR-009 Source × Lens, 4 schema docs + migrations, lens prompts, source-type schema fragments, layout-design, optional new ingest pipeline.
+- **Track B (gated on KG-04):** canonical-resolution UI live, re-ingest day, feature-build end-to-end.
 
 ### INP-08: Krisp meeting auto-classification
 - **What:** Maintain a list of recurring meeting patterns (name, participants, schedule, tag conventions). When a Krisp transcript is ingested via INP-01, auto-match it against known patterns and pre-populate title and tags accordingly. Example: transcripts with Demetrius on Mondays → title "Mastermind hotseat — [date]", tags ["mastermind", "coaching"]. Patterns stored as a simple config (JSON or DB table). User can review/correct before processing.
@@ -597,8 +609,10 @@
 - **Size:** L
 - **Depends on:** OUT-01 (chat infra), INF-06
 - **Enables:** OUT-01b (context pane), OUT-01c (DB-write tool), DNA-02 generation, OUT-03, OUT-05
-- **Status:** in-progress
-- **Brief:** `01-design/briefs/OUT-01a-chat-skills-infrastructure.md` (approved 2026-04-30)
+- **Status:** done
+- **Brief:** `01-design/briefs/OUT-01a-chat-skills-infrastructure.md` (approved 2026-04-30, complete 2026-05-01)
+- **Layout:** `01-design/wireframes/OUT-01a-layout.md` (approved 2026-04-30)
+- **Implementation:** Migration 0030 (`skill_id` + `skill_state` on `conversations`). Skills runtime + registry under `lib/skills/`: `types.ts`, `runtime.ts`, `state.ts`, `registry.ts`, `sub-agent-tools.ts`, `load-brief.ts`. `retrieval_bot` sub-agent wraps the existing 4 retrieval tools. `hello-world` example skill (discursive, one checklist item) validates the runtime end-to-end. Chat route (`/api/chat`) branches on `skill_id` — skill path uses assembled system prompt + sub-agent tools + a second `generateObject` call (Claude Haiku 4.5) after each turn for structured state extraction. Slash-command parsing in `ChatInput` (`/<id>` and `/skill <id>`); Case A attaches in place on empty conversations, Case B opens a `Modal` confirm and routes to a new conversation. Three new molecules: `ConversationListRowIcon` (fixed icon slot in conversation list rows), `InlineWarningBanner` (registry-miss bar — also picked up by OUT-01b's state-extraction-failed row), `SkillContinueBar` (staged-skill advance affordance). `ActionButton` extended with `trailingIcon`.
 - **Note:** ADR-008 (2026-04-30) confirms skills are a distinct primitive from OUT-02's content-creation prompt architecture. Independent runtime; shared LLM client only. Future bridge (skills calling content-creation pipelines as tools) is parked.
 
 ### OUT-01b: Adaptive chat context pane
@@ -608,7 +622,9 @@
 - **Size:** M
 - **Depends on:** OUT-01a
 - **Enables:** DNA-02 generation flows, OUT-03, OUT-02 (potentially — chat-mode variant picker context)
-- **Status:** planned
+- **Status:** in-progress
+- **Brief:** `01-design/briefs/OUT-01b-adaptive-chat-context-pane.md` (approved 2026-04-30)
+- **Note:** Includes a small amendment to OUT-01a's edge case — state extraction switches to AI SDK structured output (Zod-validated) instead of silent-skip on malformed JSON. Lands as part of OUT-01b's build.
 
 ### OUT-01c: LLM database write tool
 - **What:** LLM-callable tool for writing to DNA tables (and later: ideas, source knowledge, etc.) with schema awareness — knows table shapes, validates inputs, surfaces required-field gaps. Reusable across chat: used by skills (e.g. brand meaning save) and by ad-hoc chat ("update my value proposition to say…"). Scopes: per-table allowlist + per-field write rules + user confirmation contract for each write.
@@ -619,6 +635,16 @@
 - **Enables:** DNA-02 generation, in-chat DNA editing, OUT-03 strategy update
 - **Status:** planned
 - **Note:** Security-sensitive — needs scoping rules and a confirmation contract worked out at brief time. Reuses the lessons from existing auto-save on edit views (DS-06 save contract).
+
+### OUT-01d: Skill creator skill
+- **What:** A meta-skill that walks the user through authoring a new chat skill or context-pane tab. Prompts for the inputs that define a skill (id, mode, checklist, stages, sub-agents, gathered schema, opening message) or a context tab (id, icon, status function, render contract, data source) and emits the code scaffolding. Run after OUT-01b ships and a few skills/tabs have been built by hand, so the questions are grounded in real friction. Future evolution: post-run reflection — a skill can invoke `/skill-creator` to update itself based on how the just-completed run went (motivates the longer-term "utility skills" model where multiple skills can co-exist in one conversation).
+- **Layer:** cross
+- **Problems:** P5
+- **Size:** M
+- **Depends on:** OUT-01a, OUT-01b
+- **Enables:** faster authoring of new skills and context tabs; eventual utility-skill / flow-skill distinction
+- **Status:** planned
+- **Note:** Defer until OUT-01b ships and at least one or two more skills/tabs have been built manually. The point of writing it later is to learn what the questions actually need to be.
 
 ### OUT-02: Content creator — single-step
 - **What:** Parameter-driven content generation built on the eight-layer prompt model. User picks a content type (filterable catalogue), fills a content-type-specific Strategy panel, drills the Infinite Prompt Engine (1–4 step cascade with multi-select on item steps + free-text augment at any depth), tunes Settings (model, person override, tone variation, variant count), and generates N variants. Variants can be edited inline, saved to library (auto-tagged from selections + user tags), chatted with via inline modal, or regenerated. Saved items appear in `/chat` context picker. Architecture: `content_types` carry catalogue metadata + `topic_context_config`; `prompt_stages` (FK) carry per-stage prompt config across the eight layers; `prompt_fragments` is the unified library (six kinds: persona, worldview, craft, context, proofing, output_contract); `topic_paths` declares the 1–4 step cascade. `generation_runs` is the system-of-record for in-flight + recently-generated work; `library_items` is opt-in registry of explicitly-saved variants.
@@ -646,7 +672,43 @@
     - Smoke tests at `02-app/lib/llm/content/__smoke__/assemble-smoke.ts`, `02-app/lib/content/__smoke__/topic-engine-smoke.ts`, `02-app/lib/db/__smoke__/sweep-generation-runs-smoke.ts` — all passing. Final prompts: instagram-caption 25,573 / newsletter-edition 9,021 / brainstorm-blog-posts 5,030 chars.
     - Drift fixes shipped during build: `topic` + `topic_platform` fragments to v=2; newsletter skeleton placeholder rename; `${customer_journey_stage}` added to vocab Group A. Remaining drift in 5 unused fragments — see `04-documentation/reference/legacy-fragment-placeholder-drift.md`.
     - Phase 2 punchlist: OUT-02-PL1 (cascade smoke coverage), OUT-02-PL2 (StrategyFieldId vocab tightening), DNA-09 sample-coverage gap (newsletter/email).
-  - **Phase 4 (next):** picker UI on top of `topic-engine.ts`, Strategy panel, variant editor, library. Architecture doc Part 4 covers the UX. Now unblocked by Phase 2.
+  - **Phase 4 (in progress):** UI workstream, split into 4a / 4b / 4c sub-features:
+    - **OUT-02-P4a (done 2026-05-01):** picker + generation surface shell (Strategy panel + Topic Engine UI + Settings + Generate-to-assembled-prompt). 13 new molecules, 2 new templates, 1 migration, OUT-02-PL2 closed. Cursor-pointer added to base Button atom (app-wide polish).
+    - **OUT-02-P4b (planned):** generation flow + variant cards + save modal + library page.
+    - **OUT-02-P4c (planned):** chat-on-variant inline modal + library items as `/chat` context.
+
+### OUT-02-P4a: Content creator UI shell — picker + generation surface
+- **What:** UI shell for the content creator. `/content` picker (filterable card grid with search, category/channel filters, favourites toggle, locked-card affordances) and `/content/create/[slug]` generation surface (three-region layout: left-rail Strategy panel + Topic Engine cascade + Settings strip; right-pane assembled-prompt inspector; sticky-footer Generate). Generate inserts a `generation_runs` row, calls the existing `assemble()` runtime, and returns the assembled eight-layer prompt — no model call yet (that's 4b). Closes OUT-02-PL2.
+- **Layer:** output
+- **Problems:** P5
+- **Size:** M
+- **Depends on:** OUT-02 Phases 1+2+3 (done — runtime + seeds), DNA-01..09 (consumed via existing bundles)
+- **Enables:** OUT-02-P4b (generation flow + variants + library), OUT-02-P4c (chat-on-variant)
+- **Status:** done — closed 2026-05-01
+- **Brief:** `01-design/briefs/OUT-02-P4a-content-creator-ui-shell.md` (complete 2026-05-01)
+- **Layout:** `01-design/wireframes/OUT-02-P4a-layout.md` (approved 2026-04-30)
+- **Migration:** `0029_spicy_mauler.sql` — `ai_models` + `brand_content_type_favourites` tables.
+- **New molecules (13 + base atom polish):** `ContentTypeCard`, `PickerFilterBar`, `MultiFilterPillGroup`, `StrategyField`, `TopicCascadeStep`, `TopicCascade`, `MissingPrereqDeeplink`, `LockBadge`, `NumberStepper`, `AssembledPromptInspector`, `SearchInput`, `GenerationSettingsStrip`, `ContentTypeSwitcher`. Establishes `launch-picker-grid` and `creator-workspace-three-region` templates (both registered). App-wide fix: `cursor-pointer` added to base Button atom (`02-app/components/ui/button.tsx`).
+- **Resolves:** OUT-02-PL2 — StrategyFieldId union extended with `platform` + `sales_page_angle` + `cta_url`; dual-read fallback removed from `placeholders.ts`.
+- **Implementation notes:** Strategy field IDs aligned to seed convention (singular `audience_segment` / `offer` / `knowledge_asset` / `platform`, not `_id`-suffixed). Topic engine cascade auto-skips the entity step when the matching strategy field is filled — saves picking the same audience/offer/etc twice. **Mixed lookup contract surfaced and noted:** `topic-engine.ts`'s public functions use different keys — `listChildren(brandId, parentId, ...)` looks up by uuid, `resolveChain(brandId, leafPath, ...)` looks up by dotted-path string. Worth unifying eventually. Base-ui Checkbox needs `<label>` wrap (not `htmlFor`) because it's a custom `<div>` — pattern to standardise.
+
+### OUT-02-P4b: Content creator — generation flow + variants + library
+- **What:** Plug the model call into the 4a shell. Wires `generation_runs` `pending` → `streaming` → `complete` against the Vercel AI SDK using the assembled prompt from 4a. Replaces the right-pane prompt-inspector with variant cards (edit / save / discard / regenerate). Adds the save modal with auto-tag pre-fill + user tag editor. Adds `/content/library` list view with filters.
+- **Layer:** output
+- **Problems:** P5
+- **Size:** M
+- **Depends on:** OUT-02-P4a
+- **Enables:** OUT-02-P4c
+- **Status:** planned
+
+### OUT-02-P4c: Content creator — chat-on-variant + library-as-context
+- **What:** Inline chat-on-variant modal in the generation surface (reuses OUT-01 AI SDK chat). Library items become first-class context in the main `/chat` context picker. Closes the OUT-02 V1 exit criteria.
+- **Layer:** output
+- **Problems:** P5
+- **Size:** S–M
+- **Depends on:** OUT-02-P4b, OUT-01 (chat infra)
+- **Enables:** OUT-02 V1 exit
+- **Status:** planned
 
 ### OUT-02a: Content creator — long-form / multi-step
 - **What:** Two-step generation flow for long-form content (sales pages, web pages, proposals). Stage 1 produces a structured blueprint (`{purpose, rationale, messaging, provenance}` per section). User reviews and edits in a richer-than-legacy editor (reorder, per-section regenerate, lock sections, swap DNA per section). Stage 2 generates copy section-by-section. Stage 3 (optional, required for sales pages) is a synthesis pass that reconciles flow against the blueprint. Same eight-layer prompt model and `content_types`/`prompt_stages` schema as OUT-02 — this just enables `is_multi_step = true` and adds the editor + stage handoff. Also includes V2 smarts: AI suggestion from one-line goal in picker, project/mission-aware ranking, retrieval-aware step 4 ranking, cost guardrails.
@@ -675,8 +737,9 @@
 - **Size:** XS
 - **Depends on:** OUT-02 Phase 2 (done)
 - **Enables:** Type-safe strategy field handling
-- **Status:** planned
+- **Status:** done — closed 2026-05-01 as part of OUT-02-P4a build.
 - **Origin:** OUT-02 Phase 2 session 2026-04-30 (`2026-04-30-out02-phase2-runtime-x4q`).
+- **Resolution:** Took option (a) — extended `StrategyFieldId` union with `platform` (matching the seed convention; not `platform_id`). Also added `sales_page_angle` and `cta_url` for full alignment with the placeholder vocabulary. Dropped the dual-read fallback in `placeholders.ts:platform_name`. Seeds untouched.
 
 ### OUT-03: Strategy generation and update
 - **What:** Generate or refine DNA elements. Multiple trigger paths: (a) via chat — "help me rethink my positioning for [audience]", (b) via forms/dashboard — structured input, (c) **retrieval-informed** — system pulls relevant source knowledge, research, and graph context to suggest or draft strategy updates. E.g. new research on a topic could surface a prompt to revisit a methodology or content pillar. All paths: generates a draft → you approve → DNA updates with version history.

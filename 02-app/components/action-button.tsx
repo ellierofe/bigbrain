@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils'
 
 interface ActionButtonProps {
   icon?: LucideIcon
+  /** Optional trailing icon, rendered to the right of children. Hidden while loading. */
+  trailingIcon?: LucideIcon
   children: React.ReactNode
   onClick?: () => void
   /** When set, renders as a Next.js Link. */
@@ -31,6 +33,7 @@ interface ActionButtonProps {
 
 export function ActionButton({
   icon: Icon,
+  trailingIcon: TrailingIcon,
   children,
   onClick,
   href,
@@ -45,6 +48,7 @@ export function ActionButton({
 }: ActionButtonProps) {
   const isDisabled = Boolean(disabled || loading)
   const LeadingIcon = loading ? Loader2 : Icon
+  const Trailing = !loading ? TrailingIcon : undefined
 
   const button = href ? (
     <Button
@@ -61,6 +65,7 @@ export function ActionButton({
         <LeadingIcon className={cn(loading && 'animate-spin')} />
       )}
       {children}
+      {Trailing && <Trailing />}
     </Button>
   ) : (
     <Button
@@ -77,6 +82,7 @@ export function ActionButton({
         <LeadingIcon className={cn(loading && 'animate-spin')} />
       )}
       {children}
+      {Trailing && <Trailing />}
     </Button>
   )
 

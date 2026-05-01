@@ -1,8 +1,8 @@
 # Chat Skills Infrastructure Brief
 Feature ID: OUT-01a
-Status: approved
-Last updated: 2026-04-30
-Related: OUT-01 (chat — done), OUT-01b (adaptive context pane — depends on this), OUT-01c (LLM database write tool — depends on this), DNA-02 (first consumer), ADR-008 (skills as separate primitive from content-creation pipelines)
+Status: complete
+Last updated: 2026-05-01 (build complete)
+Related: OUT-01 (chat — done), OUT-01b (adaptive context pane — brief approved 2026-04-30), OUT-01c (LLM database write tool — depends on this), DNA-02 (first consumer), ADR-008 (skills as separate primitive from content-creation pipelines)
 
 ## Summary
 
@@ -216,6 +216,8 @@ No direct interaction. Skills can invoke `retrieval_bot` which queries the graph
 
 ## UI/UX notes
 
+**Template match:** none. New pattern (small) — chat surface extensions + skill-launch button. Layout spec at `01-design/wireframes/OUT-01a-layout.md`.
+
 (Filled in detail at layout-design phase. The build needs at minimum:)
 
 - **Skill marker** on conversations: visual indicator (badge, colour shift, or icon in the conversation list) so skill conversations are distinguishable from freeform
@@ -233,10 +235,12 @@ A conversation row exists with `skill_id = 'foo'` but the registry has no `foo` 
 Block advancement. Surface what's missing inline ("The system hasn't captured X yet — keep talking, or fill it manually"). Validation runs against the current stage's `checklistItemIds`. v1: block-and-surface only; no manual-fill UI (deferred to OUT-01b).
 
 ### LLM emits malformed structured state output
-The skill brief instructs the LLM to emit a JSON block with the structured state update on each turn. If the JSON is malformed or doesn't match the schema: skip the state update for that turn, log a warning, continue. The user-facing prose response is still shown. Don't block the conversation.
+**Primary defence:** state extraction uses AI SDK structured output (`generateObject` with the skill's `gatheredSchema`, or tool calls with the same Zod schema). The LLM cannot emit free-form JSON for state — the API enforces the schema, so malformed-JSON is prevented at the LLM layer rather than parsed-by-vibe at the runtime layer. (Amendment 2026-04-30; see OUT-01b brief for the rationale.)
+
+**Defensive fallback:** if validation still fails (rare — e.g. provider regression, schema mismatch after a code change): skip the state update for that turn and surface a visible warning row in the OUT-01b context pane ("State update failed at [time] — last successful update at [time]"). Don't silent-skip; the user must see that an extraction failed. The user-facing prose response is still shown; the conversation is not blocked.
 
 ### LLM doesn't emit a state update at all
-Treated the same as malformed — skip, log, continue. The next turn may emit one.
+Treated the same as the defensive-fallback case above: no state change recorded, warning surfaced in the pane, conversation continues. The next turn may emit one.
 
 ### One skill per conversation — user tries to start another
 If user types `/skill <id>` in a conversation that already has a skill: prompt "Start a new conversation for this skill?" with confirm/cancel. No mid-conversation switching.
@@ -334,3 +338,6 @@ All hard dependencies are met. This feature is unblocked.
 ## Decisions log
 
 - 2026-04-30: Brief approved. v1 test fixture is `hello-world` (discursive, no `db_update_bot` dependency) — keeps OUT-01a's blast radius bounded; brand meaning lands as a real skill once OUT-01b and OUT-01c ship.
+- 2026-04-30: Edge case "LLM emits malformed structured state output" amended on approval of OUT-01b. State extraction now uses AI SDK structured output (Zod-enforced) as the primary defence; defensive fallback surfaces a visible warning in the context pane rather than silently skipping. Implementation lands as part of OUT-01b's build.
+- 2026-04-30: Layout approved (`01-design/wireframes/OUT-01a-layout.md`). Four small UI surfaces: conversation-list row icon slot, inline Continue button below latest assistant message, slash-command parse-on-submit (no popover), and a registry-miss warning banner. Two new molecules: `ConversationListRowIcon` and `InlineWarningBanner` (the latter is also picked up by OUT-01b's "state update failed" warning row, so it's extracted now). Page-launched `SkillLaunchButton` deferred until DNA-02's build introduces the first real consumer. Continue stays user-confirmed per the brief's original journey (not auto-advance).
+- 2026-05-01: Build complete. Migration 0030 added `skill_id` + `skill_state` to `conversations`. Skills runtime + registry + `retrieval_bot` sub-agent shipped under `lib/skills/`. `hello-world` example skill validates the runtime end-to-end. Slash-command parsing (`/<id>` and `/skill <id>`) intercepts in `ChatInput`; Case A attaches in place, Case B opens a `Modal` confirm and routes to a new conversation. Three new molecules landed: `ConversationListRowIcon`, `InlineWarningBanner`, and a third surfaced at plan time — `SkillContinueBar` (encapsulates the staged-skill advance affordance + missing-items hint to keep the chat-area organism free of appearance classes). `ActionButton` extended with optional `trailingIcon` prop. State extraction runs as a second `generateObject` call (Claude Haiku 4.5) after each assistant turn; defensive fallback warns to console without blocking the conversation. Skill conversations titled `<Skill name> · <date>` at creation, no auto-titling. State-extraction prompt explicitly lists checklist IDs and tells the LLM to mark items filled if their underlying value is present in `gathered` (caught during smoke testing — without this, the checklist was decoupled from the gathered field).

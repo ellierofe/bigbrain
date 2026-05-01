@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
   Lightbulb, History, Target, CircleHelp, MapPin, GraduationCap, Wrench,
   Presentation, Clock, RefreshCw, Award, Layers, Eye, Compass,
-  FileType, LinkIcon, FileOutput, Users, Lock, LockOpen, Network, LayoutGrid, Plus, Archive, Sparkles, Loader2,
+  FileType, LinkIcon, FileOutput, Users, Lock, LockOpen, Network, LayoutGrid, Plus, Archive, Sparkles, Loader2, Trash2,
 } from 'lucide-react'
 import { PageChrome } from '@/components/page-chrome'
 import { ContentPane } from '@/components/content-pane'

@@ -100,6 +100,11 @@ export function ChatDrawer({ open, onOpenChange }: ChatDrawerProps) {
                 initialMessages={[]}
                 conversations={[]}
                 compact
+                skillState={null}
+                skillName={null}
+                skillMode={null}
+                skillInRegistry={true}
+                conversationHasMessages={false}
               />
             </div>
           </motion.div>

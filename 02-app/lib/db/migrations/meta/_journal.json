@@ -204,6 +204,20 @@
       "when": 1777404349804,
       "tag": "0028_fine_next_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1777571356031,
+      "tag": "0029_spicy_mauler",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1777577163469,
+      "tag": "0030_late_wasp",
+      "breakpoints": true
     }
   ]
 }
