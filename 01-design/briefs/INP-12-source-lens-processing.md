@@ -270,6 +270,74 @@ Surfaces that need design work:
 
 The Sources page filter/search/sort improvements are explicitly out of scope for this brief — the existing list UI is acknowledged as needing work but that's a separate next pass.
 
+### Pass 2 layout — approved 2026-05-04
+
+Full spec: `01-design/wireframes/INP-12-pass2-layout.md`. Covers the schema-driven `<LensReportReview>` molecule (one component renders all 7 lens outputs via metadata + 3 extension slots: prose-blob / single-object / canonical-resolution, plus a fourth `object-with-array` hybrid for `project-synthesis.methodology`), the canonical-resolution micro-UI (inline-on-row + lazy fuzzy-match with pre-fetched counts), and the contact-card modal sub-form (Person + Organisation, stages-not-writes — graph commit happens at review commit, not contact-card save).
+
+Key resolved decisions:
+- **Single review page** at `/inputs/results?run=<runId>` — single-run focus with conditional sibling switcher when `pendingRunCount > 1`.
+- **Single scrollable pane** with `InPageNav` (w-44) + sticky commit footer. No stepped wizard. Per-section `(N/M)` confirmed-of-total counters in the nav.
+- **Section renderers** switched by schema metadata: `array` (most common), `object` (decisionFraming, energyAndMomentum), `prose` (summaries, caseStudyNarrative), `object-with-array` (methodology hybrid). `unexpected[]` always rendered last.
+- **`pairWith` metadata hint** renders two array sections side-by-side in one SectionCard at ≥1280px (e.g. evidenceFor / evidenceAgainst). Falls back to vertical at narrower widths.
+- **Item-card states**: unreviewed / confirmed / rejected / needs-attention (canonical-resolution-specific). Click body to expand editor; checkbox to confirm; trash to reject.
+- **Canonical-resolution = inline-on-row** (Q3=a). Each Person/Org row shows extracted name + lazy-fetched count badge `[Resolve · 2 strong matches]`. Click expands inline with match candidates + "+ Create new" + "Park as unresolved". Quick-link shortcut for the unique-strong-match-of-1 case.
+- **Contact-card sub-form** opens as Modal size `lg` from the resolution slot. Stages new entities locally; graph write happens only on overall review commit.
+- **Pre-flight commit prompt** when unresolved Person/Org rows exist: three-way (park & commit all / commit resolved only / cancel).
+- **Surface-extraction commits to graph** (no LensReport); analysis lenses commit to `lens_reports` row. Both redirect on success — surface-extraction → source detail; analysis lenses → Pass 3 committed-report page.
+- **`unexpected[]`** universal field rendered as the final section across every lens, identical shape, muted distinct styling.
+- **Confidence/strength badge** — `ConfidenceBadge` extended to accept a state-driven value (so analysis-lens `strength` and surface-extraction `confidence` use the same molecule).
+
+Eight new molecules required by Pass 2:
+- `LensReportReview` (root render tree)
+- `LensReviewSection` (single section renderer — internal)
+- `LensReviewItemCard` (single item card — internal)
+- `SourceChip` (clickable source-reference pill — broadly reusable)
+- `MultiSelectField` (form-context multi-select with envelope — broadly reusable)
+- `MarkdownEditor` (prose editor with live preview — reusable for session log, content drafts)
+- `MatchCandidateCard` (canonical-match candidate row — reusable for future People/Org admin)
+- `ContactCardForm` (Person/Org contact-card form — reusable for future People/Org admin)
+
+Plus existing-molecule extension: `ConfidenceBadge` accepts state-driven values (extension to spec, not a new molecule).
+
+`CommitFooter` was considered but is inlined for v1 (promote on second consumer).
+
+Non-molecule: `02-app/lib/lens-review/metadata/[lens-id].ts` — one metadata file per lens declaring sections + renderers + layout hints. Drives the schema-driven panel. Format sketched in the spec; full TypeScript types finalised at feature-build.
+
+Schema-metadata format extension points: future lenses that need UX a metadata hint can't express add a new slot (and document it), not fork the panel.
+
+Pass 2 establishes the `lens-report-review` candidate template. Register after build proves the pattern.
+
+### Pass 1 layout — approved 2026-05-04
+
+Full spec: `01-design/wireframes/INP-12-pass1-layout.md`. Covers Sources page (NEW filter chip + side preview pane + selection bar), bulk-triage modal (hybrid set-all + per-row), full-page source detail at `/inputs/sources/[id]` (InPageNav + 5 sections), and lens picker modal (3-col grid + per-lens disabled states + lens-input slot for decision-support).
+
+Key resolved decisions:
+- **Source detail = full page route** (not drawer / not in-place). Deep-linkable; back link to filtered list.
+- **Click semantics** on source rows: body click opens in-place 480px quick-preview; trailing chevron / Cmd-click navigates to detail. Two affordances preserve the inbox-scan rhythm.
+- **Bulk-triage = hybrid**: a set-all bar (source-type + authority only) plus per-row controls for tags/participants/overrides — all in one modal at `2xl` size.
+- **Lens picker** is one modal serving both bulk and single-source invocation. Source-set summary degrades gracefully. Per-lens disabled states gate by source-count and source-type.
+- **`dataset` source type** has a distinct detail layout (no chunks list, no lens, "Open in graph" instead of "Run lens") and is disabled across the lens picker grid.
+- **Tag chip styling** standardised to a single fixed muted hue (`TypeBadge` hue 3 — custard) across all source tags for visual quiet. Hash-of-string left for category-meaning contexts elsewhere.
+- **`description` field on detail** is shown only when non-empty; otherwise an "Add description" affordance.
+- **`ParticipantsPicker` v1** lets users park unresolved People (`relationship_types: ['unresolved']`) per the brief's edge-case path. Full canonical resolution + contact card lives in Pass 2.
+- **Default filter on entry** is NEW when `inboxCount > 0`, else All.
+- **"Mark as triaged" on detail** is a single-button action — flips `inboxStatus` only; metadata is filled inline via the autosave fields above.
+
+New molecules required by Pass 1 (specs sketched in the layout doc — full specs land at `feature-build` plan time):
+- `SourceListRow` (Sources list row composition)
+- `TagListEditor` (inline tag list with chips + suggestions; reusable)
+- `ParticipantsPicker` (inline person-list with chips + search + suggestions; reusable; v1 supports park-as-unresolved)
+- `DateField` (InlineField-parity date input; reusable)
+- `LensPickerCard` (lens grid tile; lighter than ContentTypeCard)
+
+Plus an extension: `InlineWarningBanner` gains a `'info'` tone.
+
+Centralised non-molecule: `lib/source-types.ts` — `sourceType` → icon + label mapping, used in 5+ places.
+
+Two candidate templates emerge from Pass 1 (register after build proves the patterns):
+- `sources-inbox-list-template.md` — list with NEW filter chip + side preview + bulk-action footer. Reusable for ideas backlog, future Krisp queue, lens-reports list.
+- `source-detail-pane-template.md` — full-page route for one read-heavy item with metadata + InPageNav-driven sections + light inline editing. Reusable for the Pass 3 lens-report page.
+
 ### Layout architecture decision (2026-05-04)
 
 Two structural decisions were made before any layout-design pass began, to scope the work realistically:
@@ -380,6 +448,8 @@ The universal `unexpected[]` array (per `extraction-schemas/_base.md`) renders a
 - 2026-05-02: One small migration-generation note for future reference — Drizzle's interactive prompt for `mode → lens` rename was answered as "create" (drop + add) rather than "rename" because the table was empty either way. End state is identical, but the snapshot now records `mode` as deleted and `lens` as a fresh column. Acceptable per ADR-009 (the columns are semantically distinct under the new vocabulary). If a future similar rename happens on a populated table, answer "rename" instead.
 - 2026-05-04: Lens prompts (7) and source-type fragments (`_base.md` + `_README.md` + 12 source types) drafted. `dataset` intentionally absent from extraction-schemas — bypasses the lens path entirely (ingests via `kg-ingest-creator` SKL-12 to graph; queried by traversal, not lensed). ADR-009 amended to record `dataset` exception. Universal `unexpected[]` output field introduced in `_base.md` and added to all lens result schemas — gives the LLM a structured place to surface left-field observations the lens's frame couldn't see. `lens-reports.md` schema doc + 7 lens-prompt files updated to reflect this. INP-05 backlog entry rewritten to capture multi-modal PDF extraction requirements (text + visual; pitch-deck vs report-shape; vision-LLM dependency for INP-05 build).
 - 2026-05-04: Layout architecture decisions made before any layout-design pass began (see "Layout architecture decision" section above). Two structural calls: (1) `layout-design` runs in three sequential passes — entry surfaces (Pass 1) → schema-driven lens-review surface (Pass 2) → committed lens report page (Pass 3); (2) one schema-driven `<LensReportReview>` molecule serves all 7 lenses, not seven per-lens panels — per-lens differences live in schema metadata (field types, layout hints) plus three bounded extension slots (prose-blob renderer, single-object renderer, canonical-resolution slot). Reduces panel-count from 7 to 1 with bounded extensibility, matches ADR-009's "adding a lens is a 4-step operation" goal. Pass 1 unaffected; the three-pass split was made to keep each `layout-design` invocation tractable and review-able. Decision driven by token-budget and review-fatigue concerns during this session — the 10-surface mega-spec was looking like multiple-hour read with high rework risk.
+- 2026-05-04: Pass 2 layout approved. Spec at `01-design/wireframes/INP-12-pass2-layout.md`. Resolved: single review page at `/inputs/results?run=<id>` with conditional sibling switcher; single scrollable pane (no wizard) + InPageNav + sticky commit footer; section renderers switched by schema metadata (array / object / prose / object-with-array hybrid); `pairWith` metadata hint renders two array sections side-by-side at ≥1280px; canonical-resolution inline-on-row with lazy fuzzy-match and pre-fetched count badges, plus a one-click shortcut for the unique-strong-match-of-1 case; contact-card sub-form is Modal size `lg` and stages-not-writes (graph commit happens at review commit, not contact-card save); pre-flight commit prompt is three-way when unresolved People/Orgs exist (park & commit all / commit resolved only / cancel); `ConfidenceBadge` extended to accept state-driven values for analysis-lens `strength` vocabulary alongside surface-extraction `confidence`. Eight new molecules required: `LensReportReview`, `LensReviewSection`, `LensReviewItemCard`, `SourceChip`, `MultiSelectField`, `MarkdownEditor`, `MatchCandidateCard`, `ContactCardForm`. Five of those (`SourceChip`, `MultiSelectField`, `MarkdownEditor`, `MatchCandidateCard`, `ContactCardForm`) have reuse beyond INP-12. `CommitFooter` considered but inlined for v1. Schema-metadata format lives at `02-app/lib/lens-review/metadata/[lens-id].ts` (one file per lens). One candidate template flagged for post-build registration: `lens-report-review`.
+- 2026-05-04: Pass 1 layout approved. Spec at `01-design/wireframes/INP-12-pass1-layout.md`. Resolved: source detail = full-page route at `/inputs/sources/[id]`; row click semantics = preview-on-body / detail-on-trailing-chevron-or-Cmd-click; bulk-triage = hybrid set-all bar + per-row in one `2xl` modal; lens picker = single modal serving bulk and single-source; `dataset` source type = distinct detail layout + disabled across the lens grid; tag chip styling = single fixed `TypeBadge` hue 3 (custard); description vs summary = description shown only when non-empty with "Add description" affordance; participants v1 = park-as-unresolved (`relationship_types: ['unresolved']`) until Pass 2's contact-card flow lands; default filter on entry = NEW when count > 0 else All. Five new molecules required (`SourceListRow`, `TagListEditor`, `ParticipantsPicker`, `DateField`, `LensPickerCard`) plus an `InlineWarningBanner` `info` tone extension; `TagListEditor` / `ParticipantsPicker` / `DateField` are reusable beyond INP-12. Two candidate templates flagged for post-build registration: `sources-inbox-list` and `source-detail-pane`.
 
 ## Status / gate items
 
@@ -406,8 +476,14 @@ The work splits into two tracks. Track A's schema layer is now complete; remaini
 - ADR-009 amended to record `dataset` exception and the `LensNotApplicableError` runtime requirement.
 - INP-05 backlog entry rewritten to capture the multi-modal PDF extraction requirement (text + visual content; report-shaped vs deck-shaped extraction; vision-LLM dependency for pitch decks).
 
+**✅ Done (2026-05-04):**
+- `layout-design` Pass 1 — entry surfaces (Sources page NEW filter chip + side preview, bulk-triage modal, source detail page at `/inputs/sources/[id]`, lens picker modal with `dataset` disabled state). Spec at `01-design/wireframes/INP-12-pass1-layout.md`. Five new molecules identified for build: `SourceListRow`, `TagListEditor`, `ParticipantsPicker`, `DateField`, `LensPickerCard`. Plus `InlineWarningBanner` `info`-tone extension. Two candidate templates flagged for post-build registration: `sources-inbox-list`, `source-detail-pane`.
+
+**✅ Done (2026-05-04, second pass):**
+- `layout-design` Pass 2 — schema-driven `<LensReportReview>` molecule (one component for all 7 lenses via metadata + 4 renderers including `object-with-array` hybrid), canonical-resolution micro-UI (inline-on-row + lazy fuzzy-match + pre-fetched counts), contact-card modal (Person + Organisation, stages-not-writes). Spec at `01-design/wireframes/INP-12-pass2-layout.md`. Eight new molecules required at build time. One candidate template flagged: `lens-report-review`.
+
 **⏳ Remaining (prose + design — no further DB work):**
-- `layout-design` for the new UI surfaces (Sources NEW label + filter chip, bulk-triage flow, lens picker, canonical-resolution micro-UI, contact-card sub-form, lens report page, per-item review/edit panels, lens-picker disabled state for `dataset` sources)
+- `layout-design` Pass 3 — committed lens-report page at `/inputs/lens-reports/[id]` (reuses `LensReportReview` in `mode='committed'`) + lens-report list page at `/inputs/lens-reports`. Smaller than originally scoped because Pass 2 already supplies most of the rendering.
 - Optional: build the new ingest pipeline (chunking + summary + embeddings) so new Krisp transcripts arriving incrementally get the new shape, even before KG-04 lands. Lens layer stays dormant until canonical resolution can run against politics.
 
 ### Implementation follow-ups (for the INP-12 build pass)
