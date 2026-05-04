@@ -1,42 +1,78 @@
 import { boolean, date, index, integer, jsonb, pgTable, smallint, text, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 import { brands } from './brands'
 import { vector } from './types'
 
 // ---------------------------------------------------------------------------
 // src_source_documents — original files (PDFs, transcripts, etc.)
+// v3 (INP-12): added sourceType controlled vocab, authority, summary, chunk_count.
 // ---------------------------------------------------------------------------
 export const srcSourceDocuments = pgTable('src_source_documents', {
   id: uuid('id').defaultRandom().primaryKey(),
   brandId: uuid('brand_id').notNull().references(() => brands.id, { onDelete: 'cascade' }),
   title: varchar('title', { length: 300 }).notNull(),
-  /** 'transcript' | 'session-note' | 'research' | 'voice-note' | 'image' | 'email' | 'document' | 'other'
-   *  Content/intent type — not file format. Format lives in mimeType. */
-  type: varchar('type', { length: 50 }).notNull(),
+
+  /** Controlled vocabulary per ADR-009. Drives extraction prompt fragment selection.
+   *  'client-interview' | 'coaching-call' | 'peer-conversation' | 'supplier-conversation' |
+   *  'accountability-checkin' | 'meeting-notes' | 'internal-notes' | 'research-document' |
+   *  'dataset' | 'pitch-deck' | 'report' | 'collection' | 'content-idea' */
+  sourceType: varchar('source_type', { length: 40 }).notNull(),
+
+  /** Evidence weight, orthogonal to source type. Used by retrieval to weight sources.
+   *  'own' | 'peer' | 'external-authoritative' | 'external-sample' */
+  authority: varchar('authority', { length: 30 }).notNull(),
+
   description: text('description'),
+
+  /** ~300-word LLM-generated summary of source content. Stored on SourceDocument graph node
+   *  description property (per ADR-002a §3 narrow exception to no-AI-inference rule). */
+  summary: text('summary'),
+  summaryGeneratedAt: timestamp('summary_generated_at', { withTimezone: true }),
+
+  /** Convenience count of src_source_chunks rows. Maintained app-side. Zero for dataset/collection. */
+  chunkCount: integer('chunk_count').notNull().default(0),
+
   /** Vercel Blob URL. Nullable — paste-only inputs (INP-03) have no file. */
   fileUrl: varchar('file_url', { length: 500 }),
   fileSize: integer('file_size'),
   mimeType: varchar('mime_type', { length: 100 }),
+
+  /** Plain text from file or paste. Source for chunking + summary. Immutable post-ingest (app rule). */
   extractedText: text('extracted_text'),
+
   externalSource: varchar('external_source', { length: 500 }),
-  tags: text('tags').array(),
-  isArchived: boolean('is_archived').notNull().default(false),
-  documentDate: date('document_date'),
-  // Embedding of extractedText. Populated async after text extraction (INP-05 pipeline).
-  embedding: vector('embedding', { dimensions: 1536 }),
-  /** 32-char hex Krisp meeting ID — set at ingestion time (INP-01) */
-  krispMeetingId: text('krisp_meeting_id'),
-  /** 'new' | 'triaged' | null. Auto-scraped items get 'new'. Null for manually-created sources. */
+
+  /** Free-form tags. Auto-suggestions at ingest, fully editable. */
+  tags: text('tags').array().notNull().default(sql`'{}'::text[]`),
+
+  /** References to Person graph nodes. Suggested from speaker-turn analysis at ingest. */
+  participantIds: uuid('participant_ids').array().notNull().default(sql`'{}'::uuid[]`),
+
+  /** 'new' | 'triaged' | null. Drives "NEW" label on Sources page (per INP-12). */
   inboxStatus: text('inbox_status'),
-  /** Array of { date, mode, runId } tracking each processing run this source was part of */
+
+  /** Array of { date, lens, processingRunId, lensReportId? } per ADR-009. */
   processingHistory: jsonb('processing_history').notNull().default([]),
-  /** contacts.id array — resolved at ingestion time */
-  participantIds: uuid('participant_ids').array(),
+
+  documentDate: date('document_date'),
+  isArchived: boolean('is_archived').notNull().default(false),
+
+  /** OpenAI text-embedding-3-small of `title — summary`. Re-embedded when summary changes. */
+  embedding: vector('embedding', { dimensions: 1536 }),
+  embeddingGeneratedAt: timestamp('embedding_generated_at', { withTimezone: true }),
+
+  /** Krisp meeting identifier — unique per (brandId, krispMeetingId). */
+  krispMeetingId: text('krisp_meeting_id'),
+
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('src_source_documents_embedding_idx').using('hnsw', t.embedding.op('vector_cosine_ops')),
   uniqueIndex('src_source_documents_brand_krisp_idx').on(t.brandId, t.krispMeetingId),
+  index('src_source_documents_brand_source_type_idx').on(t.brandId, t.sourceType),
+  index('src_source_documents_brand_inbox_status_idx').on(t.brandId, t.inboxStatus),
+  index('src_source_documents_tags_gin_idx').using('gin', t.tags),
+  index('src_source_documents_participant_ids_gin_idx').using('gin', t.participantIds),
 ])
 
 // ---------------------------------------------------------------------------

@@ -218,6 +218,48 @@
       "when": 1777577163469,
       "tag": "0030_late_wasp",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1777621432130,
+      "tag": "0031_context_pane",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1777631552733,
+      "tag": "0032_inp12_source_docs_v3",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1777634335635,
+      "tag": "0033_inp12_source_chunks",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1777636419550,
+      "tag": "0034_inp12_lens_reports",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1777636666268,
+      "tag": "0035_pane_open_default_false",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1777670063712,
+      "tag": "0036_inp12_processing_runs_v3",
+      "breakpoints": true
     }
   ]
 }

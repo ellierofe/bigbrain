@@ -135,14 +135,28 @@ Only raise improvements that are material — don't propose changes for the sake
 
 Stage and commit the session's work as a single per-session commit, then push to `origin`. This is the convention going forward (established 2026-04-27 after a four-week gap forced a bulk recovery — see commit `76233c4`).
 
-**What to stage:** every change made this session — files created, modified, deleted across the whole repo (code, schemas, briefs, layouts, ADRs, the new session log itself, backlog updates, milestone updates, any SKILL.md edits from Step H).
+**Parallel sessions are normal here.** Ellie often runs multiple Claude windows at once, each scoped to a different feature. Files don't usually overlap, but they share the working tree. Each session must commit only *its own* work and leave the rest unstaged for the other window to commit. This is the load-bearing convention; getting it wrong silently merges scopes and corrupts the audit trail.
 
-**What NOT to stage:** files outside the session's scope that happen to be unstaged from prior work. If you find such files, surface them explicitly to the human — they shouldn't ride along silently.
+**What to stage — by explicit pathspec:**
+
+You have a precise list of files this session touched from your conversation context — every Read, Write, Edit, Bash mutation, and migration generation you did. Build that list explicitly and stage *exactly* those paths via `git add path1 path2 ...`. Include:
+- Code, schemas, briefs, layouts, ADRs you created or edited this session
+- The new session log itself
+- Backlog and milestone updates from Step G
+- Any SKILL.md edits from Step H
+- Generated migration files + their snapshots, if this session generated them
+
+**Never use `git add .` or `git add -A`** — those grab everything in the tree and bypass the parallel-session boundary.
+
+**Shared bookkeeping files** (e.g. `02-app/lib/db/migrations/meta/_journal.json`, registry indexes, barrel `index.ts` files) are touched by multiple sessions when they each generate migrations or add tables. The convention: whichever session commits first commits the current state of the file. Subsequent sessions will see no diff on that file because they already have it. Don't try to partial-stage a shared bookkeeping file — commit it whole or leave it whole.
 
 **Pre-commit checks:**
 - Scan for secrets (`.env*`, credential files) — never commit these
 - Scan for editor/OS artefacts (`~$*` Office lock files, `.DS_Store`) — should be in `.gitignore`; if encountered, add to `.gitignore` first
-- Run `git status` and present the staged file list to the human before committing
+- Run `git status` and **present BOTH lists to the human**:
+  - **Staged (this session):** the files you intend to commit, grouped if useful
+  - **Deliberately unstaged (other sessions / other work):** every modified or untracked file in the tree that you are NOT staging, with a one-line note on which session/feature you believe owns it (or "unknown — please confirm")
+- The human's job at this gate is to spot miscategorisations: a file you've put in the wrong list, or an "unknown" that they can identify.
 
 **Commit message format:**
 
@@ -164,7 +178,7 @@ Examples:
 
 **Push:** after committing, push to `origin` (`git push`). The convention is "always push" — single-user app, GitHub mirrors local.
 
-**If the working tree is unexpectedly large** (more files than this session touched), surface it to the human before staging — likely a prior session didn't commit. Decide together whether to roll prior work into this commit or roll a separate catch-up commit first.
+**If you find unstaged work you can't attribute to any session:** surface it to the human before staging. They'll either tell you which window owns it (leave unstaged) or that it's actually part of this session (stage it).
 
 ## Edge cases
 

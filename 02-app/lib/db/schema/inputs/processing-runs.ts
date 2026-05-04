@@ -1,29 +1,64 @@
-import { index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
 import { brands } from '../brands'
+import { lensReports } from '../lens-reports'
 import { vector } from '../types'
 
+// ---------------------------------------------------------------------------
+// processing_runs — transient compute records (INP-12 v3)
+// One row per LLM call against the Source × Lens model. Captures what was asked,
+// what came back, and how the user resolved it. Not the durable artefact —
+// that's lens_reports for analysis lenses, or graph nodes for surface-extraction.
+// v3 (INP-12): renamed mode → lens; dropped title, analysis_result, topic_clusters;
+// added sourceTypeFilter, lensInput, promptFragmentsUsed, lensReportId, errorMessage,
+// tokenUsage. Embedding retained as deprecated.
+// ---------------------------------------------------------------------------
 export const processingRuns = pgTable('processing_runs', {
   id: uuid('id').defaultRandom().primaryKey(),
   brandId: uuid('brand_id').notNull().references(() => brands.id, { onDelete: 'cascade' }),
-  /** 'individual' | 'batch' | 'reflective' | 'synthesis' */
-  mode: text('mode').notNull(),
-  /** Array of src_source_documents.id that were inputs to this run */
+
+  /** Renamed from `mode` in v3. One of the 7 lens values per ADR-009:
+   *  'surface-extraction' | 'self-reflective' | 'project-synthesis' |
+   *  'pattern-spotting' | 'catch-up' | 'decision-support' | 'content-ideas' */
+  lens: varchar('lens', { length: 30 }).notNull(),
+
+  /** Soft refs to src_source_documents.id */
   sourceIds: uuid('source_ids').array().notNull().default([]),
-  title: text('title'),
-  /** For mode 'individual': the ExtractionResult. Null for other modes. */
+
+  /** Optional: scoped to one source type when selection was multi-type. Mostly null in v1. */
+  sourceTypeFilter: varchar('source_type_filter', { length: 40 }),
+
+  /** Free-form input that shaped the run (e.g. decision text for decision-support). */
+  lensInput: text('lens_input'),
+
+  /** Array of { path, gitSha? } recording which schema-fragment files composed the prompt. */
+  promptFragmentsUsed: jsonb('prompt_fragments_used').notNull().default([]),
+
+  /** Only populated for lens='surface-extraction'. Raw ExtractionResult before user review. */
   extractionResult: jsonb('extraction_result'),
-  /** For modes 'batch' / 'reflective' / 'synthesis': the structured analysis output. */
-  analysisResult: jsonb('analysis_result'),
-  /** Topic clusters if generated */
-  topicClusters: jsonb('topic_clusters'),
-  /** 'pending' | 'committed' | 'skipped' */
-  status: text('status').notNull().default('pending'),
+
+  /** Populated on commit for analysis lenses. Null for surface-extraction or pending runs. */
+  lensReportId: uuid('lens_report_id').references(() => lensReports.id, { onDelete: 'set null' }),
+
+  /** 'pending' | 'committed' | 'skipped' | 'failed' */
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+
+  /** Populated when status='failed'. */
+  errorMessage: text('error_message'),
+
+  /** { promptTokens, completionTokens, totalTokens, model } captured from LLM response. */
+  tokenUsage: jsonb('token_usage'),
+
   committedAt: timestamp('committed_at', { withTimezone: true }),
-  /** Embedding of title + analysis summary. For semantic search over analysis results. */
+
+  /** @deprecated v3 — embedding lives on lens_reports for analysis lenses; surface-extraction
+   *  uses per-item node embeddings. Retained as nullable for backward compat; not populated by new code. */
   embedding: vector('embedding', { dimensions: 1536 }),
+
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('processing_runs_brand_status_idx').on(t.brandId, t.status),
+  index('processing_runs_lens_report_idx').on(t.lensReportId),
+  index('processing_runs_source_ids_gin_idx').using('gin', t.sourceIds),
   index('processing_runs_embedding_idx').using('hnsw', t.embedding.op('vector_cosine_ops')),
 ])
 

@@ -28,14 +28,26 @@ Read:
 2. `02-app/lib/db/schema/` — read the current schema state so you understand what the migration is moving *from* and *to*
 3. Any session log or notes from the `schema-to-db` run that generated this migration — look for flags that were raised
 
-To check which migrations have already been applied, you can run:
+**Identifying which migrations are pending — the reliable method:**
+
+The `__drizzle_migrations` table records applied migrations by SHA-256 hash, not by filename or sequential id. Counting `journal entries vs table rows` is unreliable because the table's `id` column can drift from the journal `idx` (Drizzle's internal bookkeeping). Always identify pending migrations by **hashing the file content and checking for that hash in the table**:
+
 ```bash
-cd 02-app && npx drizzle-kit studio
+# Compute the hash for each .sql file you want to check
+node -e "
+const crypto = require('crypto');
+const fs = require('fs');
+const sql = fs.readFileSync('lib/db/migrations/[filename].sql', 'utf8');
+console.log(crypto.createHash('sha256').update(sql).digest('hex'));
+"
 ```
-Or inspect the `__drizzle_migrations` table directly via Neon MCP:
+
+Then via Neon MCP:
 ```sql
-SELECT * FROM __drizzle_migrations ORDER BY created_at DESC LIMIT 10;
+SELECT EXISTS(SELECT 1 FROM drizzle.__drizzle_migrations WHERE hash = '[hash]') AS applied;
 ```
+
+This works regardless of how Drizzle has internally sequenced things and regardless of any prior bookkeeping anomalies. Do NOT rely on `count(journal entries) - count(table rows)` to determine pending count.
 
 ### Step B: Classify the migration
 
@@ -105,6 +117,8 @@ The human must give explicit approval — "run it", "go ahead", "approved" or si
    ```
 
 2. Run via `mcp__Neon__run_sql_transaction` with the parsed statements array and the bigbrain project ID (`damp-boat-57321258`).
+
+   **MCP gotcha:** the `sqlStatements` parameter expects a JSON array of strings, but the MCP host has rejected multi-line array literals in the past with "Expected array, received string". Pass the array as a **single-line `["stmt1", "stmt2", ...]` literal** in the tool call. If you've split statements that contain double-quoted identifiers, escape them once (`\"`) — the MCP host parses the outer JSON, Postgres parses the inner SQL.
 
 3. Record the migration in Drizzle's tracking table:
    ```bash
