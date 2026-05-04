@@ -1,5 +1,6 @@
 import {
   boolean,
+  integer,
   pgTable,
   timestamp,
   uniqueIndex,
@@ -16,6 +17,8 @@ export const brands = pgTable(
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    chatPaneOpen: boolean("chat_pane_open").notNull().default(false),
+    chatPaneWidth: integer("chat_pane_width").notNull().default(360),
   },
   (table) => [uniqueIndex("brands_slug_idx").on(table.slug)]
 )

@@ -26,7 +26,7 @@ export async function getSourceDocuments(brandId: string, filters?: SourceFilter
     conditions.push(eq(srcSourceDocuments.inboxStatus, 'new'))
   }
   if (filters?.type) {
-    conditions.push(eq(srcSourceDocuments.type, filters.type))
+    conditions.push(eq(srcSourceDocuments.sourceType, filters.type))
   }
   if (filters?.search) {
     conditions.push(sql`${srcSourceDocuments.title} ILIKE ${'%' + filters.search + '%'}`)
@@ -42,7 +42,7 @@ export async function getSourceDocuments(brandId: string, filters?: SourceFilter
     .select({
       id: srcSourceDocuments.id,
       title: srcSourceDocuments.title,
-      type: srcSourceDocuments.type,
+      type: srcSourceDocuments.sourceType,
       extractedText: srcSourceDocuments.extractedText,
       tags: srcSourceDocuments.tags,
       documentDate: srcSourceDocuments.documentDate,

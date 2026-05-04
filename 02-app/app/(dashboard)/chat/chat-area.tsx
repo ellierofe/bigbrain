@@ -10,6 +10,7 @@ import { ChatMessage } from '@/components/chat-message'
 import { ChatInput } from '@/components/chat-input'
 import { PromptStarter } from '@/components/prompt-starter'
 import { ConversationList } from '@/components/conversation-list'
+import { ContextPane } from '@/components/context-pane'
 import { InlineWarningBanner } from '@/components/inline-warning-banner'
 import { SkillContinueBar } from '@/components/skill-continue-bar'
 import { Modal } from '@/components/modal'
@@ -19,6 +20,13 @@ import {
   createConversationWithSkillAction,
   advanceStageAction,
 } from '@/app/actions/skills'
+import {
+  setChatPaneOpenAction,
+  setChatPaneWidthAction,
+} from '@/app/actions/brand-preferences'
+import { setContextPaneStateAction } from '@/app/actions/chat'
+import { listContextPaneTabs } from '@/lib/chat-context-pane/registry'
+import type { ConversationCtx, SkillSummary } from '@/lib/chat-context-pane/types'
 import type { SkillState } from '@/lib/skills/types'
 
 interface ConversationSummary {
@@ -41,6 +49,22 @@ interface ChatAreaProps {
   skillMode: 'discursive' | 'staged' | null
   skillInRegistry: boolean
   conversationHasMessages: boolean
+  /** Brand-level preference: pane open/closed (defaults true). Ignored in compact mode. */
+  paneOpen?: boolean
+  /** Brand-level preference: pane width in px. Defaults to 360. */
+  paneWidth?: number
+  /** Per-conversation persisted tab selection. Null = pane uses default-selection logic. */
+  paneSelectedTabId?: string | null
+  /** Conversation ID used by the pane (mirror of conversationId). */
+  paneConversationId?: string | null
+  /** Skill ID used by the pane's ConversationCtx. */
+  paneSkillId?: string | null
+  /** Skill state used by the pane's ConversationCtx. */
+  paneSkillState?: SkillState | null
+  /** All registered skills, projected to client-safe summaries. */
+  paneAvailableSkills?: SkillSummary[]
+  /** Summary for the active conversation's skill (if any). */
+  paneActiveSkillSummary?: SkillSummary | null
 }
 
 const PROMPT_STARTERS = [
@@ -60,6 +84,14 @@ export function ChatArea({
   skillMode,
   skillInRegistry,
   conversationHasMessages,
+  paneOpen: paneOpenInitial = true,
+  paneWidth: paneWidthInitial = 360,
+  paneSelectedTabId = null,
+  paneConversationId = null,
+  paneSkillId = null,
+  paneSkillState = null,
+  paneAvailableSkills = [],
+  paneActiveSkillSummary = null,
 }: ChatAreaProps) {
   const router = useRouter()
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -67,6 +99,41 @@ export function ChatArea({
   const [pendingInput, setPendingInput] = useState<string | undefined>()
   const [pendingSkillSwitch, setPendingSkillSwitch] = useState<string | null>(null)
   const [advancing, setAdvancing] = useState(false)
+
+  // Pane state — optimistic local state with server-action persistence.
+  const [paneOpen, setPaneOpen] = useState(paneOpenInitial)
+  const [paneWidth, setPaneWidth] = useState(paneWidthInitial)
+  const [selectedTabId, setSelectedTabId] = useState<string | null>(paneSelectedTabId)
+  useEffect(() => setPaneOpen(paneOpenInitial), [paneOpenInitial])
+  useEffect(() => setPaneWidth(paneWidthInitial), [paneWidthInitial])
+  useEffect(() => setSelectedTabId(paneSelectedTabId), [paneSelectedTabId])
+
+  const handlePaneOpenChange = useCallback((open: boolean) => {
+    setPaneOpen(open)
+    setChatPaneOpenAction(open).catch(() => {
+      toast.error('Could not save pane preference.')
+      setPaneOpen((prev) => !prev)
+    })
+  }, [])
+
+  const handlePaneWidthChange = useCallback((width: number) => {
+    setPaneWidth(width)
+    setChatPaneWidthAction(width).catch(() => {
+      // Width is cosmetic — silent revert is fine; toast would be noisy on drag-end.
+    })
+  }, [])
+
+  const handleSelectedTabChange = useCallback(
+    (tabId: string) => {
+      setSelectedTabId(tabId)
+      if (paneConversationId) {
+        setContextPaneStateAction(paneConversationId, tabId).catch(() => {
+          // Silent — selected-tab persistence is a nice-to-have, not critical.
+        })
+      }
+    },
+    [paneConversationId]
+  )
 
   const {
     messages,
@@ -233,8 +300,22 @@ export function ChatArea({
     )
   }
 
+  const paneTabs = listContextPaneTabs()
+  const paneCtx: ConversationCtx = {
+    conversation: {
+      id: paneConversationId ?? '',
+      skillId: paneSkillId,
+      skillState: paneSkillState,
+      contextPaneState: selectedTabId ? { selectedTabId } : null,
+    },
+    messages,
+    hasMessages: messages.length > 0 || conversationHasMessages,
+    availableSkills: paneAvailableSkills,
+    activeSkillSummary: paneActiveSkillSummary,
+  }
+
   return (
-    <div className="flex h-full">
+    <div className="flex h-full w-full">
       <ConversationList
         conversations={conversations}
         activeId={conversationId}
@@ -279,6 +360,17 @@ export function ChatArea({
           />
         </div>
       </div>
+
+      <ContextPane
+        ctx={paneCtx}
+        tabs={paneTabs}
+        paneOpen={paneOpen}
+        paneWidth={paneWidth}
+        selectedTabId={selectedTabId}
+        onPaneOpenChange={handlePaneOpenChange}
+        onPaneWidthChange={handlePaneWidthChange}
+        onSelectedTabChange={handleSelectedTabChange}
+      />
 
       <Modal
         open={pendingSkillSwitch !== null}
@@ -329,7 +421,11 @@ function ChatMessageList({
   if (isEmpty) {
     return (
       <div className="flex flex-1 items-center justify-center px-6">
-        <div className="flex flex-col items-center gap-6 max-w-lg text-center">
+        <div
+          className={`flex flex-col items-center gap-6 text-center ${
+            compact ? 'max-w-lg' : 'max-w-2xl w-full'
+          }`}
+        >
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
             <Brain className="h-6 w-6 text-muted-foreground" />
           </div>

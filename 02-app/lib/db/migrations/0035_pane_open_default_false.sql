@@ -1,0 +1,1 @@
+ALTER TABLE "brands" ALTER COLUMN "chat_pane_open" SET DEFAULT false;

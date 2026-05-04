@@ -20,30 +20,23 @@ export async function GET(req: Request) {
 // ---------------------------------------------------------------------------
 // POST /api/sources — upload a file and create a source document record
 // ---------------------------------------------------------------------------
+//
+// Defaults per INP-12 v3 schema (option A from BUG resolution 2026-05-04):
+//   sourceType: 'research-document' — broadest catch-all in the controlled vocab
+//   authority:  'external-sample'   — safest default; user upgrades if appropriate
+//   inboxStatus: 'new'              — surfaces the row in the triage queue so
+//                                     the user can reclassify before the row is
+//                                     used elsewhere
+//
+// MIME inference is intentionally dropped — none of the v3 sourceType values
+// (client-interview, meeting-notes, pitch-deck, etc.) can be inferred from a
+// file's MIME type. Reclassification is a human-judgement step, deferred to
+// the INP-12 inbox UI.
 
-const MIME_TO_TYPE: Record<string, string> = {
-  'application/pdf': 'document',
-  'text/plain': 'document',
-  'text/markdown': 'document',
-  'application/msword': 'document',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'document',
-  'image/png': 'image',
-  'image/jpeg': 'image',
-  'image/gif': 'image',
-  'image/webp': 'image',
-  'image/svg+xml': 'image',
-  'audio/mpeg': 'voice-note',
-  'audio/wav': 'voice-note',
-  'audio/webm': 'voice-note',
-  'audio/mp4': 'voice-note',
-}
-
-function inferType(mimeType: string): string {
-  return MIME_TO_TYPE[mimeType] ?? 'other'
-}
+const DEFAULT_SOURCE_TYPE = 'research-document'
+const DEFAULT_AUTHORITY = 'external-sample'
 
 function titleFromFilename(filename: string): string {
-  // Strip extension and replace separators with spaces
   return filename
     .replace(/\.[^.]+$/, '')
     .replace(/[-_]/g, ' ')
@@ -65,20 +58,19 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Upload to Vercel Blob
     const pathname = `sources/${brandId}/${Date.now()}-${file.name}`
     const blob = await uploadBlob(pathname, file, { contentType: file.type })
 
-    // Create source document record
     const title = customTitle || titleFromFilename(file.name)
-    const type = inferType(file.type)
 
     const rows = await db
       .insert(srcSourceDocuments)
       .values({
         brandId,
         title,
-        type,
+        sourceType: DEFAULT_SOURCE_TYPE,
+        authority: DEFAULT_AUTHORITY,
+        inboxStatus: 'new',
         fileUrl: blob.url,
         fileSize: file.size,
         mimeType: file.type,
@@ -86,7 +78,8 @@ export async function POST(req: Request) {
       .returning({
         id: srcSourceDocuments.id,
         title: srcSourceDocuments.title,
-        type: srcSourceDocuments.type,
+        sourceType: srcSourceDocuments.sourceType,
+        authority: srcSourceDocuments.authority,
         fileUrl: srcSourceDocuments.fileUrl,
       })
 

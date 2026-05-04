@@ -21,6 +21,8 @@ export const conversations = pgTable(
     skillId: text('skill_id'),
     /** In-flight skill state (gathered, checklist, currentStage, etc.). Per-skill shape. */
     skillState: jsonb('skill_state'),
+    /** Per-conversation context pane state. Shape: { selectedTabId: string }. */
+    contextPaneState: jsonb('context_pane_state'),
   },
   (table) => [
     index('conversations_brand_updated_idx').on(table.brandId, table.updatedAt),

@@ -2873,34 +2873,39 @@ interface ConversationListRowIconProps {
 
 ### InlineWarningBanner
 
-**File:** `02-app/components/inline-warning-banner.tsx` *(planned — OUT-01a, also consumed by OUT-01b)*
-**Purpose:** Single-line warning bar that sits above content in a page region — not a toast, not a centred empty state. Used by OUT-01a's registry-miss banner above the chat message stream and by OUT-01b's "state update failed" warning row at the top of the context pane.
+**File:** `02-app/components/inline-warning-banner.tsx` *(consumed by OUT-01a, OUT-01b)*
+**Purpose:** Thin coloured banner that sits above content in a page region — not a toast, not a centred empty state. Two tones: `'warning'` (default — OUT-01a's registry-miss banner above the chat stream, OUT-01b's "state update failed" row at the top of the context pane) and `'success'` (OUT-01b's skill-completion banner above the skill summary card). Tone parameterisation was added in OUT-01b's build (2026-05-01) after the second consumer needed the same shape with success tokens; sibling success/error molecules were ruled out as premature.
 
 **Anatomy:**
-- Outer wrapper: `flex items-start gap-2 rounded-md border px-3 py-2`, with surface `bg-[var(--color-warning-bg)] border-[var(--color-warning)] text-[var(--color-warning-foreground)]`.
-- Icon: `AlertTriangle` 16px on the left, `text-[var(--color-warning)]`, `mt-0.5` to align with first line of text.
+- Outer wrapper: `flex items-start gap-2 rounded-md border px-3 py-2`. Surface tokens vary by tone (see Tone tokens below).
+- Leading icon: 16px on the left, `mt-0.5` to align with first line of text. `AlertTriangle` for warning tone; `CheckCircle2` for success tone.
 - Text block: `flex-1 min-w-0`. Title is `text-sm`. Subtitle (optional) sits on a second line as `text-xs text-muted-foreground`.
-- Dismiss (when `onDismiss` provided): `IconButton` ghost variant with `X`, anchored right via `ml-auto`. Omitted entirely when `onDismiss` is undefined — there is no "dismissible: false" prop, the existence of the handler IS the contract.
+- Dismiss (when `onDismiss` provided): `IconButton` ghost variant with `X`, anchored right. Omitted entirely when `onDismiss` is undefined — there is no "dismissible: false" prop; the existence of the handler IS the contract.
+
+**Tone tokens:**
+- `warning` (default): border `--color-warning`, background `--color-warning-bg`, foreground `--color-warning-foreground`, icon colour `--color-warning`, glyph `AlertTriangle`.
+- `success`: border `--color-success`, background `--color-success-bg`, foreground `--color-success-foreground`, icon colour `--color-success`, glyph `CheckCircle2`.
 
 **Behavioural states:**
 - Idle (rendered).
 - Dismissed (consumer's responsibility — this molecule does not own dismiss state; the parent removes it from the tree).
 
 **Edge cases:**
-- **Long title or subtitle**: wraps. The banner is single-row by typography, not by truncation. Text wrapping is acceptable — the banner is a state, not a fixed-height chrome element.
-- **No subtitle**: the molecule renders a tighter single line; vertical padding remains `py-2`.
+- **Long title or subtitle**: wraps. The banner is single-row by typography, not by truncation.
+- **No subtitle**: tighter single line; vertical padding remains `py-2`.
 
 **Props:**
 ```ts
 interface InlineWarningBannerProps {
   title: string
   subtitle?: string
+  tone?: 'warning' | 'success'  // default 'warning'
   onDismiss?: () => void
 }
 ```
 
 **Do not:**
-- Use this for success / info / error states. Add sibling molecules (`InlineSuccessBanner`, etc.) when those states are needed; do not parameterise tone via a `variant` prop and reuse this molecule. Each tone has its own token bundle and its own contract.
+- Add `error` or `info` tones speculatively. Extend tone only when a real consumer needs them — the rule preventing premature variants still applies; this molecule has two tones because it has two consumers requiring them.
 - Render this as a centred empty state — that's `EmptyState`'s job. This molecule is a thin top-of-region bar.
 - Use this for transient feedback — that's the toast pattern's job. This molecule is for persistent state visibility.
 
@@ -2939,6 +2944,311 @@ interface SkillContinueBarProps {
 - Take a `variant` prop. The contract is a single advance affordance; variations belong in different molecules.
 - Render the hint as a tooltip on the disabled button — the missing items are persistent state the user needs to see, not a hover-only explanation.
 - Show the trailing arrow during loading. The spinner is the sole busy signal.
+
+---
+
+### ContextPane
+
+**File:** `02-app/components/context-pane.tsx` *(OUT-01b)*
+**Purpose:** Right-side adaptive context pane for the chat page. Mounts as a sibling column to the message area and to the conversation history list. **The rail is always visible** (pinned to the right edge of the chat surface); `paneOpen` controls only whether the content panel is rendered next to it. Defaults to closed (rail-only) so the chat content has more room; clicking a rail icon opens the panel and selects that tab. Owns the rail-plus-(optional-)panel structure, header strip with close affordance on the open panel, the resize handle on the panel's left edge, and width clamp logic so the message area always retains ≥ 480px. Tabs are pluggable via the `ContextTab` contract from `lib/chat-context-pane`.
+
+**Anatomy:**
+- Outer wrapper: `relative flex h-full shrink-0 flex-row border-l border-border bg-card`. Width is `paneWidth + 56` when open, `56` when closed (rail-only). Set via inline `style`.
+- **Rail (always visible, 56px wide):** rightmost column; composes `ContextPaneRail`. Rail icon clicks call back into the parent via `handleRailIconClick` which: opens the panel + selects that tab when closed; switches tabs when open and a different icon is clicked; closes the panel when open and the currently-selected icon is clicked again (toggle).
+- **Content panel (rendered only when `paneOpen`):**
+  - Resize handle: `<button>` absolutely positioned on the left edge of the open pane, 8px-wide hit area centred on the boundary, `cursor-col-resize`. Hover renders a 1px sage-line indicator inside the handle. Drag updates width live; on release, parent persists.
+  - Main column: `flex min-w-0 flex-1 flex-col`. Header strip + scrollable body.
+  - Header strip: `flex items-center justify-between border-b border-border px-4 py-3`. Selected tab `label` (`text-sm font-medium`) on the left; `IconButton` close (X, ghost) on the right — closes only the panel; rail remains visible.
+  - Body: `flex-1 overflow-y-auto px-4 pb-4 pt-3`. Renders `selectedTab.render(ctx)`.
+
+**Width contract:**
+- Bounds: panel content 280–560px (constants `MIN_WIDTH`, `MAX_WIDTH`); rail is always 56px.
+- Viewport clamp: at render the pane measures its parent flex container and clamps `paneWidth` to `min(MAX_WIDTH, max(MIN_WIDTH, parentWidth - MIN_MESSAGE_AREA - RAIL_WIDTH))`. Forces the panel to shrink before the message area is squeezed below 480px.
+- Resize: drag on the panel's left edge. Live preview tracks the cursor; on mouse-up, calls `onPaneWidthChange(width)` if the value changed. While dragging, document body cursor is set to `col-resize` and text selection is suppressed (avoids cross-element flicker).
+- Persistence is the parent's job — the molecule does not call any server actions itself.
+
+**Default state:** Brand-level `chat_pane_open` defaults to `false` (rail-only). Width default is 360px. The user opens the panel by clicking a rail icon.
+
+**Rail-icon click behaviour:**
+| State | Click | Result |
+|---|---|---|
+| Panel closed | any icon | Open panel, select that tab |
+| Panel open, click selected icon | (toggle) | Close panel (rail stays visible) |
+| Panel open, click different icon | switch | Switch selected tab; panel stays open |
+
+**Selected-tab logic:**
+- If `selectedTabId` is provided AND that tab is in the visible (non-hidden) list, use it.
+- Otherwise: pick the first visible tab whose `status === 'active'`. Fall back to the first visible tab. If no visible tabs, the rail renders empty and the panel (when open) renders nothing.
+
+**Props:**
+```ts
+interface ContextPaneProps {
+  ctx: ConversationCtx
+  tabs: ContextTab[]
+  paneOpen: boolean             // controls panel only; rail is always visible
+  paneWidth: number             // panel width (excluding rail)
+  selectedTabId: string | null
+  onPaneOpenChange: (open: boolean) => void
+  onPaneWidthChange: (width: number) => void
+  onSelectedTabChange: (tabId: string) => void
+}
+```
+
+**Do not:**
+- Render an external "open pane" toggle in the parent. Re-open is via the rail icon — the rail is the single entry point. Removing the parent-side toggle keeps the affordance discoverable in one place.
+- Mount this in compact-mode chat surfaces (the slide-out drawer). The drawer is intentionally pane-less for v1 — the parent guards on `compact === true` and skips rendering this molecule.
+- Read or write `brand.chat_pane_open` / `brand.chat_pane_width` directly. The molecule is presentational; persistence happens in server actions called by the parent.
+- Hide the rail when `paneOpen` is false. The rail must remain visible so the user can re-open the panel.
+
+---
+
+### ContextPaneRail
+
+**File:** `02-app/components/context-pane-rail.tsx` *(OUT-01b)*
+**Purpose:** Vertical icon strip pinned to the right edge of `ContextPane`. Renders one `RailIcon` per non-hidden tab. Stateless — selected tab is parent-controlled.
+
+**Anatomy:**
+- Outer wrapper: `flex w-14 shrink-0 flex-col items-center gap-2 border-l border-border bg-muted px-2 py-3` with `role="tablist" aria-orientation="vertical"`.
+- 56px wide overall (40px icon hit area + 16px container padding).
+- Each tab item is a `RailIcon` with the tab's `selected`, `status`, `dot`, and `adornment` mapped from props.
+
+**Behavioural states:**
+- Stateless. The component owns no state.
+
+**Edge cases:**
+- **Empty tabs array**: renders just the rail container with no children. The pane's content panel will also render no body.
+
+**Props:**
+```ts
+interface ContextPaneRailProps {
+  tabs: {
+    id: string
+    label: string
+    icon: LucideIcon
+    status: 'active' | 'empty'
+    dot?: 'success' | null
+    adornment?: 'check' | null
+  }[]
+  selectedTabId: string
+  onSelect: (tabId: string) => void
+}
+```
+
+**Do not:**
+- Filter `'hidden'` tabs inside this molecule — the parent filters them out before passing in `tabs`. This keeps the rail's contract minimal.
+- Reorder tabs based on status. Ordering is the parent's responsibility (`priority` on `ContextTab`).
+- Add inline tooltip styling — the tooltip lives inside `RailIcon`.
+
+---
+
+### RailIcon
+
+**File:** `02-app/components/rail-icon.tsx` *(OUT-01b)*
+**Purpose:** Single rail icon button — one per tab in `ContextPaneRail`. Deliberately larger than `IconButton` (40px hit area vs IconButton's 32px sm) because the rail is a primary nav surface, not a secondary action. Distinct chrome contract: no border, surface-aware selected state, optional dot and adornment.
+
+**Anatomy:**
+- Outer button: `relative flex h-10 w-10 items-center justify-center rounded-md transition-colors`. 40px square hit area.
+- Inner glyph: 20px (`h-5 w-5`).
+- States:
+  - **Selected**: `bg-card` (visually joins the content panel) + `text-foreground`. No hover state distinct from selected.
+  - **Active, unselected**: `text-foreground`. Hover: `bg-card/50`.
+  - **Empty, unselected**: `text-muted-foreground`. Hover: `bg-card/50` + `text-foreground`.
+- Optional dot (only when `status === 'active'` AND `dot === 'success'` AND not selected): `absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-[var(--color-success)]`.
+- Optional adornment 'check': 12px `Check` glyph absolutely positioned bottom-right (`absolute right-0.5 bottom-0.5 h-3 w-3 text-[var(--color-success)]`).
+- Tooltip on hover via shadcn `Tooltip` showing `label`.
+- `aria-label={label}`, `aria-pressed={selected}`.
+
+**Behavioural states:**
+- Selected / active-unselected / empty-unselected — see Anatomy.
+
+**Edge cases:**
+- **Both `dot` and `adornment` set**: both render. Dot top-right; adornment bottom-right; they don't overlap.
+- **`dot` provided but `status === 'empty'`**: dot is suppressed. Status drives visibility.
+
+**Props:**
+```ts
+interface RailIconProps {
+  icon: LucideIcon
+  label: string
+  selected: boolean
+  status: 'active' | 'empty'
+  dot?: 'success' | null
+  adornment?: 'check' | null
+  onClick: () => void
+}
+```
+
+**Do not:**
+- Compose `IconButton`. The chrome contract differs (border, padding, default size); duplicating IconButton with overrides leaks IconButton's contract into the rail. Build directly on the `<button>` atom.
+- Use this molecule outside the rail. If something looks like a rail icon elsewhere, that's a sign a different primary-nav molecule is needed there too — don't import this one.
+- Add additional dot or adornment colours speculatively. New tones land when a new tab needs them.
+
+---
+
+### StageCard
+
+**File:** `02-app/components/stage-card.tsx` *(OUT-01b)*
+**Purpose:** Collapsible card for one skill stage in OUT-01b's context pane. Header always visible; click toggles expansion. Multiple cards can be expanded simultaneously — expansion state is owned by the parent (no internal state). Current stage carries a 3px coloured left border in `--primary` so it reads as a distinct landmark in the stage list; completed and pending stages use a 16px status icon in the leading position.
+
+**Anatomy:**
+- Outer card: `rounded-lg bg-card`. Border varies by status:
+  - Current: `border border-l-[3px] border-border border-l-[var(--primary)]`.
+  - Completed / pending: `border border-border`.
+- Header `<button>`: `flex w-full items-center gap-3 px-4 py-3 text-left`, `aria-expanded={expanded}`. Toggles expansion on click.
+  - Leading status icon (omitted for current): `Check` in `--color-success` for completed; empty `Circle` in `text-muted-foreground` for pending.
+  - Centre: `flex-1 text-sm font-medium text-foreground` label, with optional `(current)` suffix in `text-muted-foreground` for current stages.
+  - Trailing: `ChevronDown` (collapsed) or `ChevronUp` (expanded), 16px, `text-muted-foreground`.
+- Expanded body: `border-t border-border px-4 py-3`. Renders `gatheredValues` as a `<dl>` of label/value pairs (uppercase meta label + typed value renderer). Empty list shows "Nothing captured yet." in muted text.
+
+**Gathered value renderer (internal):**
+- `string` → `MarkdownRenderer` (compact mode) inside a max-200px scroll container.
+- `boolean` → "Yes" / "No".
+- `number` → as-is.
+- `string[]` or `number[]` → bulleted list.
+- Object (one level) → nested key/value rows.
+- Anything else → `<pre>` JSON block.
+- `null`, `undefined`, or `''` → muted em-dash placeholder.
+
+**Behavioural states:**
+- Collapsed (default) / expanded. Expansion is parent-controlled.
+
+**Edge cases:**
+- **Current stage with completed marker in same skill**: not possible by data model — `currentStage` and `stagesCompleted` are distinct.
+- **Stage with no gathered values**: expanded body shows "Nothing captured yet."
+- **Long gathered string** (paragraphs): scrolls inside a 200px-tall container within the card body.
+
+**Props:**
+```ts
+interface StageCardProps {
+  id: string
+  label: string
+  status: 'completed' | 'current' | 'pending'
+  expanded: boolean
+  onToggle: () => void
+  gatheredValues: { label: string; value: unknown }[]
+}
+```
+
+**Do not:**
+- Own internal expansion state. Parents manage the open/closed map so multi-expand and persistence behave coherently.
+- Edit gathered values inline — the card is read-only by spec. Editing belongs in the chat conversation (the LLM updates state) or, eventually, in OUT-01c's DB-write surface.
+- Render the (current) suffix when status is not 'current'.
+
+---
+
+### SkillChecklist
+
+**File:** `02-app/components/skill-checklist.tsx` *(OUT-01b)*
+**Purpose:** Read-only vertical checklist for the skill-state context tab. v1 has no item interaction — manual fill is out of scope per OUT-01b's brief; the LLM is the only thing that can flip an item to filled.
+
+**Anatomy:**
+- Outer: `<ul className="flex flex-col gap-1">`.
+- Each row: `flex items-center gap-2 py-1.5 text-sm`. Foreground text (`text-foreground`) when filled, muted (`text-muted-foreground`) when not.
+  - Filled: 16px `Check` glyph in `--color-success`.
+  - Unfilled: 16px empty `Circle` in `text-muted-foreground`.
+
+**Behavioural states:**
+- Read-only. No hover, no click, no focus.
+
+**Edge cases:**
+- **Empty items array**: renders nothing (`null`). The skill-state tab handles the heading separately.
+
+**Props:**
+```ts
+interface SkillChecklistItem {
+  id: string
+  label: string
+  filled: boolean
+}
+interface SkillChecklistProps {
+  items: SkillChecklistItem[]
+}
+```
+
+**Do not:**
+- Add an `onToggle` prop. v1 explicitly excludes manual fill.
+- Use this for VOC checklists or other interactive checklists — those use `VocMapping` or feature-specific molecules.
+
+---
+
+### SkillPickerRow
+
+**File:** `02-app/components/skill-picker-row.tsx` *(OUT-01b)*
+**Purpose:** Single row in the skill picker shown by the skill-state context tab when a freeform conversation is empty. Card-like row with a leading icon, name, and description. Focused contract for v1 — may generalise into a `PickerRow` molecule when a second consumer (e.g. content-type picker for OUT-02 chat-mode) appears.
+
+**Anatomy:**
+- Outer button: `flex w-full items-start gap-3 rounded-lg border border-border bg-card px-4 py-3 text-left transition-colors hover:bg-muted/50`.
+- Leading icon: 24px (`h-6 w-6 shrink-0`) in `text-muted-foreground`.
+- Body: `flex min-w-0 flex-1 flex-col gap-0.5`. Name is `text-sm font-medium text-foreground`. Description below as `text-xs text-muted-foreground line-clamp-2`.
+- `aria-label={`Start ${name}`}` for screen readers.
+- `data-skill-id` attribute on the button for testability.
+
+**Behavioural states:**
+- Idle / hover. No selected state — the parent removes the picker from the tree once a skill is attached.
+
+**Edge cases:**
+- **Long description**: clamps to 2 lines.
+- **Long name**: wraps (no truncation).
+
+**Props:**
+```ts
+interface SkillPickerRowProps {
+  skillId: string
+  name: string
+  description: string
+  icon: LucideIcon
+  onClick: () => void
+}
+```
+
+**Do not:**
+- Add a `selected` or `disabled` prop speculatively. v1 is single-action; the parent handles disabled-during-attach via guarding the click.
+- Generalise this prematurely into `PickerRow`. If a second consumer needs the same shape, evaluate then; otherwise the focused name keeps reuse intentional.
+
+---
+
+### PaneHighlightPulse
+
+**File:** `02-app/components/pane-highlight-pulse.tsx` *(OUT-01b)*
+**Purpose:** Wrapper that triggers a single 300ms low-intensity primary background flash on its child whenever its `pulseKey` prop changes. Centralises the "this just updated" animation contract for OUT-01b's context pane (and any future consumer that needs the same affordance). One source of truth for the pulse keyframe lives in `globals.css`.
+
+**Anatomy:**
+- Outer wrapper: `<div>` with the (optional) caller-provided `className` plus `pane-highlight-pulse-active` class while the pulse is firing.
+- CSS keyframe (defined in `globals.css` `@layer components`):
+  ```css
+  @keyframes pane-highlight-pulse {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: color-mix(in oklab, var(--primary) 12%, transparent); }
+  }
+  .pane-highlight-pulse-active {
+    animation: pane-highlight-pulse 300ms ease-in-out;
+    border-radius: inherit;
+  }
+  ```
+- The class is applied for exactly 300ms via `setTimeout`, then removed.
+
+**Behavioural states:**
+- Idle (no class) / pulsing (class applied for 300ms).
+
+**Edge cases:**
+- **Initial mount**: no pulse fires on first render. `pulseKey` is captured on mount and only triggers when it changes after.
+- **`pulseKey` changes faster than the 300ms animation**: the timeout is reset and a fresh pulse begins. The user sees the most recent change.
+- **Same `pulseKey` value provided again**: no pulse — only changes trigger.
+- **Component unmounts mid-pulse**: cleanup clears the timeout to prevent state updates on unmounted component.
+
+**Props:**
+```ts
+interface PaneHighlightPulseProps {
+  pulseKey: string | number  // when changed, a single 300ms pulse fires
+  children: ReactNode
+  className?: string
+}
+```
+
+**Do not:**
+- Use this for streaming text or per-token updates — the pulse is meant for discrete state changes (turn-complete, save-success), not continuous streams.
+- Customise duration or colour per call. If a need arises for a different animation, build a sibling molecule rather than parameterise this one — the contract is intentionally narrow.
+- Wrap interactive elements where the background flash would obscure focus rings or other state.
 
 ---
 

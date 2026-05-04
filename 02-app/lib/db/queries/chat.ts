@@ -66,6 +66,17 @@ export async function touchConversation(id: string) {
     .where(eq(conversations.id, id))
 }
 
+/** Persist the context-pane tab selection for a conversation. */
+export async function updateConversationContextPaneState(
+  id: string,
+  state: { selectedTabId: string }
+) {
+  await db
+    .update(conversations)
+    .set({ contextPaneState: state })
+    .where(eq(conversations.id, id))
+}
+
 export async function archiveConversation(id: string) {
   await db
     .update(conversations)

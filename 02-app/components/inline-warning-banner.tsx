@@ -1,18 +1,44 @@
 'use client'
 
-import { AlertTriangle, X } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, X } from 'lucide-react'
 import { IconButton } from '@/components/icon-button'
+
+type InlineBannerTone = 'warning' | 'success'
 
 interface InlineWarningBannerProps {
   title: string
   subtitle?: string
+  /** Defaults to 'warning' to preserve existing call-sites. */
+  tone?: InlineBannerTone
   onDismiss?: () => void
 }
 
-export function InlineWarningBanner({ title, subtitle, onDismiss }: InlineWarningBannerProps) {
+const TONE_CLASSES: Record<InlineBannerTone, { container: string; icon: string }> = {
+  warning: {
+    container:
+      'border-[var(--color-warning)] bg-[var(--color-warning-bg)] text-[var(--color-warning-foreground)]',
+    icon: 'text-[var(--color-warning)]',
+  },
+  success: {
+    container:
+      'border-[var(--color-success)] bg-[var(--color-success-bg)] text-[var(--color-success-foreground)]',
+    icon: 'text-[var(--color-success)]',
+  },
+}
+
+export function InlineWarningBanner({
+  title,
+  subtitle,
+  tone = 'warning',
+  onDismiss,
+}: InlineWarningBannerProps) {
+  const Icon = tone === 'success' ? CheckCircle2 : AlertTriangle
+  const styles = TONE_CLASSES[tone]
   return (
-    <div className="flex items-start gap-2 rounded-md border border-[var(--color-warning)] bg-[var(--color-warning-bg)] px-3 py-2 text-[var(--color-warning-foreground)]">
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-warning)]" />
+    <div
+      className={`flex items-start gap-2 rounded-md border px-3 py-2 ${styles.container}`}
+    >
+      <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${styles.icon}`} />
       <div className="flex-1 min-w-0">
         <p className="text-sm">{title}</p>
         {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}

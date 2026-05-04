@@ -158,7 +158,7 @@ export async function getProjectInputs(projectId: string): Promise<LinkedInput[]
       id: projectInputs.id,
       sourceDocumentId: projectInputs.sourceDocumentId,
       title: srcSourceDocuments.title,
-      type: srcSourceDocuments.type,
+      type: srcSourceDocuments.sourceType,
       createdAt: srcSourceDocuments.createdAt,
     })
     .from(projectInputs)
@@ -313,7 +313,7 @@ export async function searchUnlinkedInputs(brandId: string, projectId: string, q
   const linkedIds = new Set(linked.map((r) => r.sourceDocumentId))
 
   const allDocs = await db
-    .select({ id: srcSourceDocuments.id, title: srcSourceDocuments.title, type: srcSourceDocuments.type })
+    .select({ id: srcSourceDocuments.id, title: srcSourceDocuments.title, type: srcSourceDocuments.sourceType })
     .from(srcSourceDocuments)
     .where(eq(srcSourceDocuments.brandId, brandId))
     .orderBy(desc(srcSourceDocuments.createdAt))

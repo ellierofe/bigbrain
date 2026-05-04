@@ -232,4 +232,27 @@
     [data-sidebar="menu-sub-item"] {
     display: flex !important;
   }
+
+  /*
+   * Pane highlight pulse — single-source 300ms low-intensity flash used by
+   * PaneHighlightPulse molecule. Indicates "this just updated" without
+   * stealing attention. Keeps `border-radius: inherit` so pulse follows the
+   * child's shape.
+   */
+  @keyframes pane-highlight-pulse {
+    0% {
+      background-color: transparent;
+    }
+    50% {
+      background-color: color-mix(in oklab, var(--primary) 12%, transparent);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+
+  .pane-highlight-pulse-active {
+    animation: pane-highlight-pulse 300ms ease-in-out;
+    border-radius: inherit;
+  }
 }

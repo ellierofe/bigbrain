@@ -82,7 +82,7 @@ export async function getRecentActivity(brandId: string) {
       .select({
         id: srcSourceDocuments.id,
         title: srcSourceDocuments.title,
-        type: srcSourceDocuments.type,
+        type: srcSourceDocuments.sourceType,
         createdAt: srcSourceDocuments.createdAt,
       })
       .from(srcSourceDocuments)

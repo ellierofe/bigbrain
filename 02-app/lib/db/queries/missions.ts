@@ -260,7 +260,7 @@ export async function getMissionInputs(missionId: string): Promise<MissionLinked
     .select({
       id: srcSourceDocuments.id,
       title: srcSourceDocuments.title,
-      type: srcSourceDocuments.type,
+      type: srcSourceDocuments.sourceType,
       documentDate: srcSourceDocuments.documentDate,
       createdAt: srcSourceDocuments.createdAt,
     })
@@ -287,7 +287,7 @@ export async function searchUnlinkedInputs(
     .select({
       id: srcSourceDocuments.id,
       title: srcSourceDocuments.title,
-      type: srcSourceDocuments.type,
+      type: srcSourceDocuments.sourceType,
       documentDate: srcSourceDocuments.documentDate,
       createdAt: srcSourceDocuments.createdAt,
     })

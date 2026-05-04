@@ -867,9 +867,9 @@ export const componentRegistry: ComponentEntry[] = [
     path: "@/components/inline-warning-banner",
     category: "feedback",
     description:
-      "Single-line warning bar that sits above content in a page region — not a toast, not a centred empty state. Used for persistent state visibility (e.g. registry-miss warnings, state-extraction failures). Optional dismiss button when an onDismiss handler is provided.",
-    props: "title, subtitle?, onDismiss?",
-    usedIn: ["OUT-01a"],
+      "Thin coloured banner that sits above content in a page region — not a toast, not a centred empty state. Two tones: 'warning' (default — registry-miss, state-extraction failures) and 'success' (skill completion, save confirmation). Optional dismiss button when an onDismiss handler is provided.",
+    props: "title, subtitle?, tone? ('warning' | 'success', default 'warning'), onDismiss?",
+    usedIn: ["OUT-01a", "OUT-01b"],
     spec: "molecule-specifications/inlinewarningbanner",
   },
   {
@@ -881,5 +881,79 @@ export const componentRegistry: ComponentEntry[] = [
     props: "missingItems (string[]), loading (boolean), onAdvance (() => void)",
     usedIn: ["OUT-01a"],
     spec: "molecule-specifications/skillcontinuebar",
+  },
+  {
+    name: "ContextPane",
+    path: "@/components/context-pane",
+    category: "layout",
+    description:
+      "Right-side adaptive context pane for the chat page. Owns the rail-plus-content-panel structure, header strip with close affordance, resize handle on the left edge (bounds 280–560px), and width clamp logic so the message area always retains ≥ 480px. Tabs are pluggable via the ContextTab contract from lib/chat-context-pane.",
+    props:
+      "ctx (ConversationCtx), tabs (ContextTab[]), paneOpen, paneWidth, selectedTabId, onPaneOpenChange, onPaneWidthChange, onSelectedTabChange",
+    usedIn: ["OUT-01b"],
+    spec: "molecule-specifications/contextpane",
+  },
+  {
+    name: "ContextPaneRail",
+    path: "@/components/context-pane-rail",
+    category: "layout",
+    description:
+      "Vertical icon strip pinned to the right edge of ContextPane. Renders one RailIcon per non-hidden tab. Stateless — selected tab is parent-controlled.",
+    props:
+      "tabs ({ id, label, icon, status, dot?, adornment? }[]), selectedTabId, onSelect",
+    usedIn: ["OUT-01b"],
+    spec: "molecule-specifications/contextpanerail",
+  },
+  {
+    name: "RailIcon",
+    path: "@/components/rail-icon",
+    category: "layout",
+    description:
+      "Single rail icon button — one per tab in ContextPaneRail. 40px hit area (deliberately larger than IconButton's 32px because the rail is a primary nav surface). Distinct chrome (no border, surface-aware selected state). Optional success dot top-right when status='active'; optional Check adornment bottom-right for terminal states.",
+    props:
+      "icon (LucideIcon), label, selected, status ('active' | 'empty'), dot? ('success' | null), adornment? ('check' | null), onClick",
+    usedIn: ["OUT-01b"],
+    spec: "molecule-specifications/railicon",
+  },
+  {
+    name: "StageCard",
+    path: "@/components/stage-card",
+    category: "layout",
+    description:
+      "Collapsible card for a skill stage in the OUT-01b context pane. Header always visible; click toggles expansion. Multiple cards can be expanded simultaneously (state owned by parent). Current stage carries a 3px coloured left border in --primary; completed and pending use a 16px status icon. Expanded body renders gathered values via a typed key/value renderer.",
+    props:
+      "id, label, status ('completed' | 'current' | 'pending'), expanded, onToggle, gatheredValues ({ label, value }[])",
+    usedIn: ["OUT-01b"],
+    spec: "molecule-specifications/stagecard",
+  },
+  {
+    name: "SkillChecklist",
+    path: "@/components/skill-checklist",
+    category: "layout",
+    description:
+      "Read-only vertical checklist for the skill-state context tab. Each row: Check icon (filled, --color-success) or empty Circle (unfilled, muted). v1 has no item interaction.",
+    props: "items ({ id, label, filled }[])",
+    usedIn: ["OUT-01b"],
+    spec: "molecule-specifications/skillchecklist",
+  },
+  {
+    name: "SkillPickerRow",
+    path: "@/components/skill-picker-row",
+    category: "layout",
+    description:
+      "Single row in the skill picker shown by the skill-state context tab when a freeform conversation is empty. Card-like row with leading icon, name, and description. Focused contract for v1 — may generalise into a PickerRow molecule when a second consumer appears.",
+    props: "skillId, name, description, icon (LucideIcon), onClick",
+    usedIn: ["OUT-01b"],
+    spec: "molecule-specifications/skillpickerrow",
+  },
+  {
+    name: "PaneHighlightPulse",
+    path: "@/components/pane-highlight-pulse",
+    category: "layout",
+    description:
+      "Wrapper that triggers a single 300ms low-intensity primary background flash on its child whenever its pulseKey prop changes. Centralises the 'just updated' animation contract for OUT-01b's context pane (and any future consumer that needs the same affordance).",
+    props: "pulseKey (string | number), children, className?",
+    usedIn: ["OUT-01b"],
+    spec: "molecule-specifications/panehighlightpulse",
   },
 ]

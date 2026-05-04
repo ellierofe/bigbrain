@@ -531,10 +531,12 @@
 - **Size:** XL
 - **Depends on:** INP-11 (done), KG-04 (politics graph port — must complete first; canonical resolution needs the existing graph populated)
 - **Enables:** Meaningful retrieval at scale, AUTO-03, project synthesis quality, content creator quality, INP-05 (document ingestion can use the same source-type vocabulary), INP-08 (auto-classification slots into the source-type assignment step)
-- **Status:** in-progress (track A ungated; feature-build blocked on KG-04)
-- **Brief:** `01-design/briefs/INP-12-source-lens-processing.md` (approved 2026-04-30)
-- **Track A (ungated, in parallel with KG-04):** ADR-002 amendment, ADR-009 Source × Lens, 4 schema docs + migrations, lens prompts, source-type schema fragments, layout-design, optional new ingest pipeline.
+- **Status:** in-progress (track A schema layer done; prompts + layout remaining; feature-build blocked on KG-04)
+- **Brief:** `01-design/briefs/INP-12-source-lens-processing.md` (approved 2026-04-30, updated 2026-05-02)
+- **Track A done (2026-04-30 → 2026-05-02):** ADR-002a (`adr-002a-graph-schema-amendment-source-lens.md`) + ADR-009 (`adr-009-source-lens-processing-model.md`) accepted. 4 schema docs approved (`src-source-chunks`, `lens-reports`, `src-source-documents` v3, `processing-runs`). 4 Drizzle migrations generated + applied (`0032_inp12_source_docs_v3`, `0033_inp12_source_chunks`, `0034_inp12_lens_reports`, `0036_inp12_processing_runs_v3`). `src_source_documents` and `processing_runs` wiped before migration (graph was already empty).
+- **Track A remaining:** lens prompts (port 3 from INP-11, draft 4 new — `01-design/schemas/lens-prompts/`), source-type schema fragments (13 files — `01-design/schemas/extraction-schemas/`), layout-design.
 - **Track B (gated on KG-04):** canonical-resolution UI live, re-ingest day, feature-build end-to-end.
+- **Known fallout:** BUG-01 — `next build` fails because callers reference the dropped `type` column on `src_source_documents`. Mechanical fix: rename `type` → `sourceType` across the listed files. Tracked separately.
 
 ### INP-08: Krisp meeting auto-classification
 - **What:** Maintain a list of recurring meeting patterns (name, participants, schedule, tag conventions). When a Krisp transcript is ingested via INP-01, auto-match it against known patterns and pre-populate title and tags accordingly. Example: transcripts with Demetrius on Mondays → title "Mastermind hotseat — [date]", tags ["mastermind", "coaching"]. Patterns stored as a simple config (JSON or DB table). User can review/correct before processing.
@@ -622,9 +624,10 @@
 - **Size:** M
 - **Depends on:** OUT-01a
 - **Enables:** DNA-02 generation flows, OUT-03, OUT-02 (potentially — chat-mode variant picker context)
-- **Status:** in-progress
-- **Brief:** `01-design/briefs/OUT-01b-adaptive-chat-context-pane.md` (approved 2026-04-30)
-- **Note:** Includes a small amendment to OUT-01a's edge case — state extraction switches to AI SDK structured output (Zod-validated) instead of silent-skip on malformed JSON. Lands as part of OUT-01b's build.
+- **Status:** done
+- **Brief:** `01-design/briefs/OUT-01b-adaptive-chat-context-pane.md` (approved 2026-04-30, complete 2026-05-01)
+- **Layout:** `01-design/wireframes/OUT-01b-layout.md` (approved 2026-04-30)
+- **Implementation:** Migration 0031 (`brands.chat_pane_open`, `brands.chat_pane_width`, `conversations.context_pane_state`). Pluggable context-pane runtime in `lib/chat-context-pane/` (`types.ts`, `registry.ts`, `skill-summary.ts`). Skill-state context tab in `lib/skills/context-tab.tsx` consumes a client-safe `SkillSummary` projection so the registry never crosses into the client bundle. Seven new molecules (`ContextPane`, `ContextPaneRail`, `RailIcon`, `StageCard`, `SkillChecklist`, `SkillPickerRow`, `PaneHighlightPulse`) plus `InlineWarningBanner` extended with a `tone` prop ('warning' | 'success'). Brand-prefs query + server action (`lib/db/queries/brands.ts`, `app/actions/brand-preferences.ts`) and a `setContextPaneStateAction` in `app/actions/chat.ts`. Pane mounted in `chat-area.tsx` (skipped in compact-mode drawer). Full QA pending: dev server confirms the pane works end-to-end (rail, picker, attach, completion, resize, collapse/reopen, tab persistence). Production build is blocked by **BUG-01** — a baseline prerender regression in OUT-01a's tree, not introduced by OUT-01b.
 
 ### OUT-01c: LLM database write tool
 - **What:** LLM-callable tool for writing to DNA tables (and later: ideas, source knowledge, etc.) with schema awareness — knows table shapes, validates inputs, surfaces required-field gaps. Reusable across chat: used by skills (e.g. brand meaning save) and by ad-hoc chat ("update my value proposition to say…"). Scopes: per-table allowlist + per-field write rules + user confirmation contract for each write.
@@ -916,6 +919,21 @@
 ---
 
 ## CROSS-CUTTING
+
+### BUG-01: `next build` prerender fails on `/` — INP-12 source-lens schema rename leaves callers behind
+- **What:** `npm run build` fails during static prerender of `/` (the dashboard home) with `Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server"` and a `{$$typeof: ..., render: function, displayName: ...}` payload (a `React.forwardRef` component being serialised across the boundary). Root cause is upstream: the in-flight INP-12 source-lens schema work renamed/removed the `type` field on `src_source_documents` (see `lib/db/schema/source.ts` modifications and migrations 0032/0033), but a number of callers haven't been updated. TypeScript reports errors in `lib/db/queries/{sources,missions,dashboard}.ts`, `lib/processing/commit.ts`, and `app/api/process/{batch,individual,reflective,synthesis}/route.ts` + `app/api/sources/route.ts`. The prerender error on `/` is the runtime manifestation of the same broken state — when prerender hits a corrupted `tooltip`/icon path during the failing dashboard tree, Turbopack reports it via the forwardRef/serialisation path, masking the real schema cause.
+- **Layer:** infra / inputs (INP-12 source-lens)
+- **Problems:** Blocks `next build` — therefore blocks Vercel deployment. Dev server (`next dev`) is unaffected; both `/` and `/chat` render and respond `200` in dev. OUT-01b's runtime confirmed working in dev.
+- **Size:** S (mechanical update of callers to match the renamed schema field; INP-12 is mid-build in another session)
+- **Depends on:** —
+- **Enables:** Unblocks deployment of OUT-01a, OUT-01b, and any subsequent feature.
+- **Status:** open
+- **Surfaced:** 2026-05-01 during OUT-01b build. Bisected via `git stash`: the prerender error reproduces with **all OUT-01b files stashed out** — confirming the regression entered with the OUT-01a/INP-12 baseline, not OUT-01b. TS errors are all in source-lens-touched files. The dev server never tripped over it because dev doesn't prerender.
+- **Investigation / fix starting points:**
+  - `npx tsc --noEmit` from `02-app/` shows ~10 errors, all citing `'type' does not exist on type {...src_source_documents...}` or insert overload mismatches. These are the real symptoms.
+  - Update callers to match the new schema field name (whatever INP-12 renamed `type` to — likely `lensType` per the source-lens ADRs/schemas), then rebuild.
+  - The prerender error on `/` with the forwardRef shape is a downstream artefact; once the TS errors are fixed, prerender should pass.
+- **Workaround for now:** dev server works; manual QA of OUT-01a + OUT-01b is feasible. `next build` and production deploy blocked until INP-12's caller updates land.
 
 ### INP-09: Context-aware extraction (business-grounded processing)
 - **What:** Before running extraction, inject Ellie's Brand DNA (business overview, knowledge assets, audience segments, content pillars) and a summary of previously extracted topics into the extraction system prompt. This lets the LLM make better signal/noise judgements — e.g. recognising that an AI security discussion at the start of a call is tangential to Ellie's work and flagging it as low-relevance rather than extracting it at full confidence. Over time, as more knowledge accumulates, extraction quality improves automatically. Also enables the LLM to merge new extractions with existing graph nodes rather than creating near-duplicates (e.g. recognising "the Messy Middle" has been extracted before).

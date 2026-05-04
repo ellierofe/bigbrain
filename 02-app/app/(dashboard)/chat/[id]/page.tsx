@@ -6,8 +6,11 @@ import {
   getMessages,
   getFirstUserMessage,
 } from '@/lib/db/queries/chat'
-import { getSkill, isSkillId } from '@/lib/skills/registry'
+import { getBrandPanePrefs } from '@/lib/db/queries/brands'
+import { getSkill, isSkillId, listSkills } from '@/lib/skills/registry'
 import type { SkillState } from '@/lib/skills/types'
+import type { ContextPaneState } from '@/lib/chat-context-pane/types'
+import { toSkillSummary } from '@/lib/chat-context-pane/skill-summary'
 import { ChatArea } from '../chat-area'
 
 const BRAND_ID = 'ea444c72-d332-4765-afd5-8dda97f5cf6f'
@@ -21,9 +24,10 @@ export default async function ConversationPage({ params }: Props) {
   const conversation = await getConversation(id)
   if (!conversation) notFound()
 
-  const [dbMessages, convs] = await Promise.all([
+  const [dbMessages, convs, panePrefs] = await Promise.all([
     getMessages(id),
     getConversations(BRAND_ID),
+    getBrandPanePrefs(BRAND_ID),
   ])
 
   // Convert DB messages to UIMessage format
@@ -51,6 +55,9 @@ export default async function ConversationPage({ params }: Props) {
   const skill = conversation.skillId ? getSkill(conversation.skillId) : null
   const skillState = (conversation.skillState as SkillState | null) ?? null
   const skillInRegistry = !conversation.skillId || skill !== null
+  const contextPaneState = (conversation.contextPaneState as ContextPaneState | null) ?? null
+  const availableSkills = listSkills().map(toSkillSummary)
+  const activeSkillSummary = skill ? toSkillSummary(skill) : null
 
   return (
     <div className="flex h-full -mx-8 -mb-8 -mt-2">
@@ -63,6 +70,14 @@ export default async function ConversationPage({ params }: Props) {
         skillMode={skill?.mode ?? null}
         skillInRegistry={skillInRegistry}
         conversationHasMessages={dbMessages.length > 0}
+        paneOpen={panePrefs.chatPaneOpen}
+        paneWidth={panePrefs.chatPaneWidth}
+        paneSelectedTabId={contextPaneState?.selectedTabId ?? null}
+        paneConversationId={id}
+        paneSkillId={conversation.skillId}
+        paneSkillState={skillState}
+        paneAvailableSkills={availableSkills}
+        paneActiveSkillSummary={activeSkillSummary}
       />
     </div>
   )

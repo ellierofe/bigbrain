@@ -5,6 +5,7 @@ import {
   createConversation,
   archiveConversation,
   updateConversationTitle,
+  updateConversationContextPaneState,
   getMessages,
 } from '@/lib/db/queries/chat'
 import { generateText } from 'ai'
@@ -52,4 +53,17 @@ export async function generateTitleAction(conversationId: string) {
   }
 
   return cleaned
+}
+
+/** Persist the chat context pane's selected tab for a conversation. */
+export async function setContextPaneStateAction(
+  conversationId: string,
+  selectedTabId: string
+) {
+  await requireAuth()
+  if (!conversationId || !selectedTabId) {
+    throw new Error('Invalid context pane state')
+  }
+  await updateConversationContextPaneState(conversationId, { selectedTabId })
+  return { ok: true as const }
 }
