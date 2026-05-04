@@ -36,9 +36,7 @@ min-height: 6rem;
     .preloader_wrap.on {
     display: flex;
   }
-    [wized-cloak='hide'] {
-    display: none;
-  }
+    /* [wized-cloak='hide'] { display: none; } -- disabled: viewing offline without Wized auth */
   [wized-cloak='reveal'] {
     opacity: 0;
     transition-property: all;
@@ -121,8 +119,14 @@ scrollbar-width: thin; /* Optional: to control the width of the scrollbar in Fir
   <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.4.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
   <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.4.2/uicons-brands/css/uicons-brands.css">
   <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.4.2/uicons-solid-rounded/css/uicons-solid-rounded.css">
+  <!-- Wized embed disabled to allow offline viewing without auth redirect
   <script async="" src="https://embed.wized.com/YKLoNbHWTFSmRLYYjSl9.js"></script>
   <script async="" type="module" data-wized-id="YKLoNbHWTFSmRLYYjSl9" src="https://embed.wized.com/v2/index.js"></script>
+  -->
+  <script>
+    // Stub Wized so any inline code referencing it doesn't throw.
+    window.Wized = window.Wized || [];
+  </script>
   <script type="text/javascript">
     (function(w,d,u){
         w.$productFruits = w.$productFruits || [];
