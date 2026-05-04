@@ -55,6 +55,8 @@ A controlled vocabulary captured on every source at ingest time. Defines *what w
 
 Full definitions and surfaces in INP-12 brief.
 
+**`dataset` is in the source-type vocabulary but has no extraction-schema fragment.** Datasets are structured data (CSVs, parquet, JSON exports, schema'd row data) where analysis comes from graph traversal, not from LLM reading. They ingest via `kg-ingest-creator` (SKL-12) directly into FalkorDB + Neon as nodes/edges/properties; they are queried by Cypher hops, not lensed. The lens prompt composer raises a `LensNotApplicableError` when `sourceType === 'dataset'`, and the lens picker UI surfaces the dataset's graph view instead of a lens choice. A row in `src_source_documents` still gets created so the dataset is visible and findable in the front-end; the row links to its `ingestion_log` entry via a future `ingestionLogId` field (added in INP-12 implementation pass alongside the `sourceRefs` and `unexpected[]` follow-ups). All other 12 source types have a fragment file in `01-design/schemas/extraction-schemas/`.
+
 ### Lenses (7)
 
 A controlled vocabulary defining *what frame to apply* and *what output structure to produce*.
@@ -112,6 +114,7 @@ Analysis lenses (everything except `surface-extraction`) write a `LensReport` gr
 | Skip the `authority` property — bake it into source type | Authority is genuinely orthogonal: a client-interview can be `peer` (collaborative session) or `external-authoritative` (formal expert interview). Encoding it in source type would either expand the source-type list to 30+ or lose information. |
 | Implement schema fragments as code constants now, move to disk later | "Later" never comes. The point of the model is composability with low friction; disk-based fragments enforce that from day one. |
 | Treat `lens_input` as a structured object (problem statement, options, criteria for `decision-support`) | Free-form textarea is simpler and matches user's stated preference. Structuring it limits the lens prompt's flexibility. Revisit if free-form output quality is poor. |
+| Lensing `dataset` sources via the LLM | Datasets are structured rows where the analysis is graph traversal, not language reading. LLM lensing of a CSV would either summarise the schema (low value, the user already knows it) or fabricate patterns from a row preview (negative value, misleading). Datasets ingest via `kg-ingest-creator` directly to the graph and are queried by Cypher hops. `dataset` keeps its place in the source-type vocabulary so the dataset is visible/findable in the app, but has no fragment file; the lens picker disables for it and the prompt composer raises `LensNotApplicableError`. |
 
 ---
 

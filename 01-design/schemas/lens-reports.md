@@ -75,14 +75,16 @@ Full TypeScript interfaces in `lib/types/processing.ts` — drafted during INP-1
 
 | Lens | Top-level `result` keys |
 |---|---|
-| `self-reflective` | `summary`, `period`, `commitmentsAndFollowthrough[]`, `recurringBlockers[]`, `emergingThemes[]`, `shiftsInThinking[]`, `energyAndMomentum`, `keyRealisations[]`, `metaAnalysis[]` (ports from INP-11 reflective output) |
-| `project-synthesis` | `summary`, `projectName`, `methodology{}`, `whatWorked[]`, `whatDidntWork[]`, `reusablePatterns[]`, `caseStudyNarrative`, `contentAngles[]`, `openThreads[]` (ports from INP-11) |
-| `pattern-spotting` | `summary`, `dateRange`, `recurringThemes[]`, `convergences[]`, `divergences[]`, `synthesisedInsights[]`, `gaps[]` (ports from INP-11 batch) |
-| `catch-up` | `summary`, `since`, `whatChanged[]`, `whoSaidWhat[]`, `newDevelopments[]`, `unresolvedFromLastTime[]` (new — drafted during implementation) |
-| `decision-support` | `summary`, `decisionText`, `evidenceFor[]`, `evidenceAgainst[]`, `gaps[]`, `suggestedNextSteps[]` (new) |
-| `content-ideas` | `summary`, `hooks[]`, `angles[]`, `formats[]`, `audienceHypotheses[]` (new) |
+| `self-reflective` | `summary`, `period`, `commitmentsAndFollowthrough[]`, `recurringBlockers[]`, `emergingThemes[]`, `shiftsInThinking[]`, `energyAndMomentum`, `keyRealisations[]`, `metaAnalysis[]`, `unexpected[]` (ports from INP-11 reflective output; `unexpected[]` per the universal base contract) |
+| `project-synthesis` | `summary`, `projectName`, `methodology{}`, `whatWorked[]`, `whatDidntWork[]`, `reusablePatterns[]`, `caseStudyNarrative`, `contentAngles[]`, `openThreads[]`, `unexpected[]` (ports from INP-11) |
+| `pattern-spotting` | `summary`, `dateRange`, `recurringThemes[]`, `convergences[]`, `divergences[]`, `synthesisedInsights[]`, `gaps[]`, `unexpected[]` (ports from INP-11 batch) |
+| `catch-up` | `summary`, `since`, `whatChanged[]`, `whoSaidWhat[]`, `newDevelopments[]`, `unresolvedFromLastTime[]`, `unexpected[]` (new — drafted during implementation) |
+| `decision-support` | `summary`, `decisionText`, `decisionFraming{}`, `evidenceFor[]`, `evidenceAgainst[]`, `gaps[]`, `suggestedNextSteps[]`, `unexpected[]` (new) |
+| `content-ideas` | `summary`, `hooks[]`, `angles[]`, `formats[]`, `audienceHypotheses[]`, `unexpected[]` (new) |
 
-Each entry within these arrays carries `sourceRefs[]` (titles or IDs of sources where the finding draws from) so commit can write `DERIVED_FROM` edges accurately.
+Each entry within these arrays carries `sourceRefs[]` — populated with source `id` UUIDs (never titles or dates) — so commit can write `DERIVED_FROM` edges accurately. The exception is `gaps[]` items where they describe absences (no source contributed, by definition); these omit `sourceRefs`.
+
+**Universal `unexpected[]` field**: every lens (including `surface-extraction`, which writes its `unexpected[]` to a dedicated property on the processing run rather than a LensReport, since surface-extraction does not produce a report) carries an `unexpected: Array<{ observation: string, why: string, sourceRefs: string[] }>`. This field exists so the LLM can surface left-field observations the lens's frame couldn't see — a surprising connection, a contradiction, an aside that could matter. Defined in `extraction-schemas/_base.md`. Bar is "genuinely worth surfacing", not "fill the field"; empty array is the typical right answer. The per-item review UI surfaces these alongside the lens's primary output for user review and individual commit/discard.
 
 ## Notes
 

@@ -475,13 +475,21 @@
 - **Note:** IDEA-01 covers the text capture path. IDEA-02 covers voice. This entry kept for reference.
 
 ### INP-05: Research document ingestion
-- **What:** Upload PDFs, CSVs, JSON, markdown. Type-specific extraction (PDF text extraction, CSV parsing, etc.). Feeds into INP-03 for processing.
+- **What:** Upload documents and extract them into a form INP-12's chunk/summary/lens pipeline can consume. Spans PDFs (the dominant case), DOCX, markdown, plain text, and structured formats (CSV/JSON — those route to `kg-ingest-creator` SKL-12 instead of the lens path, see INP-12). The naive "PDF → extracted_text" path is insufficient: visual content (diagrams, charts, slide layout, image-only pages) carries meaning that text extraction loses, and pitch decks in particular are mostly visual. Two-shape extraction:
+  - **Report-shaped** (`research-document`, `report`): primarily linear text. Extract text per-page, preserve section structure (headings → logical groups for chunking). Capture page-level images as supporting context — a chart or diagram referenced in the text becomes a per-chunk image attachment, surfaced in retrieval and shown alongside the chunk in the per-item review UI. Image-only pages (covers, full-page diagrams) are extracted as image chunks with a vision-LLM-generated description as the text.
+  - **Deck-shaped** (`pitch-deck`): per-slide extraction, where each slide is one chunk. The slide's text content + the slide's full-page image both attach to the chunk. The summary and any lens running on a deck must have access to the visual content — many slides are 80% image, 20% text. Vision-capable LLM (Gemini Pro or Claude with image input) generates a per-slide description that combines the textual and visual content, used as the chunk's `text` field for embedding and retrieval.
 - **Layer:** input
-- **Problems:** P4
+- **Problems:** P1, P3, P4
 - **Size:** L
-- **Depends on:** INF-04, INP-03
-- **Enables:** Research compounding
+- **Depends on:** INF-04 (Vercel Blob), INP-12 (source-type vocabulary, chunking model, SourceChunk shape with image-attachment property — see INP-12 known follow-ups)
+- **Enables:** Research compounding, pitch deck review/critique flows, content creation grounded in visual references
 - **Status:** planned
+- **Notes:**
+  - Ellie has prior work on this in a separate mini-project — port rather than rebuild where feasible. Confirm tooling stack (likely `pdf-parse` or `pdfjs-dist` for text + page rendering, vision LLM for image description).
+  - SourceChunk schema (per `src-source-chunks.md`) currently has no image-attachment field. Adding one (`imageRefs: text[]` of Vercel Blob URLs, or `imageDescription: text` for vision-LLM output as the chunk's text content) is a Track B follow-up to INP-12 — flagging here so it's not lost.
+  - Pitch deck lensing is a noticeably different shape from report lensing — `pitch-deck` source-type fragment must reflect this (per slide, with both text and visual content available). Captured in `01-design/schemas/extraction-schemas/pitch-deck.md` once that fragment is drafted.
+  - Markdown/DOCX/plaintext are simpler — they go through the same chunk + summary pipeline as transcripts, no visual handling needed.
+  - CSV/JSON datasets do **not** flow through this feature — they go via `kg-ingest-creator` SKL-12 directly to the graph. Per ADR-009 follow-up: `dataset` source-type has no extraction-schema fragment.
 
 ### INP-06: Social media / web content ingestion
 - **What:** Save or scrape content from LinkedIn, X, newsletters. Basic metadata (source, date, author). Feeds into INP-03.
@@ -531,11 +539,22 @@
 - **Size:** XL
 - **Depends on:** INP-11 (done), KG-04 (politics graph port — must complete first; canonical resolution needs the existing graph populated)
 - **Enables:** Meaningful retrieval at scale, AUTO-03, project synthesis quality, content creator quality, INP-05 (document ingestion can use the same source-type vocabulary), INP-08 (auto-classification slots into the source-type assignment step)
-- **Status:** in-progress (track A schema layer done; prompts + layout remaining; feature-build blocked on KG-04)
-- **Brief:** `01-design/briefs/INP-12-source-lens-processing.md` (approved 2026-04-30, updated 2026-05-02)
-- **Track A done (2026-04-30 → 2026-05-02):** ADR-002a (`adr-002a-graph-schema-amendment-source-lens.md`) + ADR-009 (`adr-009-source-lens-processing-model.md`) accepted. 4 schema docs approved (`src-source-chunks`, `lens-reports`, `src-source-documents` v3, `processing-runs`). 4 Drizzle migrations generated + applied (`0032_inp12_source_docs_v3`, `0033_inp12_source_chunks`, `0034_inp12_lens_reports`, `0036_inp12_processing_runs_v3`). `src_source_documents` and `processing_runs` wiped before migration (graph was already empty).
-- **Track A remaining:** lens prompts (port 3 from INP-11, draft 4 new — `01-design/schemas/lens-prompts/`), source-type schema fragments (13 files — `01-design/schemas/extraction-schemas/`), layout-design.
+- **Status:** in-progress (track A schema layer + lens prompts + source-type fragments done; layout-design remaining; feature-build blocked on KG-04)
+- **Brief:** `01-design/briefs/INP-12-source-lens-processing.md` (approved 2026-04-30, updated 2026-05-04)
+- **Track A done (2026-04-30 → 2026-05-04):**
+  - ADR-002a (`adr-002a-graph-schema-amendment-source-lens.md`) + ADR-009 (`adr-009-source-lens-processing-model.md`) accepted; ADR-009 amended 2026-05-04 with `dataset` exception.
+  - 4 schema docs approved: `src-source-chunks`, `lens-reports` (updated 2026-05-04 for universal `unexpected[]` field), `src-source-documents` v3, `processing-runs` v3.
+  - 4 Drizzle migrations generated + applied (`0032`, `0033`, `0034`, `0036`). `src_source_documents` and `processing_runs` wiped before migration.
+  - 8 lens-prompt files in `01-design/schemas/lens-prompts/` (`_README.md` + `surface-extraction`, `self-reflective`, `project-synthesis`, `pattern-spotting`, `catch-up`, `decision-support`, `content-ideas`).
+  - 14 extraction-schema fragments in `01-design/schemas/extraction-schemas/` (`_README.md` + `_base.md` + 12 source types — `dataset` intentionally absent per ADR-009 amendment).
+  - INP-05 backlog entry rewritten to capture multi-modal PDF extraction requirements (text + visual; pitch deck vs report-shape; vision-LLM dependency).
+- **Track A remaining:** `layout-design` for the new UI surfaces — split into **three sequential passes** (decided 2026-05-04 to keep each invocation tractable):
+  - **Pass 1 (next):** Entry surfaces — Sources page (NEW label + filter chip), bulk-triage flow, source detail view, lens picker (with disabled state for `dataset` sources).
+  - **Pass 2:** Schema-driven `<LensReportReview>` molecule (one panel for all 7 lenses, not seven per-lens panels — per-lens differences live in schema metadata + 3 extension slots) + canonical-resolution micro-UI + contact-card sub-form.
+  - **Pass 3:** Committed lens report page + transition from review to committed view.
+  - Full architecture rationale captured in brief §"Layout architecture decision". Each pass is its own `layout-design` skill invocation; Pass 1 ideally runs in a fresh session to keep context clean.
 - **Track B (gated on KG-04):** canonical-resolution UI live, re-ingest day, feature-build end-to-end.
+- **Implementation follow-ups (for feature-build pass — must land together):** 10-item list captured in the brief at §"Implementation follow-ups". Covers `sourceRefs` additions across multiple schemas, universal `unexpected[]` field, `processing_runs.unexpected` jsonb column, TypeScript type renames (`BatchAnalysis` → `PatternSpottingResult`, etc.), `src_source_documents.ingestionLogId` field for datasets, `LensNotApplicableError` for dataset sources, `src_source_chunks` image-attachment field (INP-05 forward compat), build-time fragment validator. See brief for full detail; implementing these piecemeal will leave the schema + prompts misaligned.
 - **Known fallout:** BUG-01 — `next build` fails because callers reference the dropped `type` column on `src_source_documents`. Mechanical fix: rename `type` → `sourceType` across the listed files. Tracked separately.
 
 ### INP-08: Krisp meeting auto-classification

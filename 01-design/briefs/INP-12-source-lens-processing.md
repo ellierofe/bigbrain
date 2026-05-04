@@ -257,19 +257,61 @@ New labels: `SourceChunk`, `SourceCollection`, `SourceItem`, `LensReport`. Exist
 
 ## UI/UX notes
 
-Left blank until layout-design is run. Surfaces that need design work:
+Surfaces that need design work:
 - Sources page "NEW" label/badge + filter chip (no separate Inbox page; navigation collapses to Sources + Results)
 - Bulk-triage flow on Sources (assign source type + authority + tags + participants to selected items in one pass)
 - Source detail view (summary + chunks + processing history + linked lens reports)
-- Lens picker (separate from source-type picker, applies to selected sources)
-- Per-item review/edit panel for surface extraction (existing component, needs canonical-resolution step added)
-- Per-item review/edit panel for each analysis lens (lens types × structured output)
-- Canonical resolution micro-UI (match suggestion + confirm/new/edit)
-- Contact-card sub-form (Person and Organisation, multi-select relationship types)
-- Lens report page (first-class artefact view, editable, re-runnable)
+- Lens picker (separate from source-type picker, applies to selected sources; **disabled state for `dataset` sources** with link to graph view)
+- Schema-driven lens-result review surface (handles all 7 lenses; see "Layout architecture decision" below)
+- Canonical resolution micro-UI (match suggestion + confirm/new/edit) — slot inside the review surface, only triggered by surface-extraction Person/Organisation items
+- Contact-card sub-form (Person and Organisation, multi-select relationship types) — sub-form invoked from canonical-resolution slot
+- Lens report page (first-class artefact view of a committed `LensReport`, editable in v2, re-runnable)
 - Source × Lens compatibility hints (e.g. "self-reflective lens needs 2+ sources of same type" warnings)
 
 The Sources page filter/search/sort improvements are explicitly out of scope for this brief — the existing list UI is acknowledged as needing work but that's a separate next pass.
+
+### Layout architecture decision (2026-05-04)
+
+Two structural decisions were made before any layout-design pass began, to scope the work realistically:
+
+**Decision 1 — `layout-design` runs in three sequential passes, not one mega-spec.**
+
+The 10 surfaces above are too large for a single layout-design invocation; the hard-gate review would be a multi-hour read and the result would need significant rework as edge cases surface mid-design. Tiering by dependency:
+
+- **Pass 1: Entry surfaces** — Sources page (NEW label + filter chip), bulk-triage flow, source detail view, lens picker. These are the navigation spine; without them no other surface is reachable. Designing them first locks in the routing and IA before deeper surfaces commit to it.
+- **Pass 2: Lens review surface** — the schema-driven `<LensReportReview>` molecule (see Decision 2) + canonical-resolution slot + contact-card sub-form. One coherent pass, not seven per-lens panels.
+- **Pass 3: Committed lens report page** — the addressable, long-lived view of a committed `LensReport`, plus the transition from "review" to "committed page". Smaller than originally scoped because the review surface from Pass 2 supplies most of the rendering.
+
+Each pass is its own `layout-design` skill invocation with its own hard gate. Pass 2 should ideally see at least one real lens output before the panel is finalised — the schema is enough to design against, but tuning happens during re-ingest day (Track B).
+
+**Decision 2 — One schema-driven lens-review surface, not seven per-lens panels.**
+
+The initial framing assumed one review panel per lens (surface-extraction, pattern-spotting, self-reflective, project-synthesis, catch-up, decision-support, content-ideas — 7 panels). On reflection, this conflates *data shape* with *UI shape*. The visual structure across all lenses is the same: collapsible sections of items, per-item edit/confirm/reject affordances, a commit footer. The differences across lenses are bounded:
+
+1. Section names — derivable from schema field names (`whatWorked` → "What Worked").
+2. Item field set — derivable from the JSON schema (text fields → text input, enums → dropdown, `sourceRefs` → source-chip selector).
+3. Per-item editor type — covered by shadcn/ui primitives.
+4. Three special cases handled by extension slots:
+   - Long-form prose blobs (`project-synthesis.caseStudyNarrative`, every lens's `summary`) — full-width markdown editor slot.
+   - Single-object fields (`decision-support.decisionFraming`, `self-reflective.energyAndMomentum`) — labelled-card slot rather than a section of items.
+   - Canonical-resolution slot — only triggered by surface-extraction's Person/Organisation items.
+
+The universal `unexpected[]` array (per `extraction-schemas/_base.md`) renders as one consistent section across every lens, always last, always with the same item shape.
+
+**Architecture:**
+- **One main molecule:** `<LensReportReview>` — takes a lens `result` object + a TypeScript-typed schema description, renders sections + items + commit footer.
+- **Two extension slots:** prose-blob renderer, single-object renderer.
+- **One conditional slot:** canonical-resolution (only injected by surface-extraction's Person/Organisation rows).
+- **One sub-form:** contact-card (invoked from canonical-resolution slot).
+- **Schema-metadata convention** drives per-lens behaviour. Metadata can include layout hints (`displayWeight: primary`, `pairWith: evidenceAgainst`, `sortBy: chronological`) so lens-specific nuance — e.g. `decision-support` rendering `evidenceFor` and `evidenceAgainst` side-by-side — is achievable without forking the panel.
+
+**Caveat — when hints aren't enough:** schema-metadata hints are bounded. If a lens needs UX that hints can't express, the right move is to reach for a new slot (and document it in this section), not to fork the main panel. Forking creates seven fragile codebases; slots keep the surface to one. Tune during re-ingest day.
+
+**Adding an 8th lens** post-v1 then becomes: write a new schema-metadata file + draft a lens-prompts file. No new panel, no new code path. Matches ADR-009's "adding a lens or source type post-v1 is a 4-step operation" goal.
+
+**Why this matters now:** the `feature-build` plan for the lens review surface depends on this architecture being settled. Without it, feature-build would scope as "build seven panels" — high cost, high maintenance burden, fragile under lens additions. With it, feature-build scopes as "build one molecule + slots + metadata format" — much smaller, much more reusable.
+
+**Pass 1 is unaffected by Decision 2** — it covers Sources page, bulk-triage, source detail, lens picker, none of which touch the per-lens review shape.
 
 ## Edge cases
 
@@ -322,10 +364,12 @@ The Sources page filter/search/sort improvements are explicitly out of scope for
 - **Decision-support lens input:** Free-form textarea for the decision text. Lens prompt instructs the LLM to interrogate the corpus against the decision.
 - **Embedding cost:** $5–$15 ceiling accepted. Stays on OpenAI `text-embedding-3-small` for v1; Gemini embedding evaluation deferred (separate decision at re-ingest day if cost or latency bites).
 
-## Open questions / TBDs (now smaller — drafted during implementation, not blocking)
+## Open questions / TBDs
 
-- **[TBD] Lens prompts:** Draft the 4 new lenses (`catch-up`, `decision-support`, `content-ideas`) plus port the 3 existing INP-11 prompts to the renamed lens names (`pattern-spotting`, `self-reflective`, `project-synthesis`). User edits before first use.
-- **[TBD] Source-type schema fragments:** 13 source types each need a prompt fragment describing expected node/edge shape. Drafted during implementation, reviewed before first run.
+- **[done 2026-05-04] Lens prompts:** 7 lens-prompt files in `01-design/schemas/lens-prompts/` — 3 ports from INP-11 with critical-pass refinements + 4 new lenses (`surface-extraction` refined, `catch-up`, `decision-support`, `content-ideas`).
+- **[done 2026-05-04] Source-type schema fragments:** `_README.md` + `_base.md` + 12 source-type fragments in `01-design/schemas/extraction-schemas/`. `dataset` intentionally absent (per ADR-009 amendment).
+- **[deferred to layout-design Pass 2]** Lens-review schema metadata format — fields, types, layout hints (`displayWeight`, `pairWith`, `sortBy`). Drafted during Pass 2 of layout-design.
+- **[deferred to feature-build]** `<LensReportReview>` molecule spec finalisation (props, slots, schema-metadata interface). Sketch in Pass 2 layout spec; full spec at feature-build time when the renderer is being built.
 
 ## Decisions log
 
@@ -334,6 +378,8 @@ The Sources page filter/search/sort improvements are explicitly out of scope for
 - 2026-04-30: Gate split clarified. KG-04 only blocks `feature-build` end-to-end and re-ingest day. ADRs, schema docs, migrations, lens prompts, source-type fragments, and `layout-design` are all ungated and proceed in parallel with KG-04.
 - 2026-04-30 → 2026-05-02: Schema layer landed. ADR-002a + ADR-009 accepted. 4 schema docs approved. 4 Drizzle migrations generated + applied. `src_source_documents` and `processing_runs` wiped (70 + 3 rows; graph was already empty) before applying migrations to avoid backfill complications. End state: tables match schema docs exactly (verified via `information_schema` queries). Track A schema work done.
 - 2026-05-02: One small migration-generation note for future reference — Drizzle's interactive prompt for `mode → lens` rename was answered as "create" (drop + add) rather than "rename" because the table was empty either way. End state is identical, but the snapshot now records `mode` as deleted and `lens` as a fresh column. Acceptable per ADR-009 (the columns are semantically distinct under the new vocabulary). If a future similar rename happens on a populated table, answer "rename" instead.
+- 2026-05-04: Lens prompts (7) and source-type fragments (`_base.md` + `_README.md` + 12 source types) drafted. `dataset` intentionally absent from extraction-schemas — bypasses the lens path entirely (ingests via `kg-ingest-creator` SKL-12 to graph; queried by traversal, not lensed). ADR-009 amended to record `dataset` exception. Universal `unexpected[]` output field introduced in `_base.md` and added to all lens result schemas — gives the LLM a structured place to surface left-field observations the lens's frame couldn't see. `lens-reports.md` schema doc + 7 lens-prompt files updated to reflect this. INP-05 backlog entry rewritten to capture multi-modal PDF extraction requirements (text + visual; pitch-deck vs report-shape; vision-LLM dependency for INP-05 build).
+- 2026-05-04: Layout architecture decisions made before any layout-design pass began (see "Layout architecture decision" section above). Two structural calls: (1) `layout-design` runs in three sequential passes — entry surfaces (Pass 1) → schema-driven lens-review surface (Pass 2) → committed lens report page (Pass 3); (2) one schema-driven `<LensReportReview>` molecule serves all 7 lenses, not seven per-lens panels — per-lens differences live in schema metadata (field types, layout hints) plus three bounded extension slots (prose-blob renderer, single-object renderer, canonical-resolution slot). Reduces panel-count from 7 to 1 with bounded extensibility, matches ADR-009's "adding a lens is a 4-step operation" goal. Pass 1 unaffected; the three-pass split was made to keep each `layout-design` invocation tractable and review-able. Decision driven by token-budget and review-fatigue concerns during this session — the 10-surface mega-spec was looking like multiple-hour read with high rework risk.
 
 ## Status / gate items
 
@@ -353,11 +399,56 @@ The work splits into two tracks. Track A's schema layer is now complete; remaini
   - `0036_inp12_processing_runs_v3.sql`
 - `src_source_documents` and `processing_runs` wiped (70 docs + 3 runs deleted) so migrations could run cleanly without backfill complications. Graph was already empty (no nodes had been committed).
 
+**✅ Done (2026-05-04):**
+- Lens prompts: 7 lens-prompt files + `_README.md` written and approved-as-draft in `01-design/schemas/lens-prompts/`. 3 ports from INP-11 (`pattern-spotting`, `self-reflective`, `project-synthesis`) with critical-pass refinements; 4 new lenses drafted (`surface-extraction`, `catch-up`, `decision-support`, `content-ideas`).
+- Source-type schema fragments: `_README.md` + `_base.md` + 12 source-type fragments in `01-design/schemas/extraction-schemas/`. `dataset` is intentionally absent — has no extraction-schema fragment because datasets bypass the lens path entirely (see ADR-009 amendment).
+- `_base.md` introduces the universal `unexpected[]` output field that every lens emits (left-field-observation channel). `lens-reports.md` schema doc updated to reflect this. The 7 lens-prompt files cross-reference it.
+- ADR-009 amended to record `dataset` exception and the `LensNotApplicableError` runtime requirement.
+- INP-05 backlog entry rewritten to capture the multi-modal PDF extraction requirement (text + visual content; report-shaped vs deck-shaped extraction; vision-LLM dependency for pitch decks).
+
 **⏳ Remaining (prose + design — no further DB work):**
-- Lens prompts (7 total): port 3 from INP-11 (batch → pattern-spotting, reflective → self-reflective, synthesis → project-synthesis), draft 4 new (`catch-up`, `decision-support`, `content-ideas`, refined `surface-extraction`). Land in `01-design/schemas/lens-prompts/`.
-- Source-type schema fragments (13 files in `01-design/schemas/extraction-schemas/`)
-- `layout-design` for the new UI surfaces (Sources NEW label + filter chip, bulk-triage flow, lens picker, canonical-resolution micro-UI, contact-card sub-form, lens report page, per-item review/edit panels)
+- `layout-design` for the new UI surfaces (Sources NEW label + filter chip, bulk-triage flow, lens picker, canonical-resolution micro-UI, contact-card sub-form, lens report page, per-item review/edit panels, lens-picker disabled state for `dataset` sources)
 - Optional: build the new ingest pipeline (chunking + summary + embeddings) so new Krisp transcripts arriving incrementally get the new shape, even before KG-04 lands. Lens layer stays dormant until canonical resolution can run against politics.
+
+### Implementation follow-ups (for the INP-12 build pass)
+
+These are gaps and additions surfaced during Track A prompt-and-fragment work that need to land together when feature-build picks up. Sequencing inside this list is flexible; doing them as a single coordinated pass is the point — partial application leaves the schema and prompts misaligned.
+
+1. **Add `sourceRefs: string[]` to every extracted item type in `extractionResultSchema`** at `02-app/lib/types/processing.ts:111-119`. Each of `ExtractedIdea`, `ExtractedConcept`, `ExtractedPerson`, `ExtractedOrganisation`, `ExtractedStory`, `ExtractedTechnique`, `ExtractedContentAngle` needs the field. Required by `surface-extraction` lens prompt's universal contract.
+
+2. **Add missing `sourceRefs[]` to `projectSynthesisSchema`** at `02-app/lib/types/processing.ts`. Currently missing on: `whatDidntWork`, `reusablePatterns`, `methodology.steps`, `openThreads`. Asymmetric provenance (only `whatWorked` had refs) was a real INP-11 gap; ports surfaced it.
+
+3. **Add missing `sourceRefs[]` to `reflectiveAnalysisSchema`**:
+   - `energyAndMomentum` — add `sourceRefs: string[]` to support the energy reading's source-text anchors
+   - `keyRealisations.session` — change from single `string` to `sourceRefs: string[]` array, supports realisations that surface across multiple sessions
+
+4. **Add the universal `unexpected` field to every lens result type** as the last field:
+   ```ts
+   unexpected: Array<{
+     observation: string,
+     why: string,
+     sourceRefs: string[],
+   }>
+   ```
+   Applies to: the new `PatternSpottingResult`, `SelfReflectiveResult`, `ProjectSynthesisResult`, plus the new `CatchUpResult`, `DecisionSupportResult`, `ContentIdeasResult` types. Defined in `01-design/schemas/extraction-schemas/_base.md`.
+
+5. **Surface-extraction unexpected-items storage**. Surface-extraction does not produce a `LensReport`, so its `unexpected[]` array can't attach there. Add a `unexpected jsonb` column to `processing_runs` (default `'[]'::jsonb`), populated only when `lens='surface-extraction'`. Per-item review UI surfaces these alongside the regular extracted items for individual commit/discard.
+
+6. **TypeScript type renames** per ADR-009 §Consequences:
+   - `BatchAnalysis` → `PatternSpottingResult`
+   - `ReflectiveAnalysis` → `SelfReflectiveResult`
+   - `ProjectSynthesis` → `ProjectSynthesisResult` (already roughly aligned; confirm)
+   Update all importers across the codebase.
+
+7. **Add `ingestionLogId` field to `src_source_documents`**. New nullable uuid FK → `ingestion_log.id`. Populated for `dataset` sources only — the bridge between the front-end source row (a dataset is visible/findable in the app) and the technical record of how it became kg nodes/edges (`kg-ingest-creator` SKL-12 output). Generate a new Drizzle migration; `ingestion_log` table already exists per kg-ingest-creator skill.
+
+8. **Lens prompt composer must raise `LensNotApplicableError`** when called with `sourceType === 'dataset'`. Fail loud, not silent. Lens picker UI surfaces the error/disabled state with a link to the source's graph view (per layout-design).
+
+9. **`src_source_chunks` image-attachment field** (forward compatibility for INP-05). Add either `imageRefs: text[]` (Vercel Blob URLs of attached images per chunk) or `imageDescription: text` (vision-LLM-generated text description as the chunk's effective text content) or both. Decision deferred to INP-05 design pass — flagging here so the schema change happens at the same time as the rest, not later. Pitch-deck and research-document fragments already assume this is coming.
+
+10. **Build-time fragment validator**. Per ADR-009, the runtime asserts every source type in the controlled vocabulary (except `dataset`) has a registered fragment file in `01-design/schemas/extraction-schemas/`, and every lens has a registered file in `01-design/schemas/lens-prompts/`. Implement as a script run at app startup or in CI; missing fragment files are deployment errors, not runtime errors.
+
+Cross-reference: this list is summarised in the INP-12 backlog entry pointing back here.
 
 ### Track B — gated on KG-04
 
