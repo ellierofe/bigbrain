@@ -50,6 +50,7 @@ Ask structured questions across these categories. Adapt the questions to what yo
 - What information does this feature create, store, display, or edit?
 - For each field: type, constraints, required vs optional, default value if any
 - Are there fields that need to be validated? What are the rules?
+- **List-view density expectation** *(only for features producing multiple browsable instances — skip for single-artefact features)*: is the list scanned by **recognition** (low-volume, content-rich items where summary/excerpt does real scan-work — points layout toward cards) or by **density** (high-volume, mostly-uniform items where finding the right row matters more than reading any one — points layout toward a table or dense list)? This isn't the layout decision itself — it's the input that lets `layout-design` skip the cards-vs-table debate. (Surfaced during INP-12 Pass 3 — lens-reports list went to cards because the summary excerpt is doing scan work; sources list went to dense rows because the volume is higher and the row content is more uniform.)
 
 **Update behaviour**
 - How does this item change over time?
@@ -57,6 +58,15 @@ Ask structured questions across these categories. Adapt the questions to what yo
   - Versioned (DNA — changes tracked, history preserved)
   - Freely editable (config, settings)
 - Who can trigger updates?
+- **Edit-after-commit disambiguation** *(only if the artefact has a "commit" or "publish" state)*: distinguish two kinds of editability:
+  - **Page-level metadata** (title, summary, tags, status) — typically always-on inline editing, low risk.
+  - **Result data / payload** (the artefact's body, its fields, its committed graph nodes) — typically gated, may require a re-run, may be deferred to v2 entirely.
+  Spelling these out separately at brief time avoids "lens report editing after commit is v2" confusion at layout time. (Surfaced during INP-12 Pass 3.)
+- **Re-run / regenerate cleanup story** *(only for features that involve re-running, regenerating, or duplicating a previously-committed artefact)*: what is the cleanup story for the artefact's downstream effects? Specifically:
+  - Does re-running on identical inputs duplicate downstream nodes/edges/items? If so, is that acceptable?
+  - When the new version is committed, are the old version's downstream items kept (provenance), removed (clean replace), or flagged (reconciliation deferred)?
+  - If reconciliation is deferred, the brief should explicitly note that re-run on a *committed* artefact is v2 — not just "v1 has re-run."
+  (Surfaced during INP-12 Pass 3 — re-running a committed lens report duplicates `IDENTIFIED_IN` items in the graph with no cleanup; deferred to vNext for that reason.)
 
 **Relationships**
 - What does this feature connect to in the knowledge graph (FalkorDB)?
