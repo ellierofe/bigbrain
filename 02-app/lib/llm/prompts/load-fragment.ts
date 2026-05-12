@@ -92,9 +92,20 @@ export function pathForBasePrompt(): string {
   return join(resolveSchemasRoot(), 'extraction-schemas', '_base.md')
 }
 
+/** Path for the ingest-time summary prompt. */
+export function pathForSummaryPrompt(): string {
+  return join(resolveSchemasRoot(), 'extraction-schemas', '_summary.md')
+}
+
 /** Load the universal base extraction prompt fragment. */
 export async function loadBasePrompt(): Promise<string> {
   return readFragmentFile(pathForBasePrompt(), '_base.md')
+}
+
+/** Load the ingest-time summary prompt fragment.
+ *  Used by the Phase 1 ingest pipeline — not composed into lens-time prompts. */
+export async function loadSummaryPrompt(): Promise<string> {
+  return readFragmentFile(pathForSummaryPrompt(), '_summary.md')
 }
 
 /** Load a source-type fragment by id. Throws for `dataset` (no fragment file exists). */
@@ -117,11 +128,13 @@ export async function loadLensPrompt(lens: LensId): Promise<string> {
  *  Used by check-fragments.ts to assert coverage. */
 export function fragmentFileChecks(): {
   base: { path: string; exists: boolean }
+  summary: { path: string; exists: boolean }
   sourceTypes: { sourceType: SourceType; path: string; exists: boolean; required: boolean }[]
   lenses: { lens: LensId; path: string; exists: boolean }[]
 } {
   return {
     base: { path: pathForBasePrompt(), exists: existsSync(pathForBasePrompt()) },
+    summary: { path: pathForSummaryPrompt(), exists: existsSync(pathForSummaryPrompt()) },
     sourceTypes: (Object.values<SourceType>(
       // pull from the const tuple via a typed array literal
       // (kept inline to avoid a circular import on the constants module)

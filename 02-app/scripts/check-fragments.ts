@@ -25,6 +25,12 @@ function main() {
     ok++
   }
 
+  if (!checks.summary.exists) {
+    failures.push(`Missing summary prompt: ${checks.summary.path}`)
+  } else {
+    ok++
+  }
+
   for (const entry of checks.sourceTypes) {
     if (!entry.required) {
       skipped.push(`  · ${entry.sourceType} (intentionally absent per ADR-009 amendment)`)

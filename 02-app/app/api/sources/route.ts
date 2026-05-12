@@ -2,6 +2,7 @@ import { getSourceDocuments } from '@/lib/db/queries/sources'
 import { uploadBlob } from '@/lib/storage/blob'
 import { db } from '@/lib/db'
 import { srcSourceDocuments } from '@/lib/db/schema/source'
+import { ingestSource } from '@/lib/processing/ingest/run'
 
 export async function GET(req: Request) {
   const url = new URL(req.url)
@@ -82,6 +83,16 @@ export async function POST(req: Request) {
         authority: srcSourceDocuments.authority,
         fileUrl: srcSourceDocuments.fileUrl,
       })
+
+    // Kick off ingest (chunk + summarise + embed + graph write) in the background.
+    // Per INP-12 brief §"User journey" step 2: ingest runs immediately after the
+    // row lands. Without extractedText (INP-05 hasn't run yet) the orchestrator
+    // writes a placeholder SourceDocument graph node and skips chunking/summary —
+    // safe to fire here either way. We deliberately don't await: HTTP response
+    // returns straight after the row is created.
+    void ingestSource(rows[0].id).catch((err) => {
+      console.error(`[POST /api/sources] background ingest failed for ${rows[0].id}:`, err)
+    })
 
     return Response.json(rows[0])
   } catch (err) {
