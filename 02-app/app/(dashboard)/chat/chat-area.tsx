@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Brain } from 'lucide-react'
+import { Brain, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import type { UIMessage } from 'ai'
 import { useChat } from '@/lib/chat/use-chat'
@@ -13,6 +13,7 @@ import { ConversationList } from '@/components/conversation-list'
 import { ContextPane } from '@/components/context-pane'
 import { InlineWarningBanner } from '@/components/inline-warning-banner'
 import { SkillContinueBar } from '@/components/skill-continue-bar'
+import { SystemMessageDivider } from '@/components/system-message-divider'
 import { Modal } from '@/components/modal'
 import { ActionButton } from '@/components/action-button'
 import {
@@ -26,7 +27,12 @@ import {
 } from '@/app/actions/brand-preferences'
 import { setContextPaneStateAction } from '@/app/actions/chat'
 import { listContextPaneTabs } from '@/lib/chat-context-pane/registry'
-import type { ConversationCtx, SkillSummary } from '@/lib/chat-context-pane/types'
+import { PENDING_WRITES_TAB_ID } from '@/lib/chat-context-pane/pending-writes-tab'
+import type {
+  ConversationCtx,
+  PendingWriteSummary,
+  SkillSummary,
+} from '@/lib/chat-context-pane/types'
 import type { SkillState } from '@/lib/skills/types'
 
 interface ConversationSummary {
@@ -65,6 +71,8 @@ interface ChatAreaProps {
   paneAvailableSkills?: SkillSummary[]
   /** Summary for the active conversation's skill (if any). */
   paneActiveSkillSummary?: SkillSummary | null
+  /** Pending LLM-proposed writes for this conversation. */
+  panePendingWrites?: PendingWriteSummary[]
 }
 
 const PROMPT_STARTERS = [
@@ -92,6 +100,7 @@ export function ChatArea({
   paneSkillState = null,
   paneAvailableSkills = [],
   paneActiveSkillSummary = null,
+  panePendingWrites = [],
 }: ChatAreaProps) {
   const router = useRouter()
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -107,6 +116,42 @@ export function ChatArea({
   useEffect(() => setPaneOpen(paneOpenInitial), [paneOpenInitial])
   useEffect(() => setPaneWidth(paneWidthInitial), [paneWidthInitial])
   useEffect(() => setSelectedTabId(paneSelectedTabId), [paneSelectedTabId])
+
+  // Auto-open + tab-select when a new pending write arrives in a closed pane.
+  // Behaviour rules (per OUT-01c layout § Pane behaviour extension):
+  //  - Pane closed       → open it AND switch to pending-writes tab
+  //  - Pane open, on a   → leave the user where they are; the rail icon
+  //    different tab        appearing + pulsing is enough discovery
+  //  - Pane open, on this → no change
+  const lastPendingCount = useRef<number>(panePendingWrites.length)
+  useEffect(() => {
+    const prev = lastPendingCount.current
+    const curr = panePendingWrites.length
+    lastPendingCount.current = curr
+    if (curr > prev && curr > 0) {
+      if (!paneOpen) {
+        setPaneOpen(true)
+        setSelectedTabId(PENDING_WRITES_TAB_ID)
+        setChatPaneOpenAction(true).catch(() => {})
+        if (paneConversationId) {
+          setContextPaneStateAction(paneConversationId, PENDING_WRITES_TAB_ID).catch(() => {})
+        }
+      }
+    }
+  }, [panePendingWrites.length, paneOpen, paneConversationId])
+
+  // Tab auto-hide fallback: if the currently-selected tab is pending-writes
+  // but there are no more pending writes, fall back to the first non-hidden tab.
+  useEffect(() => {
+    if (selectedTabId !== PENDING_WRITES_TAB_ID) return
+    if (panePendingWrites.length > 0) return
+    // Pick a fallback: skill-state if applicable, else clear selection.
+    const fallback = paneSkillId ? 'skill-state' : null
+    setSelectedTabId(fallback)
+    if (paneConversationId && fallback) {
+      setContextPaneStateAction(paneConversationId, fallback).catch(() => {})
+    }
+  }, [selectedTabId, panePendingWrites.length, paneSkillId, paneConversationId])
 
   const handlePaneOpenChange = useCallback((open: boolean) => {
     setPaneOpen(open)
@@ -312,6 +357,7 @@ export function ChatArea({
     hasMessages: messages.length > 0 || conversationHasMessages,
     availableSkills: paneAvailableSkills,
     activeSkillSummary: paneActiveSkillSummary,
+    pendingWrites: panePendingWrites,
   }
 
   return (
@@ -449,9 +495,12 @@ function ChatMessageList({
       className={`flex-1 overflow-y-auto ${padding}`}
     >
       <div className={`${compact ? '' : 'max-w-3xl mx-auto'} flex flex-col ${gap}`}>
-        {messages.map((message) => (
-          <ChatMessage key={message.id} message={message} compact={compact} />
-        ))}
+        {messages.map((message) => {
+          if (message.role === 'system') {
+            return <SystemMessageRow key={message.id} message={message} />
+          }
+          return <ChatMessage key={message.id} message={message} compact={compact} />
+        })}
 
         {isStreaming && messages.length > 0 && messages[messages.length - 1]?.role !== 'assistant' && (
           <div className="flex justify-start">
@@ -468,5 +517,29 @@ function ChatMessageList({
         )}
       </div>
     </div>
+  )
+}
+
+function SystemMessageRow({ message }: { message: UIMessage }) {
+  const text = message.parts
+    ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+    .map((p) => p.text)
+    .join('\n') ?? ''
+  const metadata = (message.metadata ?? {}) as {
+    kind?: string
+    entity_type?: string
+    op?: string
+    field?: string
+  }
+  const tooltip = metadata.entity_type
+    ? `${metadata.entity_type}${metadata.op ? ` · ${metadata.op}` : ''}`
+    : undefined
+  return (
+    <SystemMessageDivider
+      icon={Check}
+      iconColor="success"
+      text={text}
+      tooltip={tooltip}
+    />
   )
 }

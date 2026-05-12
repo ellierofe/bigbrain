@@ -8,11 +8,11 @@ import {
   getSegmentById,
   countActiveSegments,
   getSegmentDependents,
-  updateSegmentField,
   updateSegmentVoc,
   archiveSegment,
   activateSegment,
 } from '@/lib/db/queries/audience-segments'
+import { audienceSegmentWrites, type WriteContext } from '@/lib/db/writes'
 import type {
   CreateSegmentInput,
   VocType,
@@ -133,30 +133,16 @@ export async function saveSegmentField(
   field: string,
   value: string | null
 ): Promise<ActionResult> {
-  const allowed = new Set([
-    'segmentName',
-    'personaName',
-    'summary',
-    'roleContext',
-    'avatarPrompt',
-    'avatarUrl',
-  ])
-  if (!allowed.has(field)) {
-    return { ok: false, error: `Field '${field}' is not directly editable via this action.` }
+  const writeCtx: WriteContext = {
+    actor: `ui:/dna/audience-segments/${id}`,
+    brandId: BRAND_ID,
   }
-
-  try {
-    await updateSegmentField(
-      id,
-      field as keyof typeof dnaAudienceSegments.$inferSelect,
-      value
-    )
-    revalidatePath(`/dna/audience-segments/${id}`)
-    return { ok: true, data: undefined }
-  } catch (err) {
-    console.error('saveSegmentField error', err)
-    return { ok: false, error: 'Save failed. Please try again.' }
+  const result = await audienceSegmentWrites.updateField(id, field, value, writeCtx)
+  if (!result.ok) {
+    return { ok: false, error: result.error }
   }
+  for (const path of result.pathsToRevalidate) revalidatePath(path)
+  return { ok: true, data: undefined }
 }
 
 /** Save a JSONB demographics or psychographics blob */
@@ -165,18 +151,16 @@ export async function saveSegmentJsonField(
   field: 'demographics' | 'psychographics',
   value: Record<string, string | null>
 ): Promise<ActionResult> {
-  try {
-    await updateSegmentField(
-      id,
-      field as keyof typeof dnaAudienceSegments.$inferSelect,
-      value
-    )
-    revalidatePath(`/dna/audience-segments/${id}`)
-    return { ok: true, data: undefined }
-  } catch (err) {
-    console.error('saveSegmentJsonField error', err)
-    return { ok: false, error: 'Save failed. Please try again.' }
+  const writeCtx: WriteContext = {
+    actor: `ui:/dna/audience-segments/${id}`,
+    brandId: BRAND_ID,
   }
+  const result = await audienceSegmentWrites.updateField(id, field, value, writeCtx)
+  if (!result.ok) {
+    return { ok: false, error: result.error }
+  }
+  for (const path of result.pathsToRevalidate) revalidatePath(path)
+  return { ok: true, data: undefined }
 }
 
 /** Replace a full VOC array column */

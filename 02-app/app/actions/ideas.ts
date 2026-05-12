@@ -2,14 +2,11 @@
 
 import { revalidatePath } from 'next/cache'
 import {
-  createIdea as dbCreateIdea,
-  updateIdeaText as dbUpdateText,
-  updateIdeaStatus as dbUpdateStatus,
-  updateIdeaType as dbUpdateType,
   deleteIdea as dbDeleteIdea,
   tagIdea as dbTagIdea,
   untagIdea as dbUntagIdea,
 } from '@/lib/db/queries/ideas'
+import { ideaWrites, type WriteContext } from '@/lib/db/writes'
 import type { IdeaType, IdeaStatus, IdeaTagEntityType } from '@/lib/types/ideas'
 
 const BRAND_ID = 'ea444c72-d332-4765-afd5-8dda97f5cf6f'
@@ -18,67 +15,59 @@ export type ActionResult<T = void> =
   | { ok: true; data: T }
   | { ok: false; error: string }
 
+function uiCtx(path: string = '/inputs/ideas'): WriteContext {
+  return { actor: `ui:${path}`, brandId: BRAND_ID }
+}
+
 export async function createIdea(input: {
   text: string
   type: IdeaType
   contextPage: string | null
 }): Promise<ActionResult<{ id: string }>> {
-  try {
-    const result = await dbCreateIdea({
-      brandId: BRAND_ID,
+  if (!ideaWrites.create) {
+    return { ok: false, error: 'Idea creation not supported.' }
+  }
+  const result = await ideaWrites.create(
+    {
       text: input.text,
       type: input.type,
-      source: 'manual',
       contextPage: input.contextPage,
-    })
-    revalidatePath('/inputs/ideas')
-    return { ok: true, data: result }
-  } catch (err) {
-    console.error('createIdea error', err)
-    return { ok: false, error: 'Failed to capture idea.' }
-  }
+    },
+    uiCtx()
+  )
+  if (!result.ok) return { ok: false, error: result.error }
+  for (const path of result.pathsToRevalidate) revalidatePath(path)
+  return { ok: true, data: result.data }
 }
 
 export async function updateIdeaText(
   id: string,
   text: string
 ): Promise<ActionResult> {
-  try {
-    await dbUpdateText(id, text)
-    revalidatePath('/inputs/ideas')
-    return { ok: true, data: undefined }
-  } catch (err) {
-    console.error('updateIdeaText error', err)
-    return { ok: false, error: 'Failed to update idea.' }
-  }
+  const result = await ideaWrites.updateField(id, 'text', text, uiCtx())
+  if (!result.ok) return { ok: false, error: result.error }
+  for (const path of result.pathsToRevalidate) revalidatePath(path)
+  return { ok: true, data: undefined }
 }
 
 export async function updateIdeaStatus(
   id: string,
   status: IdeaStatus
 ): Promise<ActionResult> {
-  try {
-    await dbUpdateStatus(id, status)
-    revalidatePath('/inputs/ideas')
-    return { ok: true, data: undefined }
-  } catch (err) {
-    console.error('updateIdeaStatus error', err)
-    return { ok: false, error: 'Failed to update status.' }
-  }
+  const result = await ideaWrites.updateField(id, 'status', status, uiCtx())
+  if (!result.ok) return { ok: false, error: result.error }
+  for (const path of result.pathsToRevalidate) revalidatePath(path)
+  return { ok: true, data: undefined }
 }
 
 export async function updateIdeaType(
   id: string,
   type: IdeaType
 ): Promise<ActionResult> {
-  try {
-    await dbUpdateType(id, type)
-    revalidatePath('/inputs/ideas')
-    return { ok: true, data: undefined }
-  } catch (err) {
-    console.error('updateIdeaType error', err)
-    return { ok: false, error: 'Failed to update type.' }
-  }
+  const result = await ideaWrites.updateField(id, 'type', type, uiCtx())
+  if (!result.ok) return { ok: false, error: result.error }
+  for (const path of result.pathsToRevalidate) revalidatePath(path)
+  return { ok: true, data: undefined }
 }
 
 export async function deleteIdea(id: string): Promise<ActionResult> {

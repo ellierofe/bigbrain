@@ -812,16 +812,9 @@ export const componentRegistry: ComponentEntry[] = [
     usedIn: ["OUT-02-P4a"],
     spec: "molecule-specifications/numberstepper",
   },
-  {
-    name: "AssembledPromptInspector",
-    path: "@/components/assembled-prompt-inspector",
-    category: "feedback",
-    description:
-      "Right-pane debug viewer for the assembled prompt — OUT-02-P4a only. Toolbar with run-id pill + Copy IconButton; <pre> body with monospace, whitespace-pre-wrap. Replaced by variant cards in 4b.",
-    props: "runId, assembledPrompt",
-    usedIn: ["OUT-02-P4a"],
-    spec: "molecule-specifications/assembledpromptinspector",
-  },
+  // AssembledPromptInspector — registered in 4a as the debug right-pane molecule.
+  // Removed from the registry in OUT-02-P4b when the variant cards replaced it.
+  // The molecule file remains on disk for ad-hoc debugging; not composed by any organism.
   {
     name: "ContentTypeSwitcher",
     path: "@/components/content-type-switcher",
@@ -953,7 +946,202 @@ export const componentRegistry: ComponentEntry[] = [
     description:
       "Wrapper that triggers a single 300ms low-intensity primary background flash on its child whenever its pulseKey prop changes. Centralises the 'just updated' animation contract for OUT-01b's context pane (and any future consumer that needs the same affordance).",
     props: "pulseKey (string | number), children, className?",
-    usedIn: ["OUT-01b"],
+    usedIn: ["OUT-01b", "OUT-01c"],
     spec: "molecule-specifications/panehighlightpulse",
+  },
+  {
+    name: "PendingWriteCard",
+    path: "@/components/pending-write-card",
+    category: "layout",
+    description:
+      "Diff/payload card for one LLM-proposed write in OUT-01c's pending-writes pane tab. Three op variants: update (before/after diff with primary left-edge accent on After), create (full payload as label/value list), generate (seed summary + async kickoff explainer). Stateless — parent owns the saving/success/error/rejected state. Cmd/Ctrl+Enter triggers the primary action when focus is inside the card.",
+    props:
+      "id, entityType, op ('update' | 'create' | 'generate'), payload (discriminated by op), state ('idle' | 'saving' | 'success' | 'error' | 'rejected'), errorMessage?, onConfirm, onReject",
+    usedIn: ["OUT-01c"],
+    spec: "molecule-specifications/pendingwritecard",
+  },
+  {
+    name: "PendingWritesList",
+    path: "@/components/pending-writes-list",
+    category: "layout",
+    description:
+      "Per-conversation pending-writes list shell for OUT-01c's pane tab. Renders a vertical stack of PendingWriteCard items wrapped in PaneHighlightPulse for arrival pulse; empty array shows EmptyState with FileCheck icon. Stateless — parent owns stateById and errorById maps.",
+    props:
+      "writes (PendingWriteSummary[]), stateById (Record<string, state>), errorById (Record<string, string | undefined>), onConfirm, onReject",
+    usedIn: ["OUT-01c"],
+    spec: "molecule-specifications/pendingwriteslist",
+  },
+  {
+    name: "SystemMessageDivider",
+    path: "@/components/system-message-divider",
+    category: "layout",
+    description:
+      "Centred narrow line in the chat message stream for system-attributed events (write confirmations, errors, generation completions). Not a participant turn — a stream divider. Token-driven icon colour (success/warning/info), optional hover tooltip for entity_type/op metadata.",
+    props: "icon (LucideIcon), iconColor ('success' | 'warning' | 'info'), text, tooltip?",
+    usedIn: ["OUT-01c"],
+    spec: "molecule-specifications/systemmessagedivider",
+  },
+  // ---------------------------------------------------------------------------
+  // OUT-02-P4b — Generation flow + variants + library
+  // ---------------------------------------------------------------------------
+  {
+    name: "VariantCard",
+    path: "@/components/variant-card",
+    category: "layout",
+    description:
+      "One generated content variant: header, italic rationale, MarkdownRenderer content body, floating action strip (Copy / Save / Chat). Saved state swaps Save icon to checkmark and re-routes click to LibraryDetailModal.",
+    props: "variantNumber, variant ({id, title, rationale, content, status, libraryItemId?}), onCopy, onSave, onChat?",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/variantcard",
+  },
+  {
+    name: "VariantCardSkeleton",
+    path: "@/components/variant-card-skeleton",
+    category: "feedback",
+    description:
+      "Shimmer placeholder mirroring VariantCard's outer shape. Variant number shown un-shimmered; body uses staged Skeleton sub-blocks.",
+    props: "variantNumber",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/variantcardskeleton",
+  },
+  {
+    name: "VariantStack",
+    path: "@/components/variant-stack",
+    category: "layout",
+    description:
+      "Renders N variant slots in the right pane — each is either a VariantCard (if resolved) or VariantCardSkeleton. Slot index = variant index forever; never reorders.",
+    props: "expectedCount, variants[], onCopy, onSave, onChat?",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/variantstack",
+  },
+  {
+    name: "TagChipEditor",
+    path: "@/components/tag-chip-editor",
+    category: "editor",
+    description:
+      "Chip editor for the library_items.tags jsonb. Renders existing tags (auto + free-text) as removable chips; '+ Add tag' inline input creates kind:'free_text' tags on Enter.",
+    props: "value (LibraryTag[]), onChange, readonly?",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/tagchipeditor",
+  },
+  {
+    name: "DatePicker",
+    path: "@/components/date-picker",
+    category: "form",
+    description:
+      "Calendar+Popover date input. Trigger is a styled button with leading calendar icon; selecting a date closes the popover; Clear button resets to null. General-purpose — first canonical date input in the app.",
+    props: "value (Date | null), onChange, placeholder?, disabled?, className?",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/datepicker",
+  },
+  {
+    name: "InlineHint",
+    path: "@/components/inline-hint",
+    category: "feedback",
+    description:
+      "Small supporting microcopy line (e.g. '⌘+Enter' shortcut hint below a button). Keeps text-* classes out of organism-layer files. General-purpose.",
+    props: "children, align? ('left' | 'center' | 'right'), className?",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/inlinehint",
+  },
+  {
+    name: "LibraryItemForm",
+    path: "@/components/library-item-form",
+    category: "form",
+    description:
+      "Shared form body for SaveToLibraryModal and LibraryDetailModal. mode='save' shows title/content/tags/status; mode='edit' adds publishDate/platform/publishedUrl/notes. Controlled — wrapping modal owns submit.",
+    props: "mode ('save' | 'edit'), values (LibraryItemFormValues), onChange, platformOptions?, submitting",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/libraryitemform",
+  },
+  {
+    name: "SaveToLibraryModal",
+    path: "@/components/save-to-library-modal",
+    category: "overlay",
+    description:
+      "Modal size='lg' for saving a single generated variant. Wraps LibraryItemForm in mode='save'. Pre-fills title/content/tags from variant + parent run context.",
+    props: "open, onOpenChange, variant ({id, title, content}), runId, autoTags (LibraryTag[]), onSaved?",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/savetolibrarymodal",
+  },
+  {
+    name: "LibraryDetailModal",
+    path: "@/components/library-detail-modal",
+    category: "overlay",
+    description:
+      "Modal size='2xl' for viewing/editing a saved library item. Wraps LibraryItemForm in mode='edit' with full publish-metadata fields. Footer: [Delete] (left, destructive, opens confirm) + [Cancel] + [Save].",
+    props: "open, onOpenChange, libraryItem (LibraryItemDetail | null), platformOptions, onSaved?, onDeleted?",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/librarydetailmodal",
+  },
+  {
+    name: "TagCell",
+    path: "@/components/tag-cell",
+    category: "layout",
+    description:
+      "Cell renderer for tag columns in LibraryTable. Looks up the matching tag by kind from the row's tags jsonb and renders its denormalised label. Em-dash placeholder when no matching tag.",
+    props: "tags (LibraryTag[]), tagKind ('audience_segment' | 'offer' | 'knowledge_asset' | 'topic_path')",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/tagcell",
+  },
+  {
+    name: "ColumnFilterFlyout",
+    path: "@/components/column-filter-flyout",
+    category: "overlay",
+    description:
+      "Popover content for one LibraryTable column. Hosts column-type-specific filter (text/date-range/multi-select-checkbox) plus a sort radio when sortable. Clear button at the bottom.",
+    props: "open, onOpenChange, trigger, column, sort, activeFilter, options?, onSortChange, onFilterChange",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/columnfilterflyout",
+  },
+  {
+    name: "ColumnVisibilityControl",
+    path: "@/components/column-visibility-control",
+    category: "overlay",
+    description:
+      "Popover with column-toggle checkboxes triggered from PageChrome. Always-on columns appear disabled with a lock indicator; toggleable columns are checkable.",
+    props: "columns (LibraryTableColumn[]), visibleColumnIds, onChange",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/columnvisibilitycontrol",
+  },
+  {
+    name: "LibraryTableHeader",
+    path: "@/components/library-table-header",
+    category: "layout",
+    description:
+      "Single header cell for LibraryTable: column label + sort indicator + filter trigger with active-filter dot. Whole cell click opens the ColumnFilterFlyout.",
+    props: "column, sort, activeFilter, filterOptions?, onSortChange, onFilterChange",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/librarytableheader",
+  },
+  {
+    name: "LibraryTable",
+    path: "@/components/library-table",
+    category: "layout",
+    description:
+      "Sortable, filterable, column-toggleable table for the /content/library page. Click a row to open LibraryDetailModal. Per-column-type cell renderers (text, date, status, content_type, tag).",
+    props: "items (LibraryItemRow[]), columns, sort, filters, filterOptions, onRowClick, onSortChange, onFilterChange",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/librarytable",
+  },
+  {
+    name: "RichTextEditor",
+    path: "@/components/rich-text-editor",
+    category: "editor",
+    description:
+      "WYSIWYG markdown editor wrapping TipTap. Minimal toolbar (bold/italic/code, H1–H3, lists, quote, link). Source-of-truth stays markdown — round-trips via marked (md→html) + turndown (html→md). Used by LibraryItemForm.",
+    props: "valueMarkdown, onChange, disabled?, className?, placeholder?, minHeight?",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/richtexteditor",
+  },
+  {
+    name: "TypedTagPicker",
+    path: "@/components/typed-tag-picker",
+    category: "editor",
+    description:
+      "Tag-selection surface: one labelled dropdown per typed kind (audience / offer / knowledge asset / topic) plus a free-text chip editor and a passthrough section for generation-resolved tags. Composes TagChipEditor for free-text/passthrough.",
+    props: "value (LibraryTag[]), onChange, sources (TypedTagSource), disabled?",
+    usedIn: ["OUT-02-P4b"],
+    spec: "molecule-specifications/typedtagpicker",
   },
 ]

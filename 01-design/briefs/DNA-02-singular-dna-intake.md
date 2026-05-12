@@ -281,3 +281,11 @@ The generation UX pattern is being established first on **DNA-03 (Audience Segme
 - 2026-04-20: Flows designed and tested via live session populating NicelyPut DNA. Business overview, brand meaning, and value proposition all populated using these flows. Key learning: asking about the problem before the mission, and values through behaviour rather than adjectives, produced dramatically better results than direct "write your mission statement" prompts.
 - 2026-04-20: Brand meaning flow confirmed as the hardest — 4-stage conversational approach is necessary. Direct form entry would produce generic, unusable statements.
 - 2026-04-20: Value proposition flow confirmed: imposter syndrome is normal and productive if the system probes through it rather than accepting the first deflection. Testimonials are critical evidence.
+
+---
+
+## Cross-build dependency: OUT-01c functional testing
+
+OUT-01c (LLM database write tool) shipped code-complete on 2026-05-10 but its full end-to-end QA (UC-1: skill terminal save) is blocked on this build. DNA-02's brand-meaning skill is the first save-bearing skill — its `onComplete` hook calling `lib/db/writes/dna/brand-meaning.ts` is what closes OUT-01c's testing loop.
+
+**When the DNA-02 brand-meaning skill lands and is exercisable end-to-end, run the full OUT-01c test plan:** [`00-project-management/2026-05-10-out01c-deferred-testing.md`](../../00-project-management/2026-05-10-out01c-deferred-testing.md). Pass means OUT-01c flips from `in-progress` → `done` (per the test plan's checklist).

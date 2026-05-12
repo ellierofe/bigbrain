@@ -66,10 +66,13 @@ export async function touchConversation(id: string) {
     .where(eq(conversations.id, id))
 }
 
-/** Persist the context-pane tab selection for a conversation. */
+/** Persist the context-pane tab selection for a conversation.
+ * `previousTabId` is stashed when an auto-tab-select happens (e.g. a pending
+ * write arrives) so the tab can fall back when its status flips to 'hidden'.
+ */
 export async function updateConversationContextPaneState(
   id: string,
-  state: { selectedTabId: string }
+  state: { selectedTabId: string; previousTabId?: string | null }
 ) {
   await db
     .update(conversations)
@@ -98,12 +101,13 @@ export async function getMessages(conversationId: string) {
 
 export async function addMessage(
   conversationId: string,
-  role: 'user' | 'assistant',
+  role: 'user' | 'assistant' | 'system',
   content: string,
   opts?: {
     attachments?: unknown[]
     toolCalls?: unknown[]
     tokenCount?: number
+    metadata?: Record<string, unknown>
   }
 ) {
   const [msg] = await db
@@ -115,6 +119,7 @@ export async function addMessage(
       attachments: opts?.attachments ?? null,
       toolCalls: opts?.toolCalls ?? null,
       tokenCount: opts?.tokenCount ?? null,
+      metadata: opts?.metadata ?? null,
     })
     .returning()
   return msg

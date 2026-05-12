@@ -8,6 +8,8 @@ import {
 } from '@/lib/db/queries/chat'
 import { getBrandPanePrefs } from '@/lib/db/queries/brands'
 import { getSkill, isSkillId, listSkills } from '@/lib/skills/registry'
+import { listPendingByConversation } from '@/lib/db/queries/pending-writes'
+import { toPendingWriteSummary } from '@/lib/chat-context-pane/pending-write-summary'
 import type { SkillState } from '@/lib/skills/types'
 import type { ContextPaneState } from '@/lib/chat-context-pane/types'
 import { toSkillSummary } from '@/lib/chat-context-pane/skill-summary'
@@ -24,18 +26,24 @@ export default async function ConversationPage({ params }: Props) {
   const conversation = await getConversation(id)
   if (!conversation) notFound()
 
-  const [dbMessages, convs, panePrefs] = await Promise.all([
+  const [dbMessages, convs, panePrefs, pendingRows] = await Promise.all([
     getMessages(id),
     getConversations(BRAND_ID),
     getBrandPanePrefs(BRAND_ID),
+    listPendingByConversation(id),
   ])
 
-  // Convert DB messages to UIMessage format
+  // Convert DB messages to UIMessage format. System messages carry a `metadata`
+  // payload used by the SystemMessageDivider render branch — we preserve it
+  // via the UIMessage's optional `metadata` field.
   const initialMessages: UIMessage[] = dbMessages.map((msg) => ({
     id: msg.id,
-    role: msg.role as 'user' | 'assistant',
+    role: msg.role as 'user' | 'assistant' | 'system',
     parts: [{ type: 'text' as const, text: msg.content }],
+    metadata: (msg.metadata as Record<string, unknown> | null) ?? undefined,
   }))
+
+  const pendingWrites = pendingRows.map(toPendingWriteSummary)
 
   const conversations = await Promise.all(
     convs.map(async (c) => {
@@ -78,6 +86,7 @@ export default async function ConversationPage({ params }: Props) {
         paneSkillState={skillState}
         paneAvailableSkills={availableSkills}
         paneActiveSkillSummary={activeSkillSummary}
+        panePendingWrites={pendingWrites}
       />
     </div>
   )

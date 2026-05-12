@@ -4,6 +4,9 @@ A right-side adaptive context pane mounted within a chat page layout. Provides a
 
 **Established from:** OUT-01b (skill-state context tab as v1's only tab).
 
+**Subsequent consumers:**
+- OUT-01c (2026-05-05) — `pending-writes` tab. Confirmed the pattern's reusability and added two runtime behaviours not in OUT-01b: (1) auto-open the panel + select the tab when a new tab-relevant event arrives in a closed pane (do *not* hijack an already-open pane on a different tab); (2) tab auto-hide when the tab's status returns to non-active, with a `previousTabId` fallback for the selected tab. Both are runtime concerns (chat route persists via `setContextPaneStateAction`) — the `ContextPane` molecule's contract is unchanged. See `01-design/wireframes/OUT-01c-layout.md` § "Pane behaviour extension".
+
 **Applies to:** any future feature that adds a new conversation-scoped context surface inside `/chat` or `/chat/[id]`. Not for full-page panes outside chat — those use other patterns. Not for the slide-out drawer — drawer remains a full-bleed compact chat without the pane.
 
 ---

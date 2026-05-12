@@ -49,6 +49,7 @@ export default async function ChatPage() {
         paneSkillState={null}
         paneAvailableSkills={availableSkills}
         paneActiveSkillSummary={null}
+        panePendingWrites={[]}
       />
     </div>
   )

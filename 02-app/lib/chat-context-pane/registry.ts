@@ -2,9 +2,11 @@
 
 import type { ContextTab } from './types'
 import { skillStateTab } from '@/lib/skills/context-tab'
+import { pendingWritesTab } from './pending-writes-tab'
 
 export const contextPaneTabRegistry: Record<string, ContextTab> = {
   [skillStateTab.id]: skillStateTab,
+  [pendingWritesTab.id]: pendingWritesTab,
 }
 
 export function listContextPaneTabs(): ContextTab[] {

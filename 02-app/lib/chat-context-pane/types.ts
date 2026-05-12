@@ -2,6 +2,9 @@ import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { UIMessage } from 'ai'
 import type { SkillState } from '@/lib/skills/types'
+import type { PendingWriteSummary } from '@/components/pending-writes-list'
+
+export type { PendingWriteSummary }
 
 export type ContextTabStatus = 'active' | 'empty' | 'hidden'
 
@@ -33,10 +36,14 @@ export interface ConversationCtx {
   availableSkills: SkillSummary[]
   /** Summary for the active conversation's skill (if any), or null. */
   activeSkillSummary: SkillSummary | null
+  /** Pending LLM-proposed writes for this conversation (status='pending' rows). */
+  pendingWrites: PendingWriteSummary[]
 }
 
 export interface ContextPaneState {
   selectedTabId: string
+  /** Stashed when a tab auto-selects; used as fallback when that tab returns to 'hidden'. */
+  previousTabId?: string | null
 }
 
 export interface ContextTab {

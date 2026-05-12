@@ -40,12 +40,16 @@ export const messages = pgTable(
     conversationId: uuid('conversation_id')
       .notNull()
       .references(() => conversations.id, { onDelete: 'cascade' }),
-    role: varchar('role', { length: 20 }).notNull(), // 'user' | 'assistant'
+    role: varchar('role', { length: 20 }).notNull(), // 'user' | 'assistant' | 'system'
     content: text('content').notNull(),
     /** Array of { type, url, name, size } for images/files */
     attachments: jsonb('attachments'),
     /** Array of tool invocations — { name, args, result } for UI display */
     toolCalls: jsonb('tool_calls'),
+    /** Structured metadata for system-attributed messages.
+     * Shape: { kind: 'write-confirmation' | 'generation-complete' | 'generation-failed', ... }
+     * Used by SystemMessageDivider rendering branch. */
+    metadata: jsonb('metadata'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     /** Optional — for future cost tracking */
     tokenCount: integer('token_count'),

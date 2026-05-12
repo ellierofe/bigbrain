@@ -958,7 +958,7 @@ interface ActionButtonProps {
 - Body: `children` rendered below the header.
 - Footer: optional `footer` prop. When provided, rendered after `children` inside `<div className="mt-6 flex justify-end gap-2">`. When omitted, no footer chrome is added — consumers can still render footer-like content inside `children` if they need full control.
 
-**Size variants** (`size` prop): `sm` (`sm:max-w-sm`), `md` default (`sm:max-w-md`), `lg`, `xl`, `2xl`. Each maps to the equivalent shadcn `sm:max-w-*` class. Default `md`.
+**Size variants** (`size` prop): `sm` (`sm:max-w-sm`), `md` default (`sm:max-w-md`), `lg`, `xl`, `2xl`, `full`. Width-only variants map to shadcn's `sm:max-w-*` classes. The `full` variant is a near-full-screen workspace modal: `sm:max-w-[min(96vw,1200px)] h-[90vh]` — used when the body hosts an editor plus a side panel (e.g. Library save / detail). Default `md`.
 
 **Behavioural states:**
 - **Closed**: nothing rendered.
@@ -2814,32 +2814,6 @@ interface SearchInputProps {
 
 ---
 
-### AssembledPromptInspector
-
-**File:** `02-app/components/assembled-prompt-inspector.tsx`
-**Purpose:** Right-pane debug viewer for the assembled eight-layer prompt — **OUT-02-P4a only**. Replaced wholesale by variant cards in 4b. Don't over-polish.
-
-**Anatomy:**
-- Outer: `flex h-full flex-col`.
-- Toolbar: `shrink-0 flex items-center justify-between border-b px-4 py-2` with run-id pill (`font-mono text-xs text-muted-foreground`) + Copy `IconButton`.
-- Body: `<pre className="flex-1 overflow-auto whitespace-pre-wrap break-words p-4 font-mono text-xs leading-relaxed text-foreground">`.
-
-**Behaviour:**
-- Copy button writes the full `assembledPrompt` to clipboard. Icon flips to `Check` for 1.5s on success. Silent fallback on clipboard API rejection (debug surface).
-
-**Props:**
-```ts
-interface AssembledPromptInspectorProps {
-  runId: string
-  assembledPrompt: string
-}
-```
-
-**Do not:**
-- Add syntax highlighting, line numbers, or layer-folding. This molecule exists *because* 4b will replace it; investing in polish is wasted work.
-
----
-
 ### ConversationListRowIcon
 
 **File:** `02-app/components/conversation-list-row-icon.tsx` *(planned — OUT-01a)*
@@ -3252,6 +3226,786 @@ interface PaneHighlightPulseProps {
 
 ---
 
+### PendingWriteCard
+
+**File:** `02-app/components/pending-write-card.tsx` *(OUT-01c)*
+**Purpose:** Diff/payload card for one LLM-proposed write in OUT-01c's pending-writes pane tab. Three op variants share a common scaffold (header / body / footer) but diverge in body content and primary-button label. Stateless — parent owns the state machine (`idle` / `saving` / `success` / `error` / `rejected`) so optimistic updates can drive transitions cleanly.
+
+**Anatomy:**
+- Outer: `flex w-full flex-col rounded-lg border border-border bg-card`. No shadow (the pane is the elevated surface). `tabIndex={-1}` so the card receives focus for the Cmd+Enter shortcut.
+- Header (`flex items-start justify-between gap-3 px-4 py-3`):
+  - Left side: op icon (16px, `mt-0.5`, `text-muted-foreground`) + breadcrumb (`text-xs text-muted-foreground truncate`) + op summary (`text-sm font-medium text-foreground truncate`).
+  - Right side: read-only `StatusBadge` when `state !== 'idle'`. Tones: `saving` → info, `success` → success (label `Saved` for update/create, `Started` for generate), `error` → error (`Failed`), `rejected` → neutral.
+- Body (`flex flex-col gap-3 border-t border-border px-4 py-3`): op-specific (see Op variants).
+- Footer (`flex items-center justify-end gap-2 border-t border-border px-4 py-3`):
+  - Reject: `ActionButton variant="ghost"`, disabled while saving.
+  - Primary: `ActionButton` with `loading` mirroring `state === 'saving'`, `tooltip="⌘↵"`, `trailingIcon={ArrowRight}` only on `op === 'generate'`. Label: `Confirm` / `Create` / `Generate` (or `Confirming…` / `Creating…` / `Starting…` while saving).
+- Error line (only when `state === 'error'`): `border-t border-border px-4 py-2 text-xs text-destructive`.
+
+**Op variants (body):**
+- `update`: two label/value blocks. "Before" — uppercase meta label + value rendered via `lib/value-render.tsx` in `text-muted-foreground`. Empty before → `<em>Empty</em>` italic muted. "After" — same label + value wrapped in `border-l-2 border-[var(--primary)] pl-3`. Field name shown small below for context (`text-[11px] text-muted-foreground`). Long values: `ValueRender` caps at `maxHeightPx={200}`.
+- `create`: scrollable `<dl>` (`max-h-[400px] overflow-y-auto`) of `{ label, value }` pairs. Each label uppercase meta + value via `ValueRender`.
+- `generate`: a quoted seed block (`blockquote` with primary left-edge accent) + trailing two-line explainer in `text-xs text-muted-foreground`. No before/after blocks.
+
+**Behavioural states (parent-driven):**
+- `idle`: full enabled, no status pill.
+- `saving`: primary loading, reject disabled, "Saving…" pill.
+- `success`: status pill ("Saved" / "Started"), parent typically removes the card 300ms later.
+- `error`: status pill "Failed", error line below footer, both buttons re-enabled.
+- `rejected`: status pill "Rejected" (neutral, not error), parent removes 300ms later.
+
+**Edge cases:**
+- Long breadcrumb / op summary: truncates with ellipsis (`min-w-0` + `truncate`).
+- Long values: scrolls within max-height block (200 / 400 px depending on op).
+- Cmd+Enter while saving or success/rejected: ignored (only fires for `idle` and `error`).
+- Click-outside / focus-loss: no internal effect — parent owns lifecycle.
+
+**Props:**
+```ts
+type PendingWriteCardState = 'idle' | 'saving' | 'success' | 'error' | 'rejected'
+
+type PendingWriteCardPayload =
+  | { op: 'update'; field: string; before: unknown; after: unknown }
+  | { op: 'create'; fields: { label: string; value: unknown }[] }
+  | { op: 'generate'; seedSummary: string }
+
+interface PendingWriteCardProps {
+  id: string
+  entityType: WriteEntityType
+  op: 'update' | 'create' | 'generate'
+  payload: PendingWriteCardPayload
+  state: PendingWriteCardState
+  errorMessage?: string
+  onConfirm: () => void
+  onReject: () => void
+}
+```
+
+**Do not:**
+- Own internal state (`state` is parent-driven so optimistic updates work).
+- Render an `update` body without before/after — caller responsibility.
+- Add a left-border accent at card level — the layout deliberately decided against this; cards are equal-priority by being in the list.
+- Render the primary button with both `loading: true` and a trailing icon visible — `ActionButton` already hides the trailing icon during loading.
+
+---
+
+### PendingWritesList
+
+**File:** `02-app/components/pending-writes-list.tsx` *(OUT-01c)*
+**Purpose:** Per-conversation pending-writes list shell for OUT-01c's pane tab. Renders a vertical stack of `PendingWriteCard` items wrapped in `PaneHighlightPulse` (one pulse-per-card on mount); empty array shows `EmptyState`. Owns no data fetching — parent provides the `writes` array and the per-id state/error maps.
+
+**Anatomy:**
+- Outer: `flex flex-col gap-3` when populated; otherwise renders `EmptyState`.
+- Each card: `<PaneHighlightPulse pulseKey={write.id}><PendingWriteCard ... /></PaneHighlightPulse>` — the `pulseKey` is the row id so each new card pulses exactly once on first mount.
+- Empty: `EmptyState` with `FileCheck` icon, heading `"Nothing pending"`, description `"The chat will propose writes here when needed."` (defensive — the tab is `'hidden'` when empty, so this is rare).
+
+**Behavioural states:**
+- Stateless. Parent owns `stateById` / `errorById`.
+
+**Edge cases:**
+- Multiple cards arriving same turn: each gets own pulse on mount.
+- Card removed mid-list (e.g. confirmed): React removes it; parent handled the auto-remove timing.
+- `stateById` key missing for a write id: defaults to `'idle'`.
+
+**Props:**
+```ts
+interface PendingWriteSummary {
+  id: string
+  entityType: WriteEntityType
+  op: 'update' | 'create' | 'generate'
+  payload: PendingWriteCardPayload
+}
+interface PendingWritesListProps {
+  writes: PendingWriteSummary[]
+  stateById: Record<string, PendingWriteCardState>
+  errorById: Record<string, string | undefined>
+  onConfirm: (id: string) => void
+  onReject: (id: string) => void
+}
+```
+
+**Do not:**
+- Own the pending-write data fetch (parent provides via `writes` prop).
+- Persist confirm/reject decisions inline — the parent calls server actions.
+- Reorder cards based on state — ordering is parent-driven (newest-first or oldest-first per the parent's choice).
+
+---
+
+### SystemMessageDivider
+
+**File:** `02-app/components/system-message-divider.tsx` *(OUT-01c)*
+**Purpose:** Centred narrow line in the chat message stream for system-attributed events (write confirmations, errors, generation completions). Not a participant turn — a stream divider. The chat message-list organism branches on `message.role === 'system'` and renders this molecule instead of `ChatMessage`. Generic enough to absorb future system-message kinds (e.g. errors, info bands) by varying `iconColor` + `icon`.
+
+**Anatomy:**
+- Outer wrapper: `my-2 flex justify-center`.
+- Inner span: `inline-flex items-center gap-2 text-xs text-muted-foreground`.
+- Icon: 12px (`h-3 w-3 shrink-0`) in the chosen state colour token (`--color-success` / `--color-warning` / `--color-info`).
+- Text: rendered as-is, `whitespace-normal` for safety on long single-line strings.
+- When `tooltip` is provided: wrap the inner span in `<Tooltip>` with `<TooltipTrigger render={<span />}>` (the same render-prop pattern `IconButton` uses).
+
+**Tone tokens:**
+- `success` → `text-[var(--color-success)]`
+- `warning` → `text-[var(--color-warning)]`
+- `info` → `text-[var(--color-info)]`
+
+**Behavioural states:**
+- Stateless. Just rendering.
+
+**Edge cases:**
+- Long text: wraps inside the inline-flex (single-line preferred but `whitespace-normal` for safety).
+- No `tooltip`: omits the wrapper entirely.
+
+**Props:**
+```ts
+interface SystemMessageDividerProps {
+  icon: LucideIcon
+  iconColor: 'success' | 'warning' | 'info'
+  text: string
+  tooltip?: string
+}
+```
+
+**Do not:**
+- Add an `onClick` (it's a divider, not a button).
+- Compose with `ChatMessage` (separate molecule by design — `ChatMessage` is scoped to user/assistant roles).
+- Add a destructive / error tone speculatively. Extend tone only when a real consumer needs it.
+
+---
+
+### VariantCard
+
+**File:** `02-app/components/variant-card.tsx` *(OUT-02-P4b)*
+**Purpose:** Renders one generated content variant inside the creator workspace's right pane. Shows the variant header, an italicised "why this works" rationale block, the markdown-rendered content, and a floating action strip (Copy / Save / Chat). Used inside `VariantStack` to display a complete model output.
+
+**Anatomy:**
+- Outer wrapper: `relative rounded-lg border border-border bg-card p-6 pb-12`. The trailing `pb-12` reserves space for the floating action strip.
+- Header row: `mb-4 text-base font-medium text-foreground` — fixed copy `Variant {N}` (the model's `title` field is not displayed on the card; it lives in the Save Modal pre-fill + library row).
+- Rationale block: `mb-4 text-sm italic text-muted-foreground` — renders `variant.rationale` directly (plain text, no markdown).
+- Content block: nested inset `rounded-md bg-muted/20 p-4` containing a `MarkdownRenderer` rendering `variant.content`.
+- Action strip: `absolute bottom-3 right-3 flex gap-1` of three `IconButton`s.
+  - **Copy** — `Copy` Lucide icon. Tooltip "Copy to clipboard."
+  - **Save** — `Save` Lucide icon (or `Check` when saved). Tooltip "Save to library." When saved: tooltip becomes "Saved — click to edit", icon swaps to `Check` from `lucide-react`, click opens `LibraryDetailModal`.
+  - **Chat** — generic chat glyph (placeholder: `MessageCircle` Lucide). Disabled in V1 — `disabled` prop on `IconButton`. Tooltip "Coming soon — chat with a variant to refine it."
+
+**Behavioural states:**
+- **Draft** (default) — Save icon as `Save` glyph, click opens `SaveToLibraryModal` for this variant.
+- **Saved** — Save icon as `Check` glyph, click opens `LibraryDetailModal` pre-loaded with `libraryItemId`.
+
+**Props:**
+```ts
+interface VariantCardProps {
+  variantNumber: number              // 1-indexed display number
+  variant: {
+    id: string                        // client-generated uuid
+    title: string                     // model output, NOT shown on card
+    rationale: string                 // italicised "why this works" block
+    content: string                   // markdown body
+    status: 'draft' | 'saved'
+    libraryItemId?: string            // present when status === 'saved'
+  }
+  onCopy: (variantId: string) => void
+  onSave: (variantId: string) => void          // opens Save modal (draft) OR Detail modal (saved)
+  onChat?: (variantId: string) => void         // optional; disabled in V1
+}
+```
+
+**Do not:**
+- Render the variant's `title` as the card header — it's intended for the Save Modal title field, not the card. (Future content types with intrinsic titles like blog posts can opt in via a content-type flag — out of V1 scope.)
+- Make the card itself clickable — only the action strip is interactive. The card body is read-only display.
+- Hardcode any colour beyond the documented tokens. The inset content background is `bg-muted/20`; the rationale uses `text-muted-foreground italic`.
+
+---
+
+### VariantCardSkeleton
+
+**File:** `02-app/components/variant-card-skeleton.tsx` *(OUT-02-P4b)*
+**Purpose:** Shimmer placeholder mirroring `VariantCard`'s outer shape. Rendered N times by `VariantStack` while the model call is in flight, then swapped 1-for-N with real `VariantCard`s on completion. The variant number is shown un-shimmered so the user knows what's coming.
+
+**Anatomy:**
+- Outer wrapper: `relative rounded-lg border border-border bg-card p-6 pb-12` — matches `VariantCard` exactly so the swap is visually seamless.
+- Header: `mb-4 text-base font-medium text-foreground` — `Variant {N}` (un-shimmered).
+- Body: three stacked `Skeleton` blocks:
+  - Rationale placeholder: 3 short bars (`h-3 w-full`, `h-3 w-11/12`, `h-3 w-3/4`) inside `mb-4 space-y-1.5`.
+  - Content placeholder: `space-y-2` of 6 bars (`h-3` of varying widths between `w-full` and `w-2/3`) inside an inset block (`rounded-md bg-muted/10 p-4`).
+
+**Behavioural states:**
+- Stateless — pure visual placeholder.
+
+**Props:**
+```ts
+interface VariantCardSkeletonProps {
+  variantNumber: number
+}
+```
+
+**Do not:**
+- Animate the header — only the body shimmers.
+- Use a generic single `Skeleton` block instead of staged sub-blocks. The staged shape conveys the rationale-then-content structure that's about to appear.
+
+---
+
+### VariantStack
+
+**File:** `02-app/components/variant-stack.tsx` *(OUT-02-P4b)*
+**Purpose:** Wrapper that renders N variant slots in the right pane of the creator workspace. Each slot is either a `VariantCard` (when the corresponding variant has resolved) or a `VariantCardSkeleton` (when still pending). Owns the layout (vertical stack with consistent gap) and the mapping from index to slot state.
+
+**Anatomy:**
+- Outer wrapper: `flex flex-col gap-4 p-6` — full-width inside the right pane's overflow container.
+- Iterates `Array.from({ length: expectedCount })`, renders a `VariantCard` if `variants[i]` exists; otherwise a `VariantCardSkeleton` with `variantNumber={i + 1}`.
+- The variant slot index is the variant's display number (1-indexed in UI, 0-indexed in array).
+
+**Behavioural states:**
+- **Streaming / loading** — `expectedCount` skeletons, no cards yet.
+- **Partial** (intermediate state, currently unused — reserved for future true streaming) — some skeletons swapped for cards.
+- **Complete** — all N slots are real `VariantCard`s.
+
+**Props:**
+```ts
+interface VariantStackProps {
+  expectedCount: number
+  variants: Array<{
+    id: string
+    title: string
+    rationale: string
+    content: string
+    status: 'draft' | 'saved'
+    libraryItemId?: string
+  }>
+  onCopy: (variantId: string) => void
+  onSave: (variantId: string) => void
+  onChat?: (variantId: string) => void
+}
+```
+
+**Do not:**
+- Render fewer than `expectedCount` slots even when `variants.length === 0`. The skeleton-from-the-start UX is the contract.
+- Rearrange slots based on resolution order. Slot index = variant index forever.
+
+---
+
+### TagChipEditor
+
+**File:** `02-app/components/tag-chip-editor.tsx` *(OUT-02-P4b)*
+**Purpose:** Chip editor for the `library_items.tags` jsonb array. Renders existing tags as removable chips, plus an inline "+ Add tag" affordance that creates `kind: 'free_text'` tags on Enter. Used inside `LibraryItemForm` (Save and Edit modes).
+
+**Anatomy:**
+- Outer wrapper: `flex flex-wrap items-center gap-1.5`.
+- Each tag chip: `inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-foreground`.
+  - Auto-tag chips render as `{kindLabel}: {label}` (e.g. "audience: Microagency Mike").
+  - Free-text chips render the value directly (no kind prefix).
+  - Trailing `IconButton` with `X` Lucide (size `xs`, `variant="ghost"`) — removes the chip.
+- "+ Add tag" affordance: when not editing, a small text-button (`text-xs text-muted-foreground hover:text-foreground`) reading `+ Add tag`. When clicked, swaps to an inline `<input>` (cell-context convention: `bg-transparent border-0 px-1 text-xs focus:outline-none`); Enter creates a `kind: 'free_text'` chip with the typed value; Esc / blur cancels.
+
+**Behavioural states:**
+- **Read-only** (when `readonly` prop true) — chips render without removal X; "+ Add tag" hidden.
+- **Editing** (default) — chips removable, "+ Add tag" visible.
+
+**Props:**
+```ts
+type LibraryTag =
+  | { kind: 'audience_segment'; id: string; label: string }
+  | { kind: 'offer'; id: string; label: string }
+  | { kind: 'knowledge_asset'; id: string; label: string }
+  | { kind: 'topic_path'; id: string; label: string }
+  | { kind: 'topic_item'; id: string; label: string; entity_kind: string }
+  | { kind: 'source_document'; id: string; label: string }
+  | { kind: 'statistic'; id: string; label: string }
+  | { kind: 'free_text'; value: string }
+
+interface TagChipEditorProps {
+  value: LibraryTag[]
+  onChange: (tags: LibraryTag[]) => void
+  readonly?: boolean
+}
+```
+
+**Do not:**
+- Allow editing of auto-tag labels — they're denormalised at save time and stable. Only removal is allowed for auto-tags.
+- Require unique tags by `(kind, id)`. The user may legitimately want duplicate free-text tags. Dedup at the persistence layer if needed (V2).
+
+---
+
+### SaveToLibraryModal
+
+**File:** `02-app/components/save-to-library-modal.tsx` *(OUT-02-P4b)*
+**Purpose:** Modal for saving a single generated variant to the library. Wraps `LibraryItemForm` in `mode="save"` inside `Modal size="lg"`. Triggered by the Save icon on a `VariantCard`. Pre-fills title, content, and tags from the variant + parent run context.
+
+**Anatomy:**
+- Composes `Modal` (`size="lg"`, title `"Save to library"`).
+- Body: `<LibraryItemForm mode="save" initial={...} onSubmit={...} submitting={...} />`.
+- Footer: `[Cancel]` outline + `[Save to library]` primary.
+
+**Behavioural states:**
+- **Idle** — open, form ready.
+- **Submitting** — Save button shows spinner, both buttons disabled.
+- **Closed** — nothing rendered.
+
+**Props:**
+```ts
+interface SaveToLibraryModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  variant: {
+    id: string
+    title: string
+    content: string
+  }
+  runId: string
+  autoTags: LibraryTag[]            // pre-built by parent from generation_runs.inputs
+  onSaved?: (libraryItemId: string) => void
+}
+```
+
+**Do not:**
+- Render `publishDate`, `platform`, `publishedUrl`, or `notes` fields. Those land in `LibraryDetailModal` post-save. Save-time friction stays low by design.
+- Block close on unsaved changes (no confirm-on-close in V1).
+
+---
+
+### LibraryDetailModal
+
+**File:** `02-app/components/library-detail-modal.tsx` *(OUT-02-P4b)*
+**Purpose:** Modal for viewing and editing a saved library item. Wraps `LibraryItemForm` in `mode="edit"` inside `Modal size="2xl"` with full publish-metadata fields and a destructive Delete affordance. Triggered by row click on `LibraryTable` or click on a saved variant card's checkmark.
+
+**Anatomy:**
+- Composes `Modal` (`size="2xl"`, title `"Edit library item"`).
+- Body: `<LibraryItemForm mode="edit" initial={...} onSubmit={...} submitting={...} />`.
+- Footer: three buttons in a `flex justify-between` row:
+  - Left: `[Delete]` `variant="destructive"` — opens nested `Modal size="sm"` confirm dialog ("Delete this item? This can't be undone.")
+  - Right: `[Cancel]` outline + `[Save]` primary
+- Delete confirm: standard `Modal` (`size="sm"`) titled `"Delete this item?"` with `[Cancel] [Delete]` footer (Delete also `destructive`).
+
+**Behavioural states:**
+- **Loading** — fetching item from server (initial open). Renders form skeleton or muted state.
+- **Idle** — open, form ready.
+- **Submitting** — Save / Delete buttons show spinner, all buttons disabled.
+- **Confirming delete** — Delete confirm modal stacked on top.
+- **Closed** — nothing rendered.
+
+**Props:**
+```ts
+interface LibraryDetailModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  libraryItemId: string
+  onSaved?: () => void
+  onDeleted?: () => void
+}
+```
+
+**Do not:**
+- Open both modals (parent + delete confirm) without a clear close-stack contract. Delete confirm closes both on success; Cancel on confirm closes only the confirm.
+- Inline the form fields directly — always compose via `LibraryItemForm` so save and edit modes share the same field rendering and validation.
+
+---
+
+### LibraryItemForm
+
+**File:** `02-app/components/library-item-form.tsx` *(OUT-02-P4b)*
+**Purpose:** Shared form body for `SaveToLibraryModal` and `LibraryDetailModal`. Holds field rendering, controlled-form state, validation, and submit handling. The two modal wrappers differ only in chrome and footer; this molecule is the substance.
+
+**Anatomy:**
+- Outer wrapper: `flex flex-col gap-4`.
+- Field stack (always present, both modes):
+  - **Title** — labelled `<input>` (cell-context convention), required. Pre-filled from `initial.title`. Validation: non-empty.
+  - **Content** — labelled `<textarea>` with markdown. Auto-resize via CSS `field-sizing: content` with `min-h-[12rem]` and `max-h-[40vh]` fallback. Pre-filled from `initial.text`.
+  - **Tags** — labelled `TagChipEditor` reading `initial.tags`.
+  - **Status** — labelled `SelectField` with options `Draft / Scheduled / Published / Archived`.
+- Edit-mode-only field stack (added when `mode="edit"`):
+  - **Publish date** — labelled `DatePicker`, nullable.
+  - **Platform** — labelled `SelectField` with channel taxonomy options, nullable.
+  - **Published URL** — labelled `<input type="url">`, nullable.
+  - **Notes** — labelled `<textarea>`, nullable.
+
+Each labelled field uses a small `<label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">` (matches existing form conventions in P4a's Settings strip).
+
+**Behavioural states:**
+- **Idle** — form populated, no pending submission.
+- **Validating** — on submit attempt, validation errors render inline (currently: just title required).
+- **Submitting** — fields disabled, parent button shows spinner.
+
+**Props:**
+```ts
+type LibraryItemFormValues = {
+  title: string
+  text: string
+  tags: LibraryTag[]
+  publishStatus: 'draft' | 'scheduled' | 'published' | 'archived'
+  // edit-mode only:
+  publishDate?: Date | null
+  platform?: string | null
+  publishedUrl?: string | null
+  notes?: string | null
+}
+
+interface LibraryItemFormProps {
+  mode: 'save' | 'edit'
+  initial: LibraryItemFormValues
+  onSubmit: (values: LibraryItemFormValues) => Promise<void>
+  submitting: boolean
+}
+```
+
+**Do not:**
+- Render publishDate / platform / publishedUrl / notes when `mode === 'save'`. Save-mode friction is intentional.
+- Add a Save button inside this molecule. The wrapping modal owns the footer + submission control.
+
+---
+
+### LibraryTable
+
+**File:** `02-app/components/library-table.tsx` *(OUT-02-P4b)*
+**Purpose:** Sortable, filterable, column-toggleable table for the `/content/library` page. Renders rows of saved library items; click a row to open `LibraryDetailModal`. Reads its column definitions and current state from props (URL-driven).
+
+**Anatomy:**
+- Outer wrapper: `rounded-lg border border-border bg-card overflow-hidden`.
+- Header row: `grid` with column-template derived from visible columns. Each header cell hosts a `LibraryTableHeader`.
+- Body rows: `grid` matching the header template. `hover:bg-muted/20 cursor-pointer border-b border-border last:border-b-0 px-3 py-2.5 items-center`. Click → `onRowClick(item.id)`.
+- Cell renderers per column type:
+  - `text` → truncated text (`truncate text-sm`)
+  - `date` → formatted via `Intl.DateTimeFormat` (`MMM d, yyyy`)
+  - `select` → plain text label
+  - `status` → `StatusBadge` (status column only)
+  - `content_type` → `TypeBadge` (content-type column only, hue from category)
+  - `tag` → `TagCell` for the matching tag kind
+
+**Behavioural states:**
+- **Populated** — rows render.
+- **Empty** — body replaced with a centred `EmptyState` (passed as a child or prop).
+- **Pending** (URL transition) — body fades to `opacity-60` via parent's `useTransition`.
+
+**Props:**
+```ts
+type LibraryTableColumn = {
+  id: string
+  label: string
+  type: 'text' | 'date' | 'select' | 'status' | 'content_type' | 'tag'
+  width: string                       // CSS grid column value, e.g. "minmax(200px, 1fr)" or "120px"
+  sortable: boolean
+  filterable: boolean
+  alwaysVisible: boolean
+  /** For tag columns only — which tag kind to read */
+  tagKind?: 'audience_segment' | 'offer' | 'knowledge_asset' | 'topic_path'
+}
+
+interface LibraryTableProps {
+  items: LibraryItemRow[]
+  columns: LibraryTableColumn[]       // already filtered to visible columns
+  sort: { key: string; direction: 'asc' | 'desc' }
+  filters: Record<string, FilterValue | null>
+  onRowClick: (id: string) => void
+  onSortChange: (sort: { key: string; direction: 'asc' | 'desc' }) => void
+  onFilterChange: (columnId: string, value: FilterValue | null) => void
+  filterOptions: Record<string, SelectOption[]>   // for select/tag columns
+}
+```
+
+**Do not:**
+- Render the empty state inside the table itself — accept it as a prop or render the empty state in the parent and skip rendering the table entirely.
+- Allow multi-key sort in V1. One sort key at a time.
+- Hardcode column widths — they're driven by the `columns` prop.
+
+---
+
+### LibraryTableHeader
+
+**File:** `02-app/components/library-table-header.tsx` *(OUT-02-P4b)*
+**Purpose:** Single header cell for `LibraryTable`. Shows the column label, a sort-direction indicator, and a filter trigger. Clicking anywhere on the cell opens the column's `ColumnFilterFlyout`. An active-filter badge dot appears when a filter is set.
+
+**Anatomy:**
+- Cell wrapper: `flex items-center justify-between gap-1 px-3 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground hover:text-foreground cursor-pointer select-none`.
+- Left: column label.
+- Right: `flex items-center gap-1`:
+  - Sort indicator: `ChevronUp` or `ChevronDown` Lucide (12px) — only when this column is the active sort key.
+  - Filter trigger: `Filter` Lucide (12px) — always shown for filterable columns. Wrapped with a relative dot indicator (`absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-primary`) when `activeFilter` is non-null.
+- The whole cell is the click target — opens the flyout via `Popover`.
+
+**Behavioural states:**
+- **Idle** — no filter, no sort.
+- **Sorted** — sort indicator visible.
+- **Filtered** — filter dot visible.
+- **Sorted + filtered** — both visible.
+- **Open** — flyout open (handled by `ColumnFilterFlyout`'s `Popover`).
+
+**Props:**
+```ts
+interface LibraryTableHeaderProps {
+  column: LibraryTableColumn
+  sort: { key: string; direction: 'asc' | 'desc' }
+  activeFilter: FilterValue | null
+  filterOptions?: SelectOption[]      // for select/tag columns
+  onSortChange: (sort: { key: string; direction: 'asc' | 'desc' }) => void
+  onFilterChange: (value: FilterValue | null) => void
+}
+```
+
+**Do not:**
+- Split the click target between label and filter icon — the whole cell opens the flyout (sort and filter are in the same flyout).
+- Render the filter icon for non-filterable columns. Show only the label.
+
+---
+
+### ColumnFilterFlyout
+
+**File:** `02-app/components/column-filter-flyout.tsx` *(OUT-02-P4b)*
+**Purpose:** Popover content for one `LibraryTable` column. Hosts the column-type-specific filter UI (text input, date range, multi-select checkbox list) plus a sort radio (when sortable). Triggered from `LibraryTableHeader`.
+
+**Anatomy:**
+- Wraps shadcn `Popover` + `PopoverContent`. Trigger lives in the parent `LibraryTableHeader`.
+- Content body: `flex flex-col gap-3 p-3 w-64`. Internal sections separated by `<Separator />` (or a simple border row).
+- **Filter section** (always present for filterable columns) — varies by `column.type`:
+  - `text` — `<input>` (cell-context convention) with placeholder "Search…"
+  - `date` — two `DatePicker`s (from / to)
+  - `select` / `tag` — vertical checkbox list of options. Each row: `Checkbox` atom + label. Scrollable internally if > 8 options (`max-h-48 overflow-auto`).
+- **Sort section** (only when `column.sortable`) — radio group with `Newest first / Oldest first` (date), `A→Z / Z→A` (text), or `(default)` for non-sorted columns.
+- **Footer** — small text-button `Clear` (`text-xs text-muted-foreground`) — clears the column's filter (does not affect sort).
+
+**Behavioural states:**
+- **Closed** — no popover.
+- **Open** — popover renders body.
+
+**Props:**
+```ts
+interface ColumnFilterFlyoutProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  trigger: React.ReactNode             // the LibraryTableHeader cell
+  column: LibraryTableColumn
+  sort: { key: string; direction: 'asc' | 'desc' }
+  activeFilter: FilterValue | null
+  options?: SelectOption[]
+  onSortChange: (sort: { key: string; direction: 'asc' | 'desc' }) => void
+  onFilterChange: (value: FilterValue | null) => void
+}
+```
+
+**Do not:**
+- Apply filter changes on every keystroke / checkbox tick. Debounce text inputs at 300ms (matches the InlineField save-debounce convention); apply select / date changes immediately.
+- Keep the popover open after Clear — close on Clear so the user gets visual confirmation.
+
+---
+
+### ColumnVisibilityControl
+
+**File:** `02-app/components/column-visibility-control.tsx` *(OUT-02-P4b)*
+**Purpose:** Popover with checkboxes to show / hide togglable columns on `LibraryTable`. Triggered from a "Columns" button in `PageChrome`'s action slot. Always-on columns appear in the list but are disabled with a small lock indicator.
+
+**Anatomy:**
+- Wraps shadcn `Popover` + `PopoverContent`.
+- Trigger: an `ActionButton` (or `IconButton` with text fallback) reading `Columns` with a `Columns` Lucide icon.
+- Content: `w-56 p-3`.
+  - Header: `text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2` reading `"Show columns"`.
+  - List: `flex flex-col gap-1`. Each row: `Checkbox` atom + label `text-sm`. Always-on rows show a small `Lock` Lucide (12px, `text-muted-foreground`) trailing.
+
+**Behavioural states:**
+- **Closed** — popover hidden.
+- **Open** — list rendered.
+
+**Props:**
+```ts
+interface ColumnVisibilityControlProps {
+  columns: LibraryTableColumn[]        // all columns (visible + hidden)
+  visibleColumnIds: string[]           // currently visible
+  onChange: (visibleColumnIds: string[]) => void
+}
+```
+
+**Do not:**
+- Allow toggling always-on columns. The lock icon is the affordance.
+- Preserve column order in the toggle UI by inserting togglable columns wherever the user adds them. Order is fixed by the `columns` prop's source order.
+
+---
+
+### TagCell
+
+**File:** `02-app/components/tag-cell.tsx` *(OUT-02-P4b)*
+**Purpose:** Cell renderer for tag columns in `LibraryTable`. Looks up the matching tag from the row's `tags` jsonb (by `kind`) and renders its denormalised `label`. Empty cell when no matching tag exists. Kept dense (no badge) to preserve table scannability — badge styling is reserved for Status / Content type columns.
+
+**Anatomy:**
+- `<span className="truncate text-sm text-foreground">` showing the matching tag's label.
+- Empty cell renders as `<span className="text-sm text-muted-foreground/40">—</span>` (em-dash placeholder).
+
+**Behavioural states:**
+- **Has tag** — label renders.
+- **No matching tag** — em-dash placeholder.
+
+**Props:**
+```ts
+interface TagCellProps {
+  tags: LibraryTag[]
+  tagKind: 'audience_segment' | 'offer' | 'knowledge_asset' | 'topic_path'
+}
+```
+
+**Do not:**
+- Render multiple matching tags inline. If a row has multiple `topic_path` tags, render only the first; show all in the detail modal. Compact tables don't have room for multi-value cells.
+- Use any background colour or badge styling. Tag cells stay text-only to keep the table dense.
+
+---
+
+### DatePicker
+
+**File:** `02-app/components/date-picker.tsx` *(OUT-02-P4b)*
+**Purpose:** Date input for nullable date fields. Used for `library_items.publishDate` in V1; becomes the canonical date input for any future field. Wraps shadcn `Calendar` inside a `Popover` with a labelled trigger button.
+
+**Anatomy:**
+- Trigger: `<button>` styled as an input (`flex items-center gap-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-muted/40 transition-colors`). Leading `CalendarIcon` Lucide (16px). Label: formatted date (`MMM d, yyyy`) or muted placeholder when null.
+- Popover content: shadcn `Calendar` atom in single-date selection mode, with a "Clear" button below (`text-xs text-muted-foreground hover:text-foreground`).
+
+**Behavioural states:**
+- **Empty** — placeholder visible.
+- **Set** — formatted date visible.
+- **Open** — popover with calendar.
+
+**Props:**
+```ts
+interface DatePickerProps {
+  value: Date | null
+  onChange: (value: Date | null) => void
+  placeholder?: string
+  disabled?: boolean
+}
+```
+
+**Do not:**
+- Use this for date *ranges*. Date ranges in `ColumnFilterFlyout` use two `DatePicker`s side by side; range selection in a single picker is V1.5+.
+- Render time-of-day. Date-only for V1. Time becomes a separate molecule when a time-bearing field appears.
+
+---
+
+### RichTextEditor
+
+**File:** `02-app/components/rich-text-editor.tsx` *(OUT-02-P4b)*
+**Purpose:** WYSIWYG markdown editor for library item content. Wraps TipTap (`@tiptap/react` + `StarterKit`) inside a bordered container with a minimal toolbar (bold / italic / inline-code / H1–H3 / lists / blockquote / link). Markdown is the source-of-truth — the molecule converts md→HTML on mount via `marked` and HTML→md on every keystroke via `turndown`, exposing only markdown to the caller.
+
+**Anatomy:**
+- Outer wrapper: `flex flex-col rounded-md border border-input bg-background`. Disabled adds `opacity-60`.
+- Toolbar (top): `flex flex-wrap items-center gap-0.5 border-b border-border bg-muted/30 px-1.5 py-1`. Buttons are 7×7 ghost squares (`hover:bg-muted hover:text-foreground`, `bg-muted` when active). Vertical dividers separate text-style / heading / list / link groups.
+- Editor body: `flex-1 overflow-auto`. TipTap's `EditorContent` renders inside with classes `prose prose-sm max-w-none px-4 py-3 focus:outline-none min-h-[var(--editor-min-h)]`. Minimum height is configurable via `minHeight` prop (default `20rem`).
+- Loading state: when the TipTap editor hasn't initialised, render a muted skeleton with the same chrome and "Loading editor…" copy. This avoids SSR mismatch (`immediatelyRender: false`).
+
+**Round-trip contract:**
+- On mount: `markdownToHtml(valueMarkdown)` populates the editor.
+- On `onUpdate`: lazy-import the markdown helper, serialise `editor.getHTML()` → markdown, fire `onChange`.
+- External `valueMarkdown` changes (e.g. modal re-opens with a different item) trigger `editor.commands.setContent(html, { emitUpdate: false })`. The molecule compares trimmed strings to avoid resetting selection when the change came from its own emission.
+- Fidelity loss is acceptable for edge HTML (raw `<div>` inside markdown). Source-of-truth remains markdown.
+
+**Toolbar contract:**
+- Bold / Italic / Inline code: toggle marks. Active state mirrors `editor.isActive(mark)`.
+- H1 / H2 / H3: `toggleHeading({ level })`. Higher levels (H4–H6) intentionally omitted from V1.
+- Bulleted / Numbered lists: `toggleBulletList` / `toggleOrderedList`.
+- Blockquote: `toggleBlockquote`.
+- Link: V1 uses `window.prompt` for URL + inserts markdown-style `[text](url)` at the selection. Native TipTap link extension is V1.5.
+
+**Behavioural states:**
+- **Idle** — editable, no toolbar buttons in active state beyond the cursor's current marks/nodes.
+- **Editing a mark** — relevant toolbar buttons highlight (`bg-muted text-foreground`).
+- **Disabled** — `editor.setEditable(false)`, toolbar buttons greyed and non-interactive (`opacity-50 cursor-not-allowed`), wrapper `opacity-60`.
+- **Loading** — pre-mount skeleton.
+
+**Props:**
+```ts
+interface RichTextEditorProps {
+  valueMarkdown: string
+  onChange: (markdown: string) => void
+  disabled?: boolean
+  className?: string
+  placeholder?: string                  // V1.5 — currently unused
+  minHeight?: string                    // default '20rem'
+}
+```
+
+**Do not:**
+- Add image upload, tables, or syntax-highlighted code blocks in V1. Each is its own follow-up.
+- Replace the markdown round-trip with HTML persistence. The schema doc + retrieval pipelines all assume markdown.
+- Inline a heavier TipTap extension set in this molecule. New marks/nodes belong in a sibling molecule (e.g. `RichTextEditorPro` with tables) or via a controlled extension prop.
+
+---
+
+### TypedTagPicker
+
+**File:** `02-app/components/typed-tag-picker.tsx` *(OUT-02-P4b)*
+**Purpose:** Tag-selection surface for library items. Renders one labelled dropdown per typed kind (Audience / Offer / Knowledge asset / Topic), plus a free-text chip editor for catch-all tags, plus a passthrough section for tags resolved by the Topic Engine (items, source documents, statistics) that the user can detach but not pick. Single-vs-multi per kind is configured in `KIND_DEFINITIONS`. Internally composes `TagChipEditor` for free-text + passthrough.
+
+**Anatomy:**
+- Outer: `flex flex-col gap-4`.
+- One `KindPicker` per kind (Audience multi, Offer single, Knowledge asset multi, Topic multi). Each:
+  - Label row: `text-xs font-medium uppercase tracking-wide text-muted-foreground`
+  - Chip row: `flex flex-wrap items-center gap-1.5` — selected option chips (removable via X) + a `+ Select…` / `+ Add` dashed-border trigger
+  - Trigger opens shadcn `Popover`. Body: scrollable list (`max-h-64 overflow-auto`), one row per option. Multi-select shows `Checkbox`; single-select shows trailing `Check` glyph when selected and auto-closes the popover on selection.
+- Free-text section: labelled `Free-text tags`, body composes `TagChipEditor` filtered to `kind === 'free_text'`.
+- Passthrough section (only when generation context attached `topic_item` / `source_document` / `statistic` tags): muted-bordered box (`rounded-md border border-border bg-muted/20 p-3`) titled `From generation` with one-line explainer ("Items, sources and statistics resolved by the Topic Engine. Removing a chip detaches it from this saved item.") + a read-then-remove `TagChipEditor`.
+
+**Kind definitions (V1):**
+| Kind | Multi-select? | Source field |
+|---|---|---|
+| `audience_segment` | yes | `tagSources.audienceSegments` |
+| `offer` | no | `tagSources.offers` |
+| `knowledge_asset` | yes | `tagSources.knowledgeAssets` |
+| `topic_path` | yes | `tagSources.topicPaths` |
+| `platform` | (UI affordance only, not stored in tags) | `tagSources.platforms` |
+
+`platform` is intentionally surfaced through the parent form's `library_items.platform` column rather than the tags jsonb — the kind list excludes it from the picker's emit path. The shape stays in case a future platform-as-tag flow appears.
+
+**Behavioural states:**
+- **Read-only** (`disabled`): chips render without ✕; all triggers hidden.
+- **Editable** (default): per-kind triggers visible, chips removable.
+- **Empty per kind**: if `sources[def.source]` is empty, the popover body shows "No {label} available" instead of an option list.
+
+**Props:**
+```ts
+export type TypedTagOption = { id: string; label: string }
+
+export type TypedTagSource = {
+  audienceSegments: TypedTagOption[]
+  offers: TypedTagOption[]
+  knowledgeAssets: TypedTagOption[]
+  topicPaths: TypedTagOption[]
+  platforms: TypedTagOption[]
+}
+
+interface TypedTagPickerProps {
+  value: LibraryTag[]
+  onChange: (tags: LibraryTag[]) => void
+  sources: TypedTagSource
+  disabled?: boolean
+}
+```
+
+**Do not:**
+- Edit auto-tag labels in place. Labels are denormalised at tag-creation time; mutating them only desyncs display from the underlying entity. Removal-and-re-add is the supported flow.
+- Allow cross-kind tag entry from the free-text chip (free-text stays free-text). Use the typed dropdowns for kinded references.
+- Use this molecule for filter UI. Filter UIs live in `ColumnFilterFlyout` — they use the same option sources but render multi-select checkboxes against a single column's value, not a multi-kind composite.
+
+---
+
+### InlineHint
+
+**File:** `02-app/components/inline-hint.tsx` *(OUT-02-P4b)*
+**Purpose:** Small hint text rendered below a button or input. Captures the "supporting microcopy" pattern (e.g. `⌘+Enter` shortcut hint below the Generate button) so organisms don't carry inline `text-*` classes. Net-new general-purpose molecule.
+
+**Anatomy:**
+- `<p className="text-xs text-muted-foreground text-center mt-1">` rendering children.
+- Variants (via `align` prop): `text-center` (default) / `text-left` / `text-right`.
+
+**Behavioural states:**
+- Stateless.
+
+**Props:**
+```ts
+interface InlineHintProps {
+  children: React.ReactNode
+  align?: 'left' | 'center' | 'right'  // default 'center'
+  className?: string                    // for spacing overrides only
+}
+```
+
+**Do not:**
+- Use for primary copy. This is supporting microcopy; primary content uses paragraph atoms or page-level molecules.
+- Add icons or interactive elements. Plain hint text only — for richer states, use `InlineWarningBanner` or a custom molecule.
+
+---
+
 ## Conventions
 
 ### Cell-context input/textarea pattern *(DS-04)*
@@ -3327,3 +4081,4 @@ Before creating any new shared component:
 | 2026-04-27 | DS-03: Spec backfill complete. 38 new specs written (19 full + 18 light + 1 shared archive); 8 existing DS-01 specs rewritten in DS-02 format for consistency. Two file moves: `OfferDetailView` → `02-app/app/(dashboard)/dna/offers/[id]/` (organism layer, removed from registry); `ConfidenceBadge` → `02-app/components/` (proper molecule home). After DS-03, every registry entry has a real spec anchor — `npm run check:design-system` reports 0 missing-spec warnings. Anchor function in check script now handles `*(light)*` and `(shared pattern)` suffixes. |
 | 2026-04-27 | DS-05: IconButton + ActionButton molecules. Both wrap Button atom with optional Link rendering (`href` prop), optional tooltip, and (ActionButton only) loading state. Migrated ~21 organism files; 3 Tooltip-wrapping-Button patterns folded into IconButton. Atom-import warnings dropped 41 → 20. Remaining 20 are documented carrythrough (Badge × 4 + DropdownMenu × 3 + DropdownMenuTrigger render Buttons × 3 + DS-04-deferred form-control sites). |
 | 2026-04-30 | OUT-02-P4a: 10 new molecules — `MultiFilterPillGroup` (multi-select promised by FilterPillGroup spec), `ContentTypeCard` + `PickerFilterBar` + `LockBadge` + `MissingPrereqDeeplink` (launch-picker-grid pattern), `StrategyField` + `TopicCascadeStep` + `TopicCascade` (creator-workspace-three-region inputs), `NumberStepper` (variant count + future bounded numerics), `AssembledPromptInspector` (debug-grade right-pane viewer, replaced in 4b). Establishes `launch-picker-grid` and `creator-workspace-three-region` template patterns. Two new tables (`brand_content_type_favourites`, `ai_models`); OUT-02-PL2 closed (StrategyFieldId union extended with `platform`, dual-read removed from placeholders). |
+| 2026-05-06 | OUT-02-P4b: 14 new molecules — variant cards (`VariantCard`, `VariantCardSkeleton`, `VariantStack`); save/edit modals (`SaveToLibraryModal`, `LibraryDetailModal`) sharing `LibraryItemForm` body; `TagChipEditor` for the tags jsonb field; library table parts (`LibraryTable`, `LibraryTableHeader`, `ColumnFilterFlyout`, `ColumnVisibilityControl`, `TagCell`); two general-purpose additions (`DatePicker` becomes the canonical date input; `InlineHint` keeps supporting microcopy out of organisms). Replaces the P4a `AssembledPromptInspector` debug surface with the variant card stack. Two new shadcn atoms installed (`popover`, `calendar` + `react-day-picker` dep). One migration adds `library_items.title` + `library_items.source` columns. |
