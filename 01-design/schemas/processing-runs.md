@@ -3,7 +3,7 @@ status: approved
 table: processing_runs
 type: processing-internal
 related_features: INP-11, INP-12
-last_updated: 2026-05-01
+last_updated: 2026-05-06
 supersedes: prior INP-11 implementation (no formal schema doc existed)
 related_docs: src-source-documents.md, src-source-chunks.md, lens-reports.md
 ---
@@ -28,6 +28,7 @@ INP-11 used a similar table that conflated compute records with output records (
 | `lensInput` | text | nullable | Free-form input that shaped the run (e.g. decision text for `decision-support`). Mirrors `lens_reports.lensInput` for analysis lenses. |
 | `promptFragmentsUsed` | jsonb | not null, default '[]'::jsonb | Array of `{ path: string, gitSha?: string }` recording which schema-fragment files were composed into the prompt. Lets us trace "this run used the v3 client-interview fragment with the v2 pattern-spotting lens prompt." |
 | `extractionResult` | jsonb | nullable | **Only populated for `lens='surface-extraction'`.** Raw `ExtractionResult` from `extractFromText()` — the per-source extracted items (ideas, concepts, people, etc.) before user review. After commit, the user-confirmed subset is written to graph nodes; this column retains the raw result for audit. |
+| `unexpected` | jsonb | not null, default '[]'::jsonb | **NEW (INP-12 follow-up #5, 2026-05-06).** Universal `unexpected[]` array — `Array<{ observation, why, sourceRefs }>` — populated only when `lens='surface-extraction'`. Surface-extraction does not produce a `lens_reports` row, so its `unexpected[]` (per `_base.md`) cannot attach there; this column is the storage. The per-item review UI surfaces these alongside the regular extracted items for individual commit/discard. Empty array (default) for analysis-lens runs (their `unexpected[]` lives on `lens_reports.result.unexpected`) and for `surface-extraction` runs that returned nothing left-field. |
 | `analysisResult` | jsonb | nullable | **DROPPED in v3 (was on INP-11 `processing_runs`).** Analysis output now lives on `lens_reports.result` for the 6 analysis lenses. |
 | `lensReportId` | uuid | nullable, FK → `lens_reports.id` | **NEW.** Populated on commit for analysis lenses. The lens report this run produced. Null for `surface-extraction` runs (no lens report) and for runs in `pending` status. |
 | `status` | varchar(20) | not null, default 'pending' | `pending \| committed \| skipped \| failed`. `pending` = LLM returned, awaiting user review. `committed` = user reviewed, items/report written. `skipped` = user discarded. `failed` = LLM call errored, no result. |

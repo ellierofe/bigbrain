@@ -10,15 +10,21 @@ import { Textarea } from '@/components/ui/textarea'
 import { ResultsPanel } from './results-panel'
 import type { ExtractionResult, CommitResult, SourceType } from '@/lib/types/processing'
 
+// INP-12: replaced free-form INP-11 vocab with the controlled 13-value source-type vocab (ADR-009).
+// This whole client is being deleted in Phase 2 of the INP-12 build; the list below is kept minimal
+// to keep TypeScript green during the foundation phase.
 const SOURCE_TYPES: { value: SourceType; label: string }[] = [
-  { value: 'transcript', label: 'Transcript' },
-  { value: 'session-note', label: 'Session note' },
-  { value: 'research', label: 'Research' },
-  { value: 'voice-note', label: 'Voice note' },
-  { value: 'image', label: 'Image' },
-  { value: 'email', label: 'Email' },
-  { value: 'document', label: 'Document' },
-  { value: 'other', label: 'Other' },
+  { value: 'client-interview', label: 'Client interview' },
+  { value: 'coaching-call', label: 'Coaching call' },
+  { value: 'peer-conversation', label: 'Peer conversation' },
+  { value: 'supplier-conversation', label: 'Supplier conversation' },
+  { value: 'accountability-checkin', label: 'Accountability check-in' },
+  { value: 'meeting-notes', label: 'Meeting notes' },
+  { value: 'internal-notes', label: 'Internal notes' },
+  { value: 'research-document', label: 'Research document' },
+  { value: 'pitch-deck', label: 'Pitch deck' },
+  { value: 'report', label: 'Report' },
+  { value: 'content-idea', label: 'Content idea' },
 ]
 
 const CHUNK_WARNING_CHARS = 28_000
@@ -29,7 +35,7 @@ interface ProcessInputClientProps {
 
 export function ProcessInputClient({ brandId }: ProcessInputClientProps) {
   const [title, setTitle] = useState('')
-  const [sourceType, setSourceType] = useState<SourceType>('transcript')
+  const [sourceType, setSourceType] = useState<SourceType>('client-interview')
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')

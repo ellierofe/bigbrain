@@ -44,6 +44,7 @@ function toExtractionResult(json: unknown, item: QueueItem): ExtractionResult {
     metadata: {
       title: item.title,
       sourceType: item.sourceType as ExtractionResult['metadata']['sourceType'],
+      authority: 'peer' as ExtractionResult['metadata']['authority'],  // INP-11 queue has no authority — default for compat; this client is removed in INP-12 Phase 2
       date: item.inputDate ?? undefined,
       tags: item.tags ?? undefined,
       brandId: '',
@@ -144,7 +145,10 @@ export function QueueClient({ items }: QueueClientProps) {
   useEffect(() => {
     if (!selectedId || !selectedResult) return
     // Check if clusters already stored in the extraction JSON
-    if (selectedResult.topicClusters && selectedResult.topicClusters.length > 0) return
+    // INP-11 legacy: topicClusters used to live on ExtractionResult; INP-12 removed it.
+    // This component is removed in Phase 2; cast through unknown to keep compiling.
+    const legacyClusters = (selectedResult as unknown as { topicClusters?: unknown[] }).topicClusters
+    if (legacyClusters && legacyClusters.length > 0) return
     // Check if already cached or already fetching
     if (clusterCache[selectedId] || clusterFetchedRef.current.has(selectedId)) return
 
@@ -166,10 +170,11 @@ export function QueueClient({ items }: QueueClientProps) {
       .finally(() => setClusteringInProgress(false))
   }, [selectedId, selectedResult, clusterCache])
 
-  // Resolve topic clusters: stored > cached > none
-  const selectedClusters = selectedResult?.topicClusters
+  // Resolve topic clusters: stored > cached > none. INP-11 legacy — removed in Phase 2.
+  const legacyClusters = (selectedResult as unknown as { topicClusters?: unknown[] } | null)?.topicClusters
+  const selectedClusters = (legacyClusters
     ?? (selectedId ? clusterCache[selectedId] : undefined)
-    ?? undefined
+    ?? undefined) as undefined
 
   // Dedup state
   const [dedupCache, setDedupCache] = useState<Record<string, { matches: Record<string, Array<{ matchedNodeName: string; score: number; source: 'graph' | 'pending' }>>; canonicalMatches: Record<string, string> }>>({})

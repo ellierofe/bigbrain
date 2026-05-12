@@ -64,6 +64,11 @@ export const srcSourceDocuments = pgTable('src_source_documents', {
   /** Krisp meeting identifier — unique per (brandId, krispMeetingId). */
   krispMeetingId: text('krisp_meeting_id'),
 
+  /** For dataset sources: bridges the front-end source row to the kg-ingest-creator (SKL-12)
+   *  ingestion_log row. Soft uuid, no FK — `ingestion_log` table doesn't yet live in BigBrain Neon
+   *  (it ships in via KG-04c). KG-04c follow-up promotes this to a real FK once the table arrives. */
+  ingestionLogId: uuid('ingestion_log_id'),
+
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [

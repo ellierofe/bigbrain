@@ -42,6 +42,15 @@ export const srcSourceChunks = pgTable('src_source_chunks', {
   embedding: vector('embedding', { dimensions: 1536 }),
   embeddingGeneratedAt: timestamp('embedding_generated_at', { withTimezone: true }),
 
+  /** Forward-compat for INP-05 (multi-modal document ingestion).
+   *  Vercel Blob URLs of image attachments — diagrams, slide images, embedded figures.
+   *  Populated by INP-05 when document ingestion lands; null for text-only chunks. */
+  imageRefs: text('image_refs').array(),
+
+  /** Forward-compat for INP-05. Vision-LLM-generated description of the chunk's visual content.
+   *  For pitch-deck slides without text, this becomes the chunk's effective text content for embedding. */
+  imageDescription: text('image_description'),
+
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [
   index('src_source_chunks_embedding_idx').using('hnsw', t.embedding.op('vector_cosine_ops')),

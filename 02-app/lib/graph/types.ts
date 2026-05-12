@@ -1,4 +1,4 @@
-// Node labels — all 14 types from ADR-002
+// Node labels — base 14 from ADR-002 plus 4 added in ADR-002a (INP-12)
 export type NodeLabel =
   | 'Idea'
   | 'Concept'
@@ -15,8 +15,15 @@ export type NodeLabel =
   | 'Policy'
   | 'Country'
   | 'Date'
+  // ADR-002a additions (INP-12)
+  | 'SourceChunk'         // child of SourceDocument; per-passage retrieval grain
+  | 'SourceCollection'    // container for many sibling SourceItem children (datasets, scrapes)
+  | 'SourceItem'          // individual member of a SourceCollection
+  | 'LensReport'          // durable analysis-lens artefact
 
-// Relationship types — all types from ADR-002
+// Relationship types — base from ADR-002 plus 2 added in ADR-002a (INP-12).
+// PART_OF already existed in ADR-002 and is reused for SourceChunk → SourceDocument
+// and SourceItem → SourceCollection per ADR-002a §2.
 export type RelationshipType =
   // Provenance and source
   | 'DERIVED_FROM'
@@ -47,6 +54,9 @@ export type RelationshipType =
   | 'SCOPED_TO'
   | 'GENERATED'
   | 'COMMISSIONED_BY'
+  // ADR-002a additions (INP-12)
+  | 'IDENTIFIED_IN'       // Idea/Concept/Methodology/Person/Organisation → LensReport
+  | 'ANALYSED_FROM'       // LensReport → SourceDocument/SourceCollection
 
 // Actor node types that go through canonical register resolution
 export const CANONICAL_TYPES = new Set<NodeLabel>(['Person', 'Organisation', 'Project'])

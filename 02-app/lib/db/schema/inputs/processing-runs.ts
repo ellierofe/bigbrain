@@ -1,4 +1,5 @@
-import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
+import { index, jsonb, pgTable, text, timestamp, uuid, varchar, type AnyPgColumn } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 import { brands } from '../brands'
 import { lensReports } from '../lens-reports'
 import { vector } from '../types'
@@ -36,8 +37,13 @@ export const processingRuns = pgTable('processing_runs', {
   /** Only populated for lens='surface-extraction'. Raw ExtractionResult before user review. */
   extractionResult: jsonb('extraction_result'),
 
-  /** Populated on commit for analysis lenses. Null for surface-extraction or pending runs. */
-  lensReportId: uuid('lens_report_id').references(() => lensReports.id, { onDelete: 'set null' }),
+  /** Universal `unexpected[]` array (per `_base.md`). Populated only when lens='surface-extraction'
+   *  (analysis lenses store theirs on `lens_reports.result.unexpected`). Default empty. */
+  unexpected: jsonb('unexpected').notNull().default(sql`'[]'::jsonb`),
+
+  /** Populated on commit for analysis lenses. Null for surface-extraction or pending runs.
+   *  AnyPgColumn return-type breaks the circular type inference with lens_reports. */
+  lensReportId: uuid('lens_report_id').references((): AnyPgColumn => lensReports.id, { onDelete: 'set null' }),
 
   /** 'pending' | 'committed' | 'skipped' | 'failed' */
   status: varchar('status', { length: 20 }).notNull().default('pending'),

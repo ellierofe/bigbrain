@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth'
 import { extractFromText } from '@/lib/processing/extract'
 import { getSourcesByIds, updateSourceProcessingHistory } from '@/lib/db/queries/sources'
 import { createProcessingRun } from '@/lib/db/queries/processing-runs'
-import type { InputMetadata, SourceType } from '@/lib/types/processing'
+import type { InputMetadata, SourceType, Authority } from '@/lib/types/processing'
 
 export async function POST(req: Request) {
   if (process.env.NODE_ENV !== 'development') {
@@ -37,7 +37,8 @@ export async function POST(req: Request) {
 
       const metadata: InputMetadata = {
         title: source.title,
-        sourceType: (source.type as SourceType) ?? 'transcript',
+        sourceType: source.sourceType as SourceType,
+        authority: source.authority as Authority,
         date: source.documentDate ?? undefined,
         tags: source.tags ?? [],
         brandId,
@@ -47,16 +48,15 @@ export async function POST(req: Request) {
 
       const run = await createProcessingRun({
         brandId,
-        mode: 'individual',
+        lens: 'surface-extraction',
         sourceIds: [source.id],
-        title: source.title,
         extractionResult: result,
         status: 'pending',
       })
 
       await updateSourceProcessingHistory(source.id, {
         date: new Date().toISOString(),
-        mode: 'individual',
+        mode: 'surface-extraction',
         runId: run.id,
       })
 

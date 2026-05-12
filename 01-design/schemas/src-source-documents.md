@@ -3,7 +3,7 @@ status: approved
 table: src_source_documents
 type: source-knowledge
 related_features: SRC-01, SRC-02, INF-04, PROV-01, INP-03, INP-11, INP-12
-last_updated: 2026-05-01
+last_updated: 2026-05-06
 supersedes: prior version (approved 2026-04-02)
 related_docs: src-source-chunks.md, lens-reports.md, processing-runs.md
 ---
@@ -41,6 +41,7 @@ This is v3 of the schema. v1 (approved 2026-03-29) was the initial source-knowle
 | `embedding` | vector(1536) | nullable | OpenAI `text-embedding-3-small` of `title + ' — ' + summary`. Re-embedded when summary changes. Indexes the source as a whole; chunk-level retrieval uses `src_source_chunks.embedding`. |
 | `embeddingGeneratedAt` | timestamp with tz | nullable | |
 | `krispMeetingId` | text | nullable | Krisp meeting identifier for transcripts ingested via SKL-10 (`/krisp-ingest`). Unique per `(brandId, krispMeetingId)`. |
+| `ingestionLogId` | uuid | nullable | **NEW (INP-12 follow-up #7, 2026-05-06).** For `dataset` sources, references the `ingestion_log` row recording how this dataset became KG nodes/edges via `kg-ingest-creator` (SKL-12). The bridge between "dataset is visible in BigBrain front-end" and "dataset's structural data lives in the graph". Soft `uuid` only — no FK constraint in BigBrain Neon yet because `ingestion_log` table currently lives in the SDP/politics Neon. KG-04c (politics Neon → BigBrain Neon as `politics` schema) lands the table here; once it has, a follow-up migration promotes this column to a real FK. Null for non-dataset sources. |
 | `createdAt` | timestamp with tz | not null, defaultNow | |
 | `updatedAt` | timestamp with tz | not null, defaultNow | |
 

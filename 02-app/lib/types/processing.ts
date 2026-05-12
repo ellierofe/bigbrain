@@ -1,27 +1,38 @@
 import { z } from 'zod'
+import type { SourceType, Authority, LensId } from './lens'
+
+// Re-export the controlled vocabularies + analysis-lens result types from lens.ts.
+// Existing imports of `SourceType` from this module continue to work — but they now
+// resolve to the 13-value INP-12 union, not the old 8-value INP-11 union.
+export type { SourceType, Authority, LensId, AnalysisLensResult, UnexpectedItem } from './lens'
+export {
+  SOURCE_TYPES, AUTHORITIES, LENSES, ANALYSIS_LENSES, LENSES_TAKING_INPUT,
+  NON_LENSABLE_SOURCE_TYPES, LensNotApplicableError,
+  sourceTypeSchema, authoritySchema, lensIdSchema, unexpectedItemSchema,
+  patternSpottingResultSchema, selfReflectiveResultSchema, projectSynthesisResultSchema,
+  catchUpResultSchema, decisionSupportResultSchema, contentIdeasResultSchema,
+  getAnalysisLensSchema,
+} from './lens'
+export type {
+  PatternSpottingResult, SelfReflectiveResult, ProjectSynthesisResult,
+  CatchUpResult, DecisionSupportResult, ContentIdeasResult, AnalysisLensResultByLens,
+} from './lens'
 
 // ---------------------------------------------------------------------------
-// InputMetadata — passed alongside text to extractFromText()
+// InputMetadata — passed alongside text to extractFromText() / surface-extraction
 // ---------------------------------------------------------------------------
-
-export type SourceType =
-  | 'transcript'
-  | 'session-note'
-  | 'research'
-  | 'voice-note'
-  | 'image'
-  | 'email'
-  | 'document'
-  | 'other'
 
 export interface InputMetadata {
   title: string
+  /** The 13-value source-type controlled vocab. */
   sourceType: SourceType
+  /** Evidence weight. Defaults are per-source-type; user can override. */
+  authority: Authority
   /** ISO date string (YYYY-MM-DD). Used for temporal graph edges. Falls back to commit date if absent. */
   date?: string
   /** Vercel Blob URL. Null for paste-only inputs. */
   fileRef?: string
-  /** Free-form context tags, e.g. ["coaching", "client:acme"]. */
+  /** Free-form context tags. */
   tags?: string[]
   brandId: string
 }
@@ -35,14 +46,18 @@ export type Confidence = 'high' | 'medium' | 'low'
 const confidenceSchema = z.enum(['high', 'medium', 'low'])
 
 // ---------------------------------------------------------------------------
-// Extracted item types — Zod schemas + TypeScript types
+// Surface-extraction item schemas
+// Per INP-12 follow-up #1: every item carries sourceRefs[].
 // ---------------------------------------------------------------------------
+
+const sourceRefsSchema = z.array(z.string())
 
 export const ideaSchema = z.object({
   id: z.string(),
   text: z.string(),
   confidence: confidenceSchema,
   sourceQuote: z.string().optional(),
+  sourceRefs: sourceRefsSchema,
 })
 export type ExtractedIdea = z.infer<typeof ideaSchema>
 
@@ -52,6 +67,7 @@ export const conceptSchema = z.object({
   description: z.string(),
   confidence: confidenceSchema,
   sourceQuote: z.string().optional(),
+  sourceRefs: sourceRefsSchema,
 })
 export type ExtractedConcept = z.infer<typeof conceptSchema>
 
@@ -62,6 +78,7 @@ export const personSchema = z.object({
   organisation: z.string().optional(),
   context: z.string(),
   confidence: confidenceSchema,
+  sourceRefs: sourceRefsSchema,
 })
 export type ExtractedPerson = z.infer<typeof personSchema>
 
@@ -71,6 +88,7 @@ export const organisationSchema = z.object({
   types: z.array(z.string()).optional(),
   context: z.string(),
   confidence: confidenceSchema,
+  sourceRefs: sourceRefsSchema,
 })
 export type ExtractedOrganisation = z.infer<typeof organisationSchema>
 
@@ -82,6 +100,7 @@ export const storySchema = z.object({
   lesson: z.string().optional(),
   type: z.string(),
   confidence: confidenceSchema,
+  sourceRefs: sourceRefsSchema,
 })
 export type ExtractedStory = z.infer<typeof storySchema>
 
@@ -92,6 +111,7 @@ export const techniqueSchema = z.object({
   origin: z.string().optional(),
   confidence: confidenceSchema,
   sourceQuote: z.string().optional(),
+  sourceRefs: sourceRefsSchema,
 })
 export type ExtractedTechnique = z.infer<typeof techniqueSchema>
 
@@ -101,14 +121,16 @@ export const contentAngleSchema = z.object({
   format: z.string().optional(),
   audienceHint: z.string().optional(),
   confidence: confidenceSchema,
+  sourceRefs: sourceRefsSchema,
 })
 export type ExtractedContentAngle = z.infer<typeof contentAngleSchema>
 
 // ---------------------------------------------------------------------------
-// ExtractionResultSchema — the full structured output from the LLM
+// Surface-extraction result schema (renamed from extractionResultSchema)
+// Carries the universal unexpected[] field for surface-extraction runs.
 // ---------------------------------------------------------------------------
 
-export const extractionResultSchema = z.object({
+export const surfaceExtractionResultSchema = z.object({
   ideas: z.array(ideaSchema),
   concepts: z.array(conceptSchema),
   people: z.array(personSchema),
@@ -116,21 +138,26 @@ export const extractionResultSchema = z.object({
   stories: z.array(storySchema),
   techniques: z.array(techniqueSchema),
   contentAngles: z.array(contentAngleSchema),
+  unexpected: z.array(z.object({
+    observation: z.string(),
+    why: z.string(),
+    sourceRefs: sourceRefsSchema,
+  })),
 })
 
-export type ExtractionOutput = z.infer<typeof extractionResultSchema>
+/** @deprecated alias for backward compatibility during the INP-12 type rename. Will be removed once all callers migrate. */
+export const extractionResultSchema = surfaceExtractionResultSchema
+
+export type SurfaceExtractionResult = z.infer<typeof surfaceExtractionResultSchema>
+/** @deprecated use SurfaceExtractionResult. */
+export type ExtractionOutput = SurfaceExtractionResult
 
 // ExtractionResult wraps the LLM output with the original metadata
 export interface ExtractionResult {
   metadata: InputMetadata
   /** The raw text that was processed */
   text: string
-  extraction: ExtractionOutput
-  /** Topic clusters grouping items by overarching theme. Generated post-extraction. */
-  topicClusters?: Array<{
-    topic: string
-    items: Array<{ id: string; category: string }>
-  }>
+  extraction: SurfaceExtractionResult
 }
 
 // ---------------------------------------------------------------------------
@@ -168,153 +195,37 @@ export interface StoryWithSubject extends ExtractedStory {
 }
 
 // ---------------------------------------------------------------------------
-// Processing modes (INP-11)
+// Minimal source data passed to lens runners
 // ---------------------------------------------------------------------------
 
-export type ProcessingMode = 'individual' | 'batch' | 'reflective' | 'synthesis'
-
-/** Minimal source data passed to analysis functions */
 export interface SourceForProcessing {
   id: string
   title: string
   extractedText: string
   documentDate: string | null
-  type: string
+  sourceType: SourceType
+  authority: Authority
   tags: string[]
 }
 
 // ---------------------------------------------------------------------------
-// Batch Analysis schema (INP-11 Mode 2)
+// Deprecated INP-11 type aliases (kept compiling until callers move off)
 // ---------------------------------------------------------------------------
 
-export const batchAnalysisSchema = z.object({
-  summary: z.string(),
-  sourceCount: z.number(),
-  dateRange: z.object({ from: z.string(), to: z.string() }),
-  recurringThemes: z.array(z.object({
-    theme: z.string(),
-    description: z.string(),
-    sourceRefs: z.array(z.string()),
-  })),
-  convergences: z.array(z.object({
-    point: z.string(),
-    description: z.string(),
-    sourceRefs: z.array(z.string()),
-  })),
-  divergences: z.array(z.object({
-    point: z.string(),
-    description: z.string(),
-    sourceRefs: z.array(z.string()),
-  })),
-  synthesisedInsights: z.array(z.object({
-    insight: z.string(),
-    basis: z.string(),
-    implication: z.string(),
-    sourceRefs: z.array(z.string()),
-  })),
-  gaps: z.array(z.object({
-    gap: z.string(),
-    description: z.string(),
-  })),
-})
+/** @deprecated Replaced by `LensId`. INP-11 used `ProcessingMode = 'individual' | 'batch' | 'reflective' | 'synthesis'`.
+ *  Map to lens names via legacyModeToLens() in lib/processing/legacy-mode-map.ts. */
+export type ProcessingMode = 'individual' | 'batch' | 'reflective' | 'synthesis'
 
-export type BatchAnalysis = z.infer<typeof batchAnalysisSchema>
-
-// ---------------------------------------------------------------------------
-// Reflective Analysis schema (INP-11 Mode 3)
-// ---------------------------------------------------------------------------
-
-export const reflectiveAnalysisSchema = z.object({
-  summary: z.string(),
-  period: z.object({ from: z.string(), to: z.string() }),
-  sessionCount: z.number(),
-  commitmentsAndFollowthrough: z.array(z.object({
-    commitment: z.string(),
-    status: z.enum(['completed', 'in_progress', 'dropped', 'recurring']),
-    sessions: z.array(z.string()),
-    notes: z.string(),
-  })),
-  recurringBlockers: z.array(z.object({
-    blocker: z.string(),
-    frequency: z.number(),
-    resolved: z.boolean(),
-    resolution: z.string().optional(),
-  })),
-  emergingThemes: z.array(z.object({
-    theme: z.string(),
-    trajectory: z.string(),
-    sessions: z.array(z.string()),
-  })),
-  shiftsInThinking: z.array(z.object({
-    shift: z.string(),
-    from: z.string(),
-    to: z.string(),
-    trigger: z.string().optional(),
-  })),
-  energyAndMomentum: z.object({
-    highPoints: z.array(z.string()),
-    lowPoints: z.array(z.string()),
-    patterns: z.string(),
-  }),
-  keyRealisations: z.array(z.object({
-    realisation: z.string(),
-    session: z.string(),
-    significance: z.string(),
-  })),
-  metaAnalysis: z.array(z.object({
-    observation: z.string(),
-    evidence: z.string(),
-    suggestions: z.string(),
-  })),
-})
-
-export type ReflectiveAnalysis = z.infer<typeof reflectiveAnalysisSchema>
-
-// ---------------------------------------------------------------------------
-// Project Synthesis schema (INP-11 Mode 4)
-// ---------------------------------------------------------------------------
-
-export const projectSynthesisSchema = z.object({
-  summary: z.string(),
-  projectName: z.string(),
-  sourceCount: z.number(),
-  dateRange: z.object({ from: z.string(), to: z.string() }),
-  methodology: z.object({
-    overview: z.string(),
-    steps: z.array(z.object({
-      step: z.string(),
-      description: z.string(),
-      tools: z.array(z.string()).optional(),
-    })),
-  }),
-  whatWorked: z.array(z.object({
-    approach: z.string(),
-    evidence: z.string(),
-    sourceRefs: z.array(z.string()),
-  })),
-  whatDidntWork: z.array(z.object({
-    approach: z.string(),
-    whatHappened: z.string(),
-    lesson: z.string(),
-  })),
-  reusablePatterns: z.array(z.object({
-    pattern: z.string(),
-    description: z.string(),
-    applicability: z.string(),
-  })),
-  caseStudyNarrative: z.string(),
-  contentAngles: z.array(z.object({
-    angle: z.string(),
-    audience: z.string(),
-    whyItResonates: z.string(),
-  })),
-  openThreads: z.array(z.object({
-    question: z.string(),
-    context: z.string(),
-  })),
-})
-
-export type ProjectSynthesis = z.infer<typeof projectSynthesisSchema>
-
-/** Union of all analysis result types */
+/** @deprecated Use `PatternSpottingResult` from this module. */
+export type BatchAnalysis = import('./lens').PatternSpottingResult
+/** @deprecated Use `SelfReflectiveResult`. */
+export type ReflectiveAnalysis = import('./lens').SelfReflectiveResult
+/** @deprecated Use `ProjectSynthesisResult`. */
+export type ProjectSynthesis = import('./lens').ProjectSynthesisResult
+/** @deprecated Union of the three INP-11 analysis types. Replaced by AnalysisLensResult. */
 export type AnalysisResult = BatchAnalysis | ReflectiveAnalysis | ProjectSynthesis
+
+/** @deprecated Zod schema aliases for INP-11 callers. Use `patternSpottingResultSchema` etc. */
+export { patternSpottingResultSchema as batchAnalysisSchema } from './lens'
+export { selfReflectiveResultSchema as reflectiveAnalysisSchema } from './lens'
+export { projectSynthesisResultSchema as projectSynthesisSchema } from './lens'

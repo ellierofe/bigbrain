@@ -2,8 +2,8 @@
 status: approved
 table: src_source_chunks
 type: source-knowledge
-related_features: INP-12, RET-01, KG-01, VEC-01
-last_updated: 2026-05-01
+related_features: INP-12, RET-01, KG-01, VEC-01, INP-05
+last_updated: 2026-05-06
 depends_on: src-source-documents.md, ADR-002a, ADR-009
 ---
 
@@ -32,6 +32,8 @@ Chunks are immutable once written. If the chunking strategy for a source changes
 | `metadata` | jsonb | not null, default '{}' | Chunk-type-specific properties. Examples: `{ slideNumber: 3, slideTitle: "Market opportunity" }` for pitch-deck slides; `{ sectionHeading: "Methodology" }` for report sections. |
 | `embedding` | vector(1536) | nullable | OpenAI `text-embedding-3-small`. Generated at write time. Nullable so chunks can be inserted before embedding completes (background backfill pattern, same as RET-01). |
 | `embeddingGeneratedAt` | timestamp with tz | nullable | Set when embedding is populated. Supports re-embedding under model changes. |
+| `imageRefs` | text[] | nullable | **NEW (INP-12 follow-up #9, 2026-05-06; forward compat for INP-05).** Vercel Blob URLs of image attachments associated with this chunk — e.g. images embedded inside a PDF page, slides containing diagrams. Populated by INP-05 when document ingestion lands; null for text-only chunks. |
+| `imageDescription` | text | nullable | **NEW (INP-12 follow-up #9, 2026-05-06; forward compat for INP-05).** Vision-LLM-generated description of the chunk's visual content. For pitch-deck slides without text, this becomes the chunk's effective text content for embedding; for research-document figures, it supplements `text`. Populated by INP-05; null until then. |
 | `createdAt` | timestamp with tz | not null, defaultNow | |
 
 No `updatedAt` — chunks are immutable. No `isArchived` — soft-delete handled at the parent source level.

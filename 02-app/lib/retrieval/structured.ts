@@ -319,15 +319,19 @@ export async function getProcessingRun(runId: string): Promise<RetrievalResult |
 
   if (!row) return null
 
+  // INP-12: `processing_runs.mode/title/analysisResult` were renamed/removed in v3.
+  // For retrieval surface compatibility this maps the new schema back to the legacy
+  // citation shape until Phase 3 replaces this helper with a lens-aware version.
+  const legacyRow = row as unknown as { lens: string; title?: string | null; analysisResult?: unknown }
   return {
     id: row.id,
     type: 'processing_run',
-    subtype: row.mode,
-    name: row.title ?? `${row.mode} analysis`,
+    subtype: legacyRow.lens,
+    name: legacyRow.title ?? `${legacyRow.lens} analysis`,
     date: row.createdAt?.toISOString(),
     reason: 'explicitly requested',
-    snippet: row.analysisResult
-      ? JSON.stringify(row.analysisResult).slice(0, 500)
-      : row.title ?? '',
+    snippet: legacyRow.analysisResult
+      ? JSON.stringify(legacyRow.analysisResult).slice(0, 500)
+      : legacyRow.title ?? '',
   }
 }

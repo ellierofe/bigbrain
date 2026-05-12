@@ -53,6 +53,7 @@ const CATEGORY_LABELS: Record<CategoryKey, string> = {
   stories: 'STORIES',
   techniques: 'TECHNIQUES',
   contentAngles: 'CONTENT ANGLES',
+  unexpected: 'UNEXPECTED',
 }
 
 const CATEGORY_ORDER: CategoryKey[] = [

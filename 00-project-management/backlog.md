@@ -143,22 +143,73 @@
 - **Enables:** User trust in the system
 - **Status:** planned
 
-### KG-04: UK politics graph port
-- **What:** Audit, clean, and port the existing UK politics knowledge graph (~75K nodes, ~347K edges across 20 node types and 44 edge types) into BigBrain's FalkorDB + Neon mirror. Reconcile the politics schema with ADR-002: direct merges for Person, Organisation, Country, Event; new label additions for PolicyPosition, Constituency, Poll, PollWave, Election, RegisteredInterest, DonationTransaction, LoanTransaction (or an agreed subset). Add high-value edge types (DONATION_TO, STOOD_IN, HOLDS_POSITION, SIGNED) to ADR-002; map the long tail to RELATES_TO with a `rel_subtype` property. All ingestion runs through canonical register so MPs/donors who reappear in Atomic Lounge research land on the same node.
+### KG-04: UK politics graph port (umbrella)
+- **What:** Consolidate the SDP politics research project into BigBrain. Port the cleaned politics graph (~75K nodes, ~347K edges, deduped and canonicalised) into BigBrain's unified FalkorDB instance, and migrate the politics Neon database (~50 source-specific tables: EC donations/loans/spending/registrations, parliament MPs/interests/EDMs/oral questions, Companies House appointments + dedup machinery, charity commission, lobbying, polling waves/results, think tanks, party policies, YouTube channels, ingestion tracking) into BigBrain Neon as a `politics` schema. The politics canonical register is mature and deduped — BigBrain canonicals become subservient to it. Active ingestion (GDELT/media, Charity Commission) finishes in the politics project before port; social/YouTube/X stays parked. Split into five sub-tasks (KG-04a–e). End state: one FalkorDB on the work email, one Neon, all politics scripts running on the unified stack.
 - **Layer:** data
 - **Problems:** P3, P4
-- **Size:** L
-- **Depends on:** KG-01, KG-02, GRF-01, GRF-02, SKL-09 (ingestion skill)
-- **Enables:** KG-05 (politics graph is the spine the wider ecosystem hangs off), Atomic Lounge three-body analysis
-- **Status:** in-progress (audit phase — schema and content review before port)
-- **Notes:** External data sources strategy is captured in ADR-007. ADR-002 schema additions for new label/edge types to be drafted as a separate ADR amendment once audit completes. Companies House integration already exists in the source graph and ports with it.
+- **Size:** XL (split into a–e)
+- **Depends on:** KG-01, KG-02, GRF-01, GRF-02, SKL-09
+- **Enables:** KG-05, KG-06, KG-07, INP-12 re-ingest day, Atomic Lounge three-body analysis
+- **Status:** in-progress (KG-04a active; KG-04b–e planned)
+- **Source:** `/Users/eleanorrofe/Library/CloudStorage/OneDrive-NicelyPut/Clients/SDP/Fundraising/Research/`
+- **Notes:** External data sources strategy in ADR-007. ADR-002 schema additions for new label/edge types to be drafted as an amendment once port completes. Raw data (~6GB) stays on OneDrive — BigBrain reads on demand rather than batch-moving up front. Politics ingestion scripts stay Python (tested, working) — they get a connection-string change and run on GitHub Actions cron via KG-06. INP-12 feature-build can proceed in parallel; only INP-12 re-ingest day blocks on KG-04d.
+
+### KG-04a: Finalise politics ingestion in source project
+- **What:** Complete in-flight politics ingestion work in the SDP research project before port: GDELT + wider media analysis + article scraping, Charity Commission ingestion. Social/YouTube/X stays out of scope (parked).
+- **Layer:** data
+- **Problems:** P3, P4
+- **Size:** M (3–4 days estimated)
+- **Depends on:** —
+- **Enables:** KG-04c, KG-04d (port happens once ingestion is stable)
+- **Status:** in-progress
+- **Notes:** Continues in source project (`OneDrive-NicelyPut/Clients/SDP/Fundraising/Research/`) where the chats, scripts, and context live. Don't disturb mid-flight by porting early.
+
+### KG-04b: FalkorDB consolidation onto work email
+- **What:** Stand up the unified FalkorDB instance under `ellie@nicelyput.co` (work email). Re-seed BigBrain's existing graph seeds: Country nodes (249), Date nodes (2010–2030), Atomic Lounge org node, canonical register entries. Switch all BigBrain env vars (`FALKOR_*`) to point at the work-email instance. Decommission the personal-email FalkorDB instance (only BigBrain seeds + test nodes — nothing irreplaceable). Existing politics FalkorDB (already on work email) stays in place to receive the re-ingest in KG-04d.
+- **Layer:** infra
+- **Problems:** P3, P4
+- **Size:** S
+- **Depends on:** —
+- **Enables:** KG-04d, all future graph writes land in one place
+- **Status:** planned
+- **Notes:** Free-tier FalkorDB allows one graph per account — consolidating onto work email is the constraint that drives this. Confirm headroom before cutover; politics graph (~75K nodes) + BigBrain growth + future ingestion needs to fit.
+
+### KG-04c: Politics Neon → BigBrain Neon as `politics` schema
+- **What:** `pg_dump`/`pg_restore` the politics Neon database (~50 tables) into BigBrain Neon under a new `politics` schema. Politics tables stay namespaced and obviously not-app; BigBrain Drizzle migrations continue to manage `public`. Update the Python ingestion scripts' connection string + `search_path=politics` so they write into the unified DB. Reconcile the politics `canonical_register` against BigBrain's GRF-02 register — politics canonicals win (they're the deduped, mature set); BigBrain's existing canonicals remap or merge to politics IDs. Decommission the politics Neon project once migration verified.
+- **Layer:** data / infra
+- **Problems:** P3, P4
+- **Size:** M
+- **Depends on:** KG-04a (don't migrate while ingestion is running)
+- **Enables:** KG-04d, cross-domain SQL queries (politics tables joinable with BigBrain tables in one connection)
+- **Status:** planned
+- **Notes:** Schema reference at `04-documentation/reference/politics_kg_schema.sql`. Reconciliation strategy for canonical_register: politics is source of truth; BigBrain rows that have politics-equivalent canonicals get remapped via a one-time migration script. Document the merge in an ADR amendment to ADR-002.
+
+### KG-04d: Re-ingest cleaned politics graph data into unified FalkorDB
+- **What:** Re-run politics ingestion scripts against the unified FalkorDB (work email) to populate the graph from the cleaned, deduped data now living in BigBrain Neon's `politics` schema. Uses the existing graph-import scripts in `00-scripts-coding/graph-import/` from the politics project, with their connection strings updated. BigBrain's `graph_nodes`/`graph_edges` mirror tables (GRF-02) catch the writes automatically via the existing `writeNode()`/`writeEdge()` pattern — no separate mirror sync needed.
+- **Layer:** data
+- **Problems:** P3, P4
+- **Size:** M
+- **Depends on:** KG-04b, KG-04c
+- **Enables:** INP-12 re-ingest day (canonical resolution lights up against populated politics nodes), KG-05, KG-07
+- **Status:** planned
+- **Notes:** This is the work the original KG-04 was scoped around. Schema additions to ADR-002 (new labels: PolicyPosition, Constituency, Poll, PollWave, Election, RegisteredInterest, DonationTransaction, LoanTransaction; new edges: DONATION_TO, STOOD_IN, HOLDS_POSITION, SIGNED; long tail → RELATES_TO with `rel_subtype`) get drafted as an ADR-002 amendment as part of this task.
+
+### KG-04e: Port politics docs into BigBrain
+- **What:** Move politics project documentation into BigBrain's structure. Session logs and progress notes → `04-documentation/reference/sdp-politics-archive/` (read-only history). Active reference docs (file naming convention, schema audits) → `04-documentation/reference/`. Schema iterations from `03-analysis-docs/schema-iterations/` → `01-design/schemas/` as politics-specific reference docs for the imported tables. Politics-specific decisions → BigBrain `00-project-management/decisions/` (renumbered as ADR amendments where they overlap with existing ADRs). Backlog items relevant to ongoing politics work get appended to BigBrain backlog rather than maintained separately.
+- **Layer:** docs
+- **Problems:** Continuity — keep the institutional memory accessible in the unified workspace
+- **Size:** S
+- **Depends on:** KG-04a (don't fork docs mid-flight)
+- **Enables:** Single source of truth for politics + BigBrain context
+- **Status:** planned
+- **Notes:** Briefings in `03-analysis-docs/briefings/` are research outputs — those belong as Mission artefacts via MISSION-01 once that supports artefact attachment. Don't bulk-port; bring across as needed.
 
 ### KG-05: External data sources working list
 - **What:** Living document at `04-documentation/reference/external-data-sources.md` capturing the named data sources per category and jurisdiction, with ingestion priority, access method (free / paid / scraped), and current status. Categories per ADR-007: capital flows, regulatory and policy, people and influence, media and narrative, procurement and demand, technical and IP. Jurisdictions: UK, US, EU, Israel (Phase 2). Each source becomes its own ingestion script via SKL-09 when it reaches the front of the queue.
 - **Layer:** data / docs
 - **Problems:** P3, P4
 - **Size:** S (initial document) + ongoing
-- **Depends on:** ADR-007 (strategy ✓), KG-04 (politics port establishes the patterns)
+- **Depends on:** ADR-007 (strategy ✓), KG-06 (recurring-ingest pattern), KG-07 (politics scripts prove the pattern)
 - **Enables:** All future external ingestion work — each source is a child task off this list
 - **Status:** planned
 - **Strategy:** `00-project-management/decisions/adr-007-external-data-sources.md`
@@ -537,9 +588,9 @@
 - **Layer:** input + storage + cross
 - **Problems:** P1, P3, P4 (also design rules 1, 2, 3, 4)
 - **Size:** XL
-- **Depends on:** INP-11 (done), KG-04 (politics graph port — must complete first; canonical resolution needs the existing graph populated)
+- **Depends on:** INP-11 (done). Feature-build is **not** blocked on KG-04 — only the re-ingest day step is, via KG-04d (canonical resolution lights up properly once politics nodes are in the graph). Build the matching infra now against the current sparse graph; meaningful matches arrive when KG-04d lands.
 - **Enables:** Meaningful retrieval at scale, AUTO-03, project synthesis quality, content creator quality, INP-05 (document ingestion can use the same source-type vocabulary), INP-08 (auto-classification slots into the source-type assignment step)
-- **Status:** in-progress (Track A complete — schema layer + lens prompts + source-type fragments + all three layout passes done; feature-build blocked on KG-04)
+- **Status:** in-progress (Track A complete — schema layer + lens prompts + source-type fragments + all three layout passes done; feature-build can proceed in parallel with KG-04, only re-ingest day gates on KG-04d)
 - **Brief:** `01-design/briefs/INP-12-source-lens-processing.md` (approved 2026-04-30, updated 2026-05-04)
 - **Track A done (2026-04-30 → 2026-05-04):**
   - ADR-002a (`adr-002a-graph-schema-amendment-source-lens.md`) + ADR-009 (`adr-009-source-lens-processing-model.md`) accepted; ADR-009 amended 2026-05-04 with `dataset` exception.
@@ -554,8 +605,9 @@
   - **✅ Pass 3 (done 2026-05-05):** Committed lens-report page at `/inputs/lens-reports/[id]` (mirrors Pass 1's `source-detail-pane` candidate; PageHeader + InPageNav + sections Output → Metadata → Sources → Committed items → History; `<LensReportReview mode='committed'>` for the Output section) + lens-reports list page at `/inputs/lens-reports` (responsive 1/2/3/4-up card grid with chip-based filter bar for lens type + status). Spec: `01-design/wireframes/INP-12-pass3-layout.md`. Two new molecules required at build time: `LensReportCard`, `FilterChipGroup` (latter broadly reusable). Three Pass 2 contract extensions to land at Pass 3 build time (footer suppression, per-item interactivity reduced to navigation-only, internal InPageNav collapses with host page providing nav). Two candidate templates flagged for post-build registration: `source-detail-pane` (now reinforced — second instance after Pass 1) and `lens-reports-archive-list` (new). Re-run-on-committed-report deferred and backlogged under INP-12 vNext.
   - Full architecture rationale captured in brief §"Layout architecture decision". Each pass was its own `layout-design` skill invocation.
 - **Track B (gated on KG-04):** canonical-resolution UI live, re-ingest day, feature-build end-to-end.
-- **Implementation follow-ups (for feature-build pass — must land together):** 10-item list captured in the brief at §"Implementation follow-ups". Covers `sourceRefs` additions across multiple schemas, universal `unexpected[]` field, `processing_runs.unexpected` jsonb column, TypeScript type renames (`BatchAnalysis` → `PatternSpottingResult`, etc.), `src_source_documents.ingestionLogId` field for datasets, `LensNotApplicableError` for dataset sources, `src_source_chunks` image-attachment field (INP-05 forward compat), build-time fragment validator. See brief for full detail; implementing these piecemeal will leave the schema + prompts misaligned.
-- **Known fallout:** BUG-01 — `next build` fails because callers reference the dropped `type` column on `src_source_documents`. Mechanical fix: rename `type` → `sourceType` across the listed files. Tracked separately.
+- **Implementation follow-ups (for feature-build pass — must land together):** 10-item list captured in the brief at §"Implementation follow-ups". Covers `sourceRefs` additions across multiple schemas, universal `unexpected[]` field, `processing_runs.unexpected` jsonb column, TypeScript type renames (`BatchAnalysis` → `PatternSpottingResult`, etc.), `src_source_documents.ingestionLogId` field for datasets, `LensNotApplicableError` for dataset sources, `src_source_chunks` image-attachment field (INP-05 forward compat), build-time fragment validator. See brief for full detail; implementing these piecemeal will leave the schema + prompts misaligned. **✅ All 10 follow-ups landed in Phase 0 (2026-05-12)** via migration `0039_inp12_followups.sql` + `lib/types/lens.ts` + `lib/types/processing.ts` updates + `lib/graph/types.ts` updates + `lib/llm/prompts/{load-fragment,compose}.ts` + `lib/graph/canonical-fuzzy.ts` + `scripts/check-fragments.ts`.
+- **Feature-build progress (started 2026-05-12):** 5-phase split: Phase 0 (foundation — types, prompts, graph, canonical, fragment validator, BUG-01 schema-rename callers) **done**; Phase 1 (ingest pipeline — chunking + summary + embeddings) next; then Phase 2 (Sources surface, Pass 1), Phase 3 (lens review, Pass 2), Phase 4 (committed lens-report page, Pass 3). Session log: `00-project-management/sessions/2026-05-12-inp12-phase0-foundation-r7k.md`.
+- **Known fallout:** BUG-01 — schema-rename portion closed in Phase 0 (2026-05-12); see updated BUG-01 entry. The forwardRef prerender failure on `/` is a separate, still-open sub-issue.
 - **vNext (deferred from Pass 3 layout-design 2026-05-05):** Re-run affordance on the committed lens-report page. Deferred because re-running on identical inputs adds duplicate `Idea`/`Concept`/`Person` nodes via fresh `IDENTIFIED_IN` edges to the new report (old items not auto-removed per brief §Edge cases) — pure noise. The legitimate "regenerate before commit" need lives in Pass 2's review surface (where `Discard + re-run` is already spec'd). Re-running with a *changed* source set is the only genuine post-commit case, and the v1 path for that is to start a fresh run from `/inputs/sources` lens picker — one extra navigation. Add a re-run affordance on the committed page only after item-cleanup-on-supersession lands (Idea/Concept dedup against old report's `IDENTIFIED_IN` edges, or hard-delete of superseded items). Surfaced 2026-05-05 during Pass 3 layout-design.
 
 ### INP-08: Krisp meeting auto-classification
@@ -579,14 +631,34 @@
 - **Size:** M
 - **Depends on:** INF-01
 - **Enables:** AUTO-02, AUTO-03, AUTO-04
+- **Status:** superseded by KG-06 — the recurring-ingest pattern absorbs the cron infra remit. AUTO-02/03/04 now depend on KG-06.
+
+### KG-06: Recurring-ingest pattern (GitHub Actions cron + per-source schedule registry)
+- **What:** Generic recurring-ingest infrastructure for batch data sources with varying cadences (politics media weekly, APPG quarterly, think tank scrapes monthly, future SBIR/Innovate UK grants, etc.). GitHub Actions scheduled workflows host the cron — chosen over Vercel cron because the politics scripts are Python and Actions supports Python natively without a server. Per-source schedule registry (which scrapes run when, last-run timestamp, success/failure) lives in BigBrain Neon. Each source is one workflow file; each workflow runs the relevant Python script with secrets injected (DB connection strings, API keys) and writes to the unified FalkorDB + BigBrain Neon `politics` schema. Failure alerts via GitHub Actions notifications + a dashboard view of recent runs.
+- **Layer:** infra
+- **Problems:** P1, P4
+- **Size:** M
+- **Depends on:** KG-04c (politics schema must exist for scripts to write to)
+- **Enables:** KG-07, AUTO-02, AUTO-03, AUTO-04, KG-05 ingestion (each external source becomes a KG-06-shaped workflow), Atomic Lounge external research cadence
 - **Status:** planned
+- **Notes:** Replaces the AUTO-01 remit. The discipline of "every external data source has a defined cadence and a workflow file" is good for BigBrain regardless of politics — applies equally to any future structured source. Schedule registry table doubles as audit log for "when did data X last refresh?".
+
+### KG-07: Port politics ingest scripts onto KG-06 cron
+- **What:** Take the existing Python ingestion scripts from the SDP research project (`00-scripts-coding/data-scraping/`, `ingestion-scripts/`, `graph-import/`) and onboard each one as a GitHub Actions workflow per KG-06's pattern. Per-source cadence: media weekly, APPG quarterly, think tanks monthly (TBD per source), Charity Commission TBD, etc. Each script keeps its current shape — no rewrite — just gets a workflow wrapper, env-var change to point at unified Neon + FalkorDB, and a registry entry. Surfaces the politics ingestion as a first-class, observable, scheduled workstream rather than ad hoc local runs.
+- **Layer:** data
+- **Problems:** P3, P4
+- **Size:** M
+- **Depends on:** KG-06, KG-04d (graph data must be in place before scripts top it up)
+- **Enables:** Politics graph stays current without manual intervention; pattern proven before scaling to other sources
+- **Status:** planned
+- **Notes:** Scripts stay Python (working, not core to the app). Per-source cadence to be decided when each is ported — use the politics project's own session logs as starting evidence.
 
 ### AUTO-02: Krisp transcript batch ingestion
 - **What:** Scheduled job (e.g. weekly) to gather new Krisp transcripts from a watched folder or API, run them through INP-03, and surface results in the input queue.
 - **Layer:** input + automation
 - **Problems:** P1, P3
 - **Size:** S
-- **Depends on:** AUTO-01, INP-01, INP-03
+- **Depends on:** KG-06, INP-01, INP-03
 - **Enables:** Hands-off transcript processing
 - **Status:** planned
 
@@ -595,7 +667,7 @@
 - **Layer:** automation + cross
 - **Problems:** P3, P4
 - **Size:** M
-- **Depends on:** AUTO-01, INP-03, RET-01
+- **Depends on:** KG-06, INP-03, RET-01
 - **Enables:** Personal development compounding (not just business knowledge)
 - **Status:** planned
 - **Notes:** Example of a "cron + LLM" pattern that could be replicated for other periodic analyses — e.g. weekly content performance review, monthly strategy health check, research gap detection.
@@ -605,7 +677,7 @@
 - **Layer:** automation
 - **Problems:** All (this is the generalised version)
 - **Size:** M
-- **Depends on:** AUTO-01, INP-03
+- **Depends on:** KG-06, INP-03
 - **Enables:** Any future periodic automation
 - **Status:** planned
 
@@ -650,14 +722,25 @@
 - **Implementation:** Migration 0031 (`brands.chat_pane_open`, `brands.chat_pane_width`, `conversations.context_pane_state`). Pluggable context-pane runtime in `lib/chat-context-pane/` (`types.ts`, `registry.ts`, `skill-summary.ts`). Skill-state context tab in `lib/skills/context-tab.tsx` consumes a client-safe `SkillSummary` projection so the registry never crosses into the client bundle. Seven new molecules (`ContextPane`, `ContextPaneRail`, `RailIcon`, `StageCard`, `SkillChecklist`, `SkillPickerRow`, `PaneHighlightPulse`) plus `InlineWarningBanner` extended with a `tone` prop ('warning' | 'success'). Brand-prefs query + server action (`lib/db/queries/brands.ts`, `app/actions/brand-preferences.ts`) and a `setContextPaneStateAction` in `app/actions/chat.ts`. Pane mounted in `chat-area.tsx` (skipped in compact-mode drawer). Full QA pending: dev server confirms the pane works end-to-end (rail, picker, attach, completion, resize, collapse/reopen, tab persistence). Production build is blocked by **BUG-01** — a baseline prerender regression in OUT-01a's tree, not introduced by OUT-01b.
 
 ### OUT-01c: LLM database write tool
-- **What:** LLM-callable tool for writing to DNA tables (and later: ideas, source knowledge, etc.) with schema awareness — knows table shapes, validates inputs, surfaces required-field gaps. Reusable across chat: used by skills (e.g. brand meaning save) and by ad-hoc chat ("update my value proposition to say…"). Scopes: per-table allowlist + per-field write rules + user confirmation contract for each write.
+- **What:** LLM-callable tool for writing to DNA tables and ideas with schema awareness — knows table shapes, validates inputs, surfaces required-field gaps. Reusable across chat: used by skills (e.g. brand meaning save) and by ad-hoc chat ("update my value proposition to say…"). Scopes: per-table allowlist + per-field write rules + user confirmation contract for each write.
 - **Layer:** cross
 - **Problems:** P2 (single source of truth), P5
 - **Size:** M
-- **Depends on:** OUT-01a, DNA-01
+- **Depends on:** OUT-01a, OUT-01b, DNA-01
 - **Enables:** DNA-02 generation, in-chat DNA editing, OUT-03 strategy update
+- **Status:** in-progress
+- **Brief:** `01-design/briefs/OUT-01c-llm-database-write-tool.md` (approved 2026-05-05)
+- **Note:** Security-sensitive — confirmation contract via OUT-01b pane (UI diff card before each ad-hoc write); skill `onComplete` saves bypass the LLM hop. Single sub-agent `db_update_bot` exposes one tool per writable entity. Schema awareness via build-time generation from Drizzle. Audit log via new `entity_writes` table covering UI-driven and LLM-driven writes. v1 scope: singular DNA + audience segments + knowledge assets + ideas (update + create); offers + platforms update-only (their multi-stage creation is skill-shaped, deferred). Reuses DS-06 save contract patterns. Includes a refactor of existing server actions into a portable `lib/db/writes/*` layer.
+
+### OUT-01c-graph: LLM graph write tool
+- **What:** Extension of `db_update_bot` (or a sibling sub-agent) for writing to the FalkorDB knowledge graph from chat — node creation, relationship creation, property updates. Confirmation contract and audit trail mirror OUT-01c's Postgres surface. Schema awareness driven by the graph schema (ADR-002 / ADR-002a).
+- **Layer:** cross
+- **Problems:** P3 (disconnected knowledge), P5
+- **Size:** M
+- **Depends on:** OUT-01c, KG-02 (graph write API)
+- **Enables:** in-chat graph extension, methodology / concept linking from conversation
 - **Status:** planned
-- **Note:** Security-sensitive — needs scoping rules and a confirmation contract worked out at brief time. Reuses the lessons from existing auto-save on edit views (DS-06 save contract).
+- **Note:** Spun out of OUT-01c on brief approval (2026-05-05). Different orchestration model — graph writes affect more than one row at a time, and the confirmation surface needs to show node/edge previews not just field diffs. Cross-entity transactions (e.g. create graph node + link to Postgres entity) also park here.
 
 ### OUT-01d: Skill creator skill
 - **What:** A meta-skill that walks the user through authoring a new chat skill or context-pane tab. Prompts for the inputs that define a skill (id, mode, checklist, stages, sub-agents, gathered schema, opening message) or a context tab (id, icon, status function, render contract, data source) and emits the code scaffolding. Run after OUT-01b ships and a few skills/tabs have been built by hand, so the questions are grounded in real friction. Future evolution: post-run reflection — a skill can invoke `/skill-creator` to update itself based on how the just-completed run went (motivates the longer-term "utility skills" model where multiple skills can co-exist in one conversation).
@@ -697,7 +780,7 @@
     - Phase 2 punchlist: OUT-02-PL1 (cascade smoke coverage), OUT-02-PL2 (StrategyFieldId vocab tightening), DNA-09 sample-coverage gap (newsletter/email).
   - **Phase 4 (in progress):** UI workstream, split into 4a / 4b / 4c sub-features:
     - **OUT-02-P4a (done 2026-05-01):** picker + generation surface shell (Strategy panel + Topic Engine UI + Settings + Generate-to-assembled-prompt). 13 new molecules, 2 new templates, 1 migration, OUT-02-PL2 closed. Cursor-pointer added to base Button atom (app-wide polish).
-    - **OUT-02-P4b (planned):** generation flow + variant cards + save modal + library page.
+    - **OUT-02-P4b (in-progress, brief approved 2026-05-05; iterating 2026-05-12):** generation flow (assemble + single multi-variant `generateObject` with fallback) + variant cards (Copy/Save/Chat-disabled) + per-variant Save Modal + Save-all batch + Regenerate (forks via `parentRunId`) + `/content/library` table + Library Detail Modal. One migration: `library_items.title` + `library_items.source`. Surfaces OUT-02-PL3 (model-call latency investigation) and OUT-02-PL4 (level-4 checkbox lag). Iteration 2026-05-12 reshaped tagging (typed-kind dropdowns + free-text + passthrough via `TypedTagPicker` molecule), added WYSIWYG editor (`RichTextEditor` wrapping TipTap, markdown source-of-truth), promoted channel to a first-class field pre-filled from strategy, expanded modal chrome to a new `Modal size="full"` variant, and added the `listLibraryItemsByTagRef` helper query for future DNA-page related-content surfaces.
     - **OUT-02-P4c (planned):** chat-on-variant inline modal + library items as `/chat` context.
 
 ### OUT-02-P4a: Content creator UI shell — picker + generation surface
@@ -716,13 +799,15 @@
 - **Implementation notes:** Strategy field IDs aligned to seed convention (singular `audience_segment` / `offer` / `knowledge_asset` / `platform`, not `_id`-suffixed). Topic engine cascade auto-skips the entity step when the matching strategy field is filled — saves picking the same audience/offer/etc twice. **Mixed lookup contract surfaced and noted:** `topic-engine.ts`'s public functions use different keys — `listChildren(brandId, parentId, ...)` looks up by uuid, `resolveChain(brandId, leafPath, ...)` looks up by dotted-path string. Worth unifying eventually. Base-ui Checkbox needs `<label>` wrap (not `htmlFor`) because it's a custom `<div>` — pattern to standardise.
 
 ### OUT-02-P4b: Content creator — generation flow + variants + library
-- **What:** Plug the model call into the 4a shell. Wires `generation_runs` `pending` → `streaming` → `complete` against the Vercel AI SDK using the assembled prompt from 4a. Replaces the right-pane prompt-inspector with variant cards (edit / save / discard / regenerate). Adds the save modal with auto-tag pre-fill + user tag editor. Adds `/content/library` list view with filters.
+- **What:** Plug the model call into the 4a shell. Generate flow becomes assemble + single multi-variant `streamObject` call (one model call returns N variants per the existing `json_five`/`json_ten` output contracts). Right pane gets variant cards (title / italicised rationale / markdown content + Copy / Save / Chat-disabled actions). Sticky footer adds Regenerate (forks via `parentRunId`) + "Save all" batch save. Per-variant Save Modal handles title / content / tags / status; full-field Library Detail Modal at `/content/library` row click handles publishDate / platform / publishedUrl / notes / Delete. Library is a sortable + filterable table with togglable tag columns. Two new fields on `library_items`: `title` + `source` (one migration).
 - **Layer:** output
 - **Problems:** P5
 - **Size:** M
 - **Depends on:** OUT-02-P4a
 - **Enables:** OUT-02-P4c
-- **Status:** planned
+- **Status:** in-progress (brief approved 2026-05-05)
+- **Brief:** `01-design/briefs/OUT-02-P4b-content-creator-generation-and-library.md`
+- **Punchlist surfaced:** OUT-02-PL3 (model-call latency investigation — flagged from Q9, parallel to 4b build).
 
 ### OUT-02-P4c: Content creator — chat-on-variant + library-as-context
 - **What:** Inline chat-on-variant modal in the generation surface (reuses OUT-01 AI SDK chat). Library items become first-class context in the main `/chat` context picker. Closes the OUT-02 V1 exit criteria.
@@ -763,6 +848,26 @@
 - **Status:** done — closed 2026-05-01 as part of OUT-02-P4a build.
 - **Origin:** OUT-02 Phase 2 session 2026-04-30 (`2026-04-30-out02-phase2-runtime-x4q`).
 - **Resolution:** Took option (a) — extended `StrategyFieldId` union with `platform` (matching the seed convention; not `platform_id`). Also added `sales_page_angle` and `cta_url` for full alignment with the placeholder vocabulary. Dropped the dual-read fallback in `placeholders.ts:platform_name`. Seeds untouched.
+
+### OUT-02-PL3: Model-call latency investigation
+- **What:** OUT-02-P4b shipping risk — Ellie noted dev-server LLM calls are very slow. Initial scoping investigation: instrument cold-start / per-call latency for the assembled-prompt → model flow. Likely culprits: cold Vercel function start, no streaming on the dev path, large assembled prompt sizes (IG-caption assembles to 25,573 chars), single-region inference latency, or just dev-mode `next dev` overhead vs production builds. **Scope extended 2026-05-12** after first real test showed a ~2-minute round-trip on a Gemini Pro → Claude Opus fallback flow. Map the full request lifecycle (assemble → primary model call → schema-validation failures → fallback model call → response parse) and instrument each step. Token sizes are not materially different from legacy Wized/Xano (~10s); legacy did have JSON-schema enforcement, but it was implemented as response-shape transformations, not provider-side structured-output mode. Output: a one-page report with measured latencies per step (cold + warm), root cause(s), and recommended fixes (e.g. drop Gemini from primary for content-creator if it's reliably failing structured-output, swap to Sonnet primary, prompt-size reduction, warmup pings, etc.). If the latency is unfixable in time for 4b launch, the deferred Cancel-mid-flight feature (Q3 in 4b brief) becomes urgent and should be promoted to V1 scope.
+- **Layer:** output
+- **Problems:** P5
+- **Size:** S–M
+- **Depends on:** OUT-02 Phase 2 (done — assembled prompts working end-to-end)
+- **Enables:** OUT-02-P4b ship-readiness; informs whether Cancel-mid-flight stays V1.5 or gets promoted; clarifies model hierarchy decisions for content-creator
+- **Status:** planned
+- **Origin:** OUT-02-P4b feature-brief session 2026-05-05 — Q9 in the brief's Open Questions section. Scope extended 2026-05-12 after first generation test surfaced multi-minute latency.
+
+### OUT-02-PL4: Topic Engine leaf-step (level 4) checkbox lag
+- **What:** OUT-02-P4a issue surfaced during 4b testing — the level-4 (item) step's checkboxes have a visible delay between Topic Engine resolution and checkbox interactivity. Risk: button-mashing on Generate before the checkbox state has actually committed, leading to an invalid run (cascade resolved=null) or a stale selection. Investigation: identify the source of the delay (server action round-trip? React re-render gating? state-derivation cost on `TopicCascadeStep`?) and either (a) optimistically render the checkboxes immediately on parent-step selection while still loading their backing data, or (b) disable Generate until the leaf step has confirmed populated state (visible spinner / skeleton), or (c) both. Don't ship a hidden race condition.
+- **Layer:** output
+- **Problems:** P5
+- **Size:** XS–S
+- **Depends on:** OUT-02-P4a (done — cascade UI is what's lagging)
+- **Enables:** Cleaner Generate-readiness UX; closes a real footgun
+- **Status:** planned
+- **Origin:** OUT-02-P4b 4b-iteration session 2026-05-12 — first generation test surfaced the lag.
 
 ### OUT-03: Strategy generation and update
 - **What:** Generate or refine DNA elements. Multiple trigger paths: (a) via chat — "help me rethink my positioning for [audience]", (b) via forms/dashboard — structured input, (c) **retrieval-informed** — system pulls relevant source knowledge, research, and graph context to suggest or draft strategy updates. E.g. new research on a topic could surface a prompt to revisit a methodology or content pillar. All paths: generates a draft → you approve → DNA updates with version history.
@@ -940,20 +1045,25 @@
 
 ## CROSS-CUTTING
 
-### BUG-01: `next build` prerender fails on `/` — INP-12 source-lens schema rename leaves callers behind
-- **What:** `npm run build` fails during static prerender of `/` (the dashboard home) with `Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server"` and a `{$$typeof: ..., render: function, displayName: ...}` payload (a `React.forwardRef` component being serialised across the boundary). Root cause is upstream: the in-flight INP-12 source-lens schema work renamed/removed the `type` field on `src_source_documents` (see `lib/db/schema/source.ts` modifications and migrations 0032/0033), but a number of callers haven't been updated. TypeScript reports errors in `lib/db/queries/{sources,missions,dashboard}.ts`, `lib/processing/commit.ts`, and `app/api/process/{batch,individual,reflective,synthesis}/route.ts` + `app/api/sources/route.ts`. The prerender error on `/` is the runtime manifestation of the same broken state — when prerender hits a corrupted `tooltip`/icon path during the failing dashboard tree, Turbopack reports it via the forwardRef/serialisation path, masking the real schema cause.
-- **Layer:** infra / inputs (INP-12 source-lens)
-- **Problems:** Blocks `next build` — therefore blocks Vercel deployment. Dev server (`next dev`) is unaffected; both `/` and `/chat` render and respond `200` in dev. OUT-01b's runtime confirmed working in dev.
-- **Size:** S (mechanical update of callers to match the renamed schema field; INP-12 is mid-build in another session)
+### BUG-01: `next build` prerender fails on `/` — forwardRef serialisation (schema portion closed 2026-05-12)
+- **What:** `npm run build` fails during static prerender of `/` (the dashboard home) with `Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server"` and a `{$$typeof: ..., render: function, displayName: ...}` payload (a `React.forwardRef` component being serialised across the boundary).
+- **Layer:** infra (Next 16 / Turbopack prerender + shadcn Tooltip)
+- **Problems:** Blocks `next build` — therefore blocks Vercel deployment. Dev server (`next dev`) is unaffected; both `/` and `/chat` render and respond `200` in dev.
+- **Size:** Unknown (depends on root cause of forwardRef serialisation — possibly the dashboard's `<TooltipTrigger render={<span />}>` pattern at `app/(dashboard)/page.tsx:405`, possibly a deeper shadcn/Next 16 interaction)
 - **Depends on:** —
-- **Enables:** Unblocks deployment of OUT-01a, OUT-01b, and any subsequent feature.
-- **Status:** open
-- **Surfaced:** 2026-05-01 during OUT-01b build. Bisected via `git stash`: the prerender error reproduces with **all OUT-01b files stashed out** — confirming the regression entered with the OUT-01a/INP-12 baseline, not OUT-01b. TS errors are all in source-lens-touched files. The dev server never tripped over it because dev doesn't prerender.
+- **Enables:** Unblocks production deploy of OUT-01a, OUT-01b, INP-12, and subsequent features.
+- **Status:** **partial — schema-rename portion closed 2026-05-12 (INP-12 Phase 0); forwardRef portion remains open.**
+- **Surfaced:** 2026-05-01 during OUT-01b build.
+- **Schema-rename portion (CLOSED 2026-05-12):** Initial hypothesis was that the prerender failure was the runtime manifestation of TypeScript errors in callers referencing the dropped `type` column on `src_source_documents`. The schema-mismatch portion was real: `lib/processing/commit.ts`, `app/api/process/{individual,batch,reflective,synthesis}/route.ts`, `app/(dashboard)/inputs/{queue,process,results}/*` and others did reference `s.type` / `s.mode` / `s.analysisResult` from the old INP-11 schema. **All TS errors are fixed as of 2026-05-12** — `tsc --noEmit` is clean. INP-12 Phase 0 closed this portion (see session log `2026-05-12-inp12-phase0-foundation-r7k.md`).
+- **forwardRef portion (STILL OPEN):** Fixing TypeScript did NOT resolve the prerender failure. The hypothesis was wrong: the prerender error is a separate problem, not a downstream artefact of the schema mismatch. It persists with `tsc --noEmit` clean. Likely candidates:
+  - Dashboard's `<TooltipTrigger render={<span />}>` pattern at `app/(dashboard)/page.tsx:405` — uses Radix's `render` prop with a React element, which may serialise badly across server→client boundary in Next 16.
+  - Tooltip atom (`components/ui/tooltip.tsx`) may be using `React.forwardRef` in a way that crosses the Next 16 server-component boundary.
+  - Next 16 Turbopack-vs-Webpack prerender semantics may have changed.
 - **Investigation / fix starting points:**
-  - `npx tsc --noEmit` from `02-app/` shows ~10 errors, all citing `'type' does not exist on type {...src_source_documents...}` or insert overload mismatches. These are the real symptoms.
-  - Update callers to match the new schema field name (whatever INP-12 renamed `type` to — likely `lensType` per the source-lens ADRs/schemas), then rebuild.
-  - The prerender error on `/` with the forwardRef shape is a downstream artefact; once the TS errors are fixed, prerender should pass.
-- **Workaround for now:** dev server works; manual QA of OUT-01a + OUT-01b is feasible. `next build` and production deploy blocked until INP-12's caller updates land.
+  - Try changing `<TooltipTrigger render={<span />}>` to `<TooltipTrigger asChild><span>...</span></TooltipTrigger>` to see if it's the `render` prop pattern.
+  - Move the `QuickActionDisabled` component (the only Tooltip user on `/`) into a separate `'use client'` file.
+  - Compare with `/chat` which also uses Tooltip — does it prerender? (Probably not — likely a `dynamic = 'force-dynamic'` is involved.)
+- **Workaround for now:** dev server works; manual QA is feasible. Production deploy blocked.
 
 ### INP-09: Context-aware extraction (business-grounded processing)
 - **What:** Before running extraction, inject Ellie's Brand DNA (business overview, knowledge assets, audience segments, content pillars) and a summary of previously extracted topics into the extraction system prompt. This lets the LLM make better signal/noise judgements — e.g. recognising that an AI security discussion at the start of a call is tangential to Ellie's work and flagging it as low-relevance rather than extracting it at full confidence. Over time, as more knowledge accumulates, extraction quality improves automatically. Also enables the LLM to merge new extractions with existing graph nodes rather than creating near-duplicates (e.g. recognising "the Messy Middle" has been extracted before).

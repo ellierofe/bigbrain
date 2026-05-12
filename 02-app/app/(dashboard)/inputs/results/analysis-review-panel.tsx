@@ -168,7 +168,7 @@ function ReflectiveView({ data }: { data: ReflectiveAnalysis }) {
         <Card key={i}>
           <div className="font-medium">{item.realisation}</div>
           <div className="mt-1 text-muted-foreground">{item.significance}</div>
-          <div className="mt-1 text-xs text-muted-foreground">Session: {item.session}</div>
+          <div className="mt-1 text-xs text-muted-foreground">Sources: {(item.sourceRefs ?? []).join(', ')}</div>
         </Card>
       ))}
 
@@ -182,7 +182,7 @@ function ReflectiveView({ data }: { data: ReflectiveAnalysis }) {
             </span>
           </div>
           <div className="mt-1 text-muted-foreground">{item.notes}</div>
-          <div className="mt-1 text-xs text-muted-foreground">Sessions: {item.sessions.join(', ')}</div>
+          <div className="mt-1 text-xs text-muted-foreground">Sources: {(item.sourceRefs ?? []).join(', ')}</div>
         </Card>
       ))}
 

@@ -68,6 +68,7 @@ function prefixIds(
     stories: extraction.stories.map((s) => ({ ...s, id: `${prefix}-${s.id}` })),
     techniques: extraction.techniques.map((t) => ({ ...t, id: `${prefix}-${t.id}` })),
     contentAngles: extraction.contentAngles.map((a) => ({ ...a, id: `${prefix}-${a.id}` })),
+    unexpected: extraction.unexpected ?? [],
   }
 }
 
@@ -82,6 +83,7 @@ function mergeExtractions(
     stories: results.flatMap((r) => r.stories),
     techniques: dedupeByName(results.flatMap((r) => r.techniques)),
     contentAngles: results.flatMap((r) => r.contentAngles),
+    unexpected: results.flatMap((r) => r.unexpected),
   }
 }
 

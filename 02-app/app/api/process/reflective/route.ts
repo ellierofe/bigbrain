@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth'
 import { runReflectiveAnalysis } from '@/lib/processing/analyse'
 import { getSourcesByIds, updateSourceProcessingHistory } from '@/lib/db/queries/sources'
 import { createProcessingRun } from '@/lib/db/queries/processing-runs'
-import type { SourceForProcessing } from '@/lib/types/processing'
+import type { SourceForProcessing, SourceType, Authority } from '@/lib/types/processing'
 
 export async function POST(req: Request) {
   if (process.env.NODE_ENV !== 'development') {
@@ -39,7 +39,8 @@ export async function POST(req: Request) {
         title: s.title,
         extractedText: s.extractedText!,
         documentDate: s.documentDate,
-        type: s.type,
+        sourceType: s.sourceType as SourceType,
+        authority: s.authority as Authority,
         tags: s.tags ?? [],
       }))
       // Sort chronologically — earliest first for reflective analysis
@@ -57,17 +58,18 @@ export async function POST(req: Request) {
 
     const run = await createProcessingRun({
       brandId,
-      mode: 'reflective',
+      lens: 'self-reflective',
       sourceIds: processable.map((s) => s.id),
-      title: title ?? `Reflective analysis — ${processable.length} sessions`,
-      analysisResult: result,
+      // analysis result now lives on lens_reports.result. INP-12 Phase 2/3 replaces this route.
       status: 'pending',
     })
 
+    void title
+    void result
     for (const source of processable) {
       await updateSourceProcessingHistory(source.id, {
         date: new Date().toISOString(),
-        mode: 'reflective',
+        mode: 'self-reflective',
         runId: run.id,
       })
     }

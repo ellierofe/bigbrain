@@ -37,26 +37,44 @@ export async function commitAnalysis(runId: string): Promise<AnalysisCommitResul
     .limit(1)
 
   if (!run) throw new Error(`Processing run ${runId} not found`)
-  if (!run.analysisResult) throw new Error(`Processing run ${runId} has no analysis result`)
   if (run.status === 'committed') throw new Error(`Processing run ${runId} is already committed`)
 
+  // INP-12 legacy adapter: this whole function is replaced in Phase 2/3 (analysis output
+  // moves to lens_reports.result; commit flow goes through /api/process/run/[id]/commit).
+  // Until then, map the new lens vocab back to the INP-11 mode names and bail if the run
+  // doesn't have legacy analysis data attached (which it won't post-Phase-0).
+  const legacyRun = run as unknown as {
+    lens: string
+    title?: string | null
+    analysisResult?: unknown
+    sourceIds: string[]
+    status: string
+  }
+  const modeMap: Record<string, string> = {
+    'pattern-spotting': 'batch',
+    'self-reflective': 'reflective',
+    'project-synthesis': 'synthesis',
+  }
+  const mode = modeMap[legacyRun.lens] ?? legacyRun.lens
+  if (!legacyRun.analysisResult) throw new Error(`Processing run ${runId} has no analysis result (INP-11 legacy path)`)
+
   const result: AnalysisCommitResult = { success: true, nodesWritten: 0, edgesWritten: 0, errors: [] }
-  const source = `ANALYSIS_${run.mode.toUpperCase()}`
+  const source = `ANALYSIS_${mode.toUpperCase()}`
   const nodeIds: string[] = []
 
   // Dispatch to mode-specific commit
-  switch (run.mode) {
+  switch (mode) {
     case 'batch':
-      await commitBatch(run.analysisResult as BatchAnalysis, source, run.title ?? 'Batch analysis', nodeIds, result)
+      await commitBatch(legacyRun.analysisResult as BatchAnalysis, source, legacyRun.title ?? 'Batch analysis', nodeIds, result)
       break
     case 'reflective':
-      await commitReflective(run.analysisResult as ReflectiveAnalysis, source, run.title ?? 'Reflective analysis', nodeIds, result)
+      await commitReflective(legacyRun.analysisResult as ReflectiveAnalysis, source, legacyRun.title ?? 'Reflective analysis', nodeIds, result)
       break
     case 'synthesis':
-      await commitSynthesis(run.analysisResult as ProjectSynthesis, source, run.title ?? 'Project synthesis', nodeIds, result)
+      await commitSynthesis(legacyRun.analysisResult as ProjectSynthesis, source, legacyRun.title ?? 'Project synthesis', nodeIds, result)
       break
     default:
-      throw new Error(`Cannot commit analysis for mode '${run.mode}' — only batch, reflective, and synthesis are supported`)
+      throw new Error(`Cannot commit analysis for mode '${mode}' — only batch, reflective, and synthesis are supported`)
   }
 
   // Link all created nodes to the source documents that fed the analysis
@@ -93,10 +111,10 @@ export async function commitAnalysis(runId: string): Promise<AnalysisCommitResul
     }
   }
 
-  // Generate embedding for the processing run itself
+  // Generate embedding for the processing run itself (INP-11 legacy — Phase 2 removes this)
   try {
-    const analysisText = JSON.stringify(run.analysisResult).slice(0, 32000)
-    const embeddingText = `${run.title ?? run.mode + ' analysis'} — ${analysisText}`
+    const analysisText = JSON.stringify(legacyRun.analysisResult).slice(0, 32000)
+    const embeddingText = `${legacyRun.title ?? mode + ' analysis'} — ${analysisText}`
     const embedding = await generateEmbedding(embeddingText)
     if (embedding) {
       const vec = `[${embedding.join(',')}]`
@@ -239,7 +257,7 @@ async function commitReflective(
       source,
       properties: {
         analysisType: 'emerging_theme',
-        sessions: theme.sessions,
+        sourceRefs: theme.sourceRefs,
       },
     })
     if (r.success) { result.nodesWritten++; nodeIds.push(id) }
@@ -249,15 +267,16 @@ async function commitReflective(
   // Key realisations → Idea nodes
   for (const real of analysis.keyRealisations ?? []) {
     const id = randomUUID()
+    const sources = (real.sourceRefs ?? []).join(', ')
     const r = await writeNode({
       id,
       label: 'Idea',
       name: real.realisation.slice(0, 200),
-      description: `${real.realisation}\n\nSignificance: ${real.significance}\n\nSession: ${real.session}`,
+      description: `${real.realisation}\n\nSignificance: ${real.significance}${sources ? `\n\nSources: ${sources}` : ''}`,
       source,
       properties: {
         subtype: 'realisation',
-        session: real.session,
+        sourceRefs: real.sourceRefs ?? [],
       },
     })
     if (r.success) { result.nodesWritten++; nodeIds.push(id) }

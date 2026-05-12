@@ -12,12 +12,18 @@ import {
 } from 'lucide-react'
 import type { ExtractionResult, CommitResult, ProcessingMode } from '@/lib/types/processing'
 
+// INP-12: `mode` renamed to `lens`, `analysisResult` moved to `lens_reports.result`,
+// `title` removed. This whole client is rewritten in Phase 3; legacy props are mapped
+// from the new schema in `page.tsx` until then.
 interface ProcessingRunItem {
   id: string
+  /** Maps from `processingRuns.lens` (was `mode`). */
   mode: string
   sourceIds: string[]
+  /** Removed from `processingRuns` in INP-12; supplied by page.tsx as a placeholder. */
   title: string | null
   extractionResult: unknown
+  /** Removed from `processingRuns` in INP-12; null until Phase 3 wires the new flow. */
   analysisResult: unknown
   status: string
   createdAt: Date | null
