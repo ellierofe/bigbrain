@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ContentPane } from '@/components/content-pane'
 import { EmptyState } from '@/components/empty-state'
-import { ResultsPanel } from '@/app/(dashboard)/inputs/process/results-panel'
+import { ResultsPanel } from './results-panel'
 import { AnalysisReviewPanel } from './analysis-review-panel'
 import {
   ListOrdered, FileText, Layers, TrendingUp, FolderSearch,

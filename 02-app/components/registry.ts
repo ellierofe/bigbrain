@@ -429,10 +429,20 @@ export const componentRegistry: ComponentEntry[] = [
     path: "@/components/chat-drawer",
     category: "overlay",
     description:
-      "Slide-out drawer from right for contextual chat from any page. 440px, backdrop overlay, compact message rendering. Header: new chat, title, open in full view, close.",
-    props: "open, onOpenChange",
-    usedIn: ["OUT-01"],
+      "Slide-out drawer from right for contextual chat from any page. Two width states (collapsed 440px / expanded 680px). Header: new chat, title, width toggle, open in full view, close. State managed via ChatDrawerProvider; entry points are top-toolbar (collapsed default) and SkillLaunchButton (expanded default with context pane mounted).",
+    props: "(stateless — reads from useChatDrawer hook)",
+    usedIn: ["OUT-01", "DNA-02"],
     spec: "molecule-specifications/chatdrawer",
+  },
+  {
+    name: "SkillLaunchButton",
+    path: "@/components/skill-launch-button",
+    category: "form",
+    description:
+      "Three-state launcher button for skill-driven generation flows on a DNA page. Renders Generate / Refresh / Resume based on recordPopulated and inProgressConversationId props. Click mints (or re-opens) a skill conversation and opens the chat drawer in expanded mode.",
+    props: "skillId, recordPopulated, inProgressConversationId, labels?",
+    usedIn: ["DNA-02"],
+    spec: "molecule-specifications/skilllaunchbutton",
   },
   {
     name: "ExpandableCardList",
@@ -860,9 +870,9 @@ export const componentRegistry: ComponentEntry[] = [
     path: "@/components/inline-warning-banner",
     category: "feedback",
     description:
-      "Thin coloured banner that sits above content in a page region — not a toast, not a centred empty state. Two tones: 'warning' (default — registry-miss, state-extraction failures) and 'success' (skill completion, save confirmation). Optional dismiss button when an onDismiss handler is provided.",
-    props: "title, subtitle?, tone? ('warning' | 'success', default 'warning'), onDismiss?",
-    usedIn: ["OUT-01a", "OUT-01b"],
+      "Thin coloured banner that sits above content in a page region — not a toast, not a centred empty state. Three tones: 'warning' (default — registry-miss, state-extraction failures), 'success' (skill completion, save confirmation), 'info' (INP-12 — datasets-bypass notice on lens picker and source detail). Optional dismiss button when an onDismiss handler is provided.",
+    props: "title, subtitle?, tone? ('warning' | 'success' | 'info', default 'warning'), onDismiss?",
+    usedIn: ["OUT-01a", "OUT-01b", "INP-12"],
     spec: "molecule-specifications/inlinewarningbanner",
   },
   {
@@ -1143,5 +1153,116 @@ export const componentRegistry: ComponentEntry[] = [
     props: "value (LibraryTag[]), onChange, sources (TypedTagSource), disabled?",
     usedIn: ["OUT-02-P4b"],
     spec: "molecule-specifications/typedtagpicker",
+  },
+  // ---------------------------------------------------------------------------
+  // INP-12 Pass 1 — Sources surface
+  // ---------------------------------------------------------------------------
+  {
+    name: "DateField",
+    path: "@/components/date-field",
+    category: "form",
+    description:
+      "InlineField-parity date input. Always-visible border, floating label, active-state token swap, Saved/Failed feedback. Wraps DatePicker for the calendar engine; presents within the form-field family for inline use alongside InlineField/SelectField on detail pages.",
+    props:
+      "value (string | null — ISO YYYY-MM-DD), onSave, label, placeholder?, icon? (LucideIcon), description?, labelBg?, disabled?, debounceMs?, className?",
+    usedIn: ["INP-12"],
+    spec: "molecule-specifications/datefield",
+  },
+  {
+    name: "TagListEditor",
+    path: "@/components/tag-list-editor",
+    category: "editor",
+    description:
+      "Inline-editable free-form string[] tag list. Hash-hued TypeBadge chips with hover-remove, Enter-to-add input, optional one-click suggestion chips. Save contract: full-array save on every change. Distinct from TagChipEditor (which edits a LibraryTag discriminated union).",
+    props:
+      "value (string[]), onSave, suggestions?, label?, placeholder?, readOnly?, debounceMs?, className?",
+    usedIn: ["INP-12"],
+    spec: "molecule-specifications/taglisteditor",
+  },
+  {
+    name: "LensPickerCard",
+    path: "@/components/lens-picker-card",
+    category: "layout",
+    description:
+      "Single tile in the lens picker grid. Lighter contract than ContentTypeCard — no favourites, no lock, no thumbnail. Lens name + description + optional caveat row. Idle / hover / selected / disabled states with disabled-reason tooltip.",
+    props:
+      "lens (LensId), name, description, caveat?, selected, disabled?, disabledReason?, onSelect, className?",
+    usedIn: ["INP-12"],
+    spec: "molecule-specifications/lenspickercard",
+  },
+  {
+    name: "ChunkPreviewRow",
+    path: "@/components/chunk-preview-row",
+    category: "layout",
+    description:
+      "Compact read-only renderer for one source chunk. Speaker-turn / paragraph / section / slide / row / item shapes — meta line + body. Optional truncation with Show-more toggle. No edit affordance: chunks are immutable.",
+    props:
+      "chunk (Pick<SrcSourceChunk, 'chunkType' | 'text' | 'speaker' | 'position' | 'metadata'>), truncateAt?, showPosition?, className?",
+    usedIn: ["INP-12"],
+    spec: "molecule-specifications/chunkpreviewrow",
+  },
+  {
+    name: "SourceListRow",
+    path: "@/components/source-list-row",
+    category: "layout",
+    description:
+      "Single row of the Sources list. Leading checkbox + source-type icon, body with title + meta-line + hash-hued tag row, hover-revealed trailing action icons. Owns the dual click-affordance (body = preview, trailing chevron / Cmd-click = detail) and active-state precedence (previewing > selected).",
+    props:
+      "source (SourceListRowData), selected, previewing, onToggleSelect, onPreview, onOpenDetail, onDelete",
+    usedIn: ["INP-12"],
+    spec: "molecule-specifications/sourcelistrow",
+  },
+  {
+    name: "ParticipantsPicker",
+    path: "@/components/participants-picker",
+    category: "editor",
+    description:
+      "Inline-editable Person reference list. Chip row + search-existing-People type-ahead popover + 'Park as unresolved' affordance (creates Person with relationship_types: ['unresolved'] for Pass 2 canonical-resolution cleanup). Suggestion chips from speaker-turn analysis. Save contract: full-array save on every change.",
+    props:
+      "value (string[]), hydratedPeople (PersonSummary[]), onSave, searchPeople, onParkUnresolved, suggestions?, label?, readOnly?, debounceMs?, className?",
+    usedIn: ["INP-12"],
+    spec: "molecule-specifications/participantspicker",
+  },
+  {
+    name: "LensInputForm",
+    path: "@/components/lens-input-form",
+    category: "form",
+    description:
+      "Per-lens input form for the lens picker modal. v1 supports `decision-support` (decision-text textarea). Returns null for lenses without an input form. Controlled — caller owns the value and onChange.",
+    props: "lens (LensId), value (string), onChange, className?",
+    usedIn: ["INP-12"],
+    spec: "molecule-specifications/lensinputform",
+  },
+  {
+    name: "SectionLabel",
+    path: "@/components/section-label",
+    category: "layout",
+    description:
+      "Small uppercase label used to title a sub-block inside a SectionCard or fieldset-like grouping. Same chrome as InlineField's floating label patch (10px uppercase tracking, muted foreground). Captures the pattern so organisms don't carry inline `text-*` classes when titling a chip row, an input cluster, or any sub-region without the full SectionCard envelope.",
+    props: "children, className?",
+    usedIn: ["INP-12"],
+    spec: "molecule-specifications/sectionlabel",
+  },
+  {
+    name: "LinkButton",
+    path: "@/components/link-button",
+    category: "form",
+    description:
+      "Inline text-link affordance for cues like 'Show more', 'View all N →', 'Re-summarise'. Tone-driven (primary, muted, destructive). Renders as <button> with onClick or <Link> with href. Distinct from ActionButton (real button surface with icon slot) and IconButton (icon-only).",
+    props:
+      "children, tone? ('primary'|'muted'|'destructive', default 'primary'), size? ('xs'|'sm', default 'sm'), onClick OR href, disabled?, className?",
+    usedIn: ["INP-12"],
+    spec: "molecule-specifications/linkbutton",
+  },
+  {
+    name: "PlainTextField",
+    path: "@/components/plain-text-field",
+    category: "form",
+    description:
+      "Controlled, non-autosave text input or textarea inside a modal or form surface. Used when the value is collected and submitted as a batch (e.g. paste-text modal). Distinct from InlineField (which autosaves) and ListRowField (which is bare-chrome for list rows).",
+    props:
+      "label, value, onChange, placeholder?, disabled?, variant? ('input'|'textarea', default 'input'), rows? (textarea only), className?",
+    usedIn: ["INP-12"],
+    spec: "molecule-specifications/plaintextfield",
   },
 ]

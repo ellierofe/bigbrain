@@ -14,7 +14,7 @@ export function NewInputDropdown() {
         </ActionButton>
       }
       items={[
-        { type: 'link', label: 'Text', href: '/inputs/process' },
+        { type: 'link', label: 'Sources', href: '/inputs/sources' },
         { type: 'disabled', label: 'Document', hint: 'Soon' },
         { type: 'disabled', label: 'Audio', hint: 'Soon' },
         { type: 'disabled', label: 'URL / Link', hint: 'Soon' },

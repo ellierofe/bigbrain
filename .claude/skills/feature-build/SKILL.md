@@ -151,10 +151,20 @@ While building, follow the spec exactly:
 
 ### Step D+: Design system drift check
 
-After the build, before the review summary, run `design-system` Drift check (Mode B) on all files modified in `app/(dashboard)/`.
+After the build, before the review summary, run two checks on every organism-layer file this feature touched:
 
-- If violations found: fix them before proceeding. Appearance classes in organisms are not a style issue — they're an architectural violation.
-- If clean: note "Drift check: clean" in the review summary.
+1. **`design-system` Drift check (Mode B)** — validates registry ↔ spec alignment and surfaces direct atom imports. Runs `npm run check:design-system` under the hood.
+
+2. **Appearance-class grep** — the script does NOT scan for inline appearance classes. Run this grep on every organism file this feature touched (replace `<paths>` with the explicit list of new/modified organism paths):
+
+   ```bash
+   grep -nE "className=.*['\"\`].*(bg-|text-|border-|shadow-)" <paths>
+   ```
+
+   Any match in an organism-layer file is a DS-01 violation, even if `check:design-system` reports clean. "Organism layer" means `app/(dashboard)/**` AND any file in `02-app/components/` matching `*-view.tsx`, `*-modal.tsx`, `*-panel.tsx`, `*-list.tsx`, `*-table.tsx`, `*-workspace.tsx`, `*-area.tsx`, `*-section.tsx`, `*-card.tsx` — anything composing molecules into a feature surface, regardless of directory.
+
+- If violations found in either check: fix them before proceeding. Appearance classes in organisms are not a style issue — they're an architectural violation. The fix is usually one of: promote a small molecule (e.g. `SectionLabel`, `LinkButton`, `InlineHint`-style), reuse an existing molecule, or move the chrome down to a molecule that absorbs it.
+- If clean: note "Drift check: clean (atoms + appearance)" in the review summary.
 
 ### Step E: Review summary
 

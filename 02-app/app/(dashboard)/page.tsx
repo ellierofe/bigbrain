@@ -208,14 +208,9 @@ export default async function DashboardHome() {
           {/* Quick actions */}
           <div className="grid grid-cols-4 gap-3">
             <QuickAction
-              href="/inputs/process"
+              href="/inputs/sources"
               icon={<Upload className="h-5 w-5" />}
-              label="Process text"
-            />
-            <QuickAction
-              href="/inputs/queue"
-              icon={<ListOrdered className="h-5 w-5" />}
-              label="Manage queue"
+              label="Sources"
               badge={pendingCount > 0 ? pendingCount : undefined}
             />
             <QuickAction
@@ -223,10 +218,15 @@ export default async function DashboardHome() {
               icon={<MessageSquare className="h-5 w-5" />}
               label="Chat"
             />
-            <QuickActionDisabled
+            <QuickAction
+              href="/content"
               icon={<Sparkles className="h-5 w-5" />}
               label="Create content"
-              tooltip="Coming in M5"
+            />
+            <QuickActionDisabled
+              icon={<ListOrdered className="h-5 w-5" />}
+              label="Lens reports"
+              tooltip="Coming in Phase 3"
             />
           </div>
         </div>
@@ -248,7 +248,7 @@ export default async function DashboardHome() {
           title="Input queue"
           action={
             pendingCount > 0 ? (
-              <ActionButton href="/inputs/queue" variant="ghost">
+              <ActionButton href="/inputs/sources?inbox=new" variant="ghost">
                 Review all
               </ActionButton>
             ) : undefined

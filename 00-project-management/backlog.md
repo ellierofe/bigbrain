@@ -3,7 +3,7 @@
 > Registry of all features. This is not a sprint plan — it's an inventory.
 > Each feature has dependencies, layer, and which core problem(s) it addresses.
 > Status: `planned` → `in-progress` → `done` | `parked` for future milestones
-> Last updated: 2026-04-27 (KG-04 politics graph port + KG-05 external data sources working list added per ADR-007)
+> Last updated: 2026-05-13 (status review — DASH-01, UX-11, REG-02, SRC-02 closed; INP-07 superseded by INP-12; UX-08 → OUT-06)
 
 ---
 
@@ -272,10 +272,10 @@
 - **Layer:** output
 - **Problems:** P2 (also design rule 4: visibility)
 - **Size:** M
-- **Depends on:** DNA-01, DASH-01; AI generation flows additionally depend on OUT-01a, OUT-01b, OUT-01c, UX-14
-- **Enables:** OUT-02, OUT-03
+- **Depends on:** DNA-01, DASH-01; AI generation flows additionally depend on OUT-01a, OUT-01b, OUT-01c (all done / code-complete). UX-14 is *not* a hard dep — generation runs without gating in v1; UX-14 retrofits later.
+- **Enables:** OUT-02, OUT-03, OUT-01c done-ness (this is OUT-01c's deferred-QA fixture)
 - **Status:** in-progress
-- **Implementation:** Auto-saving edit views for business overview (two-column with summary card), brand meaning (featured statement blocks with accent border), value proposition (featured statements + SectionCard grouping). Query layer: `lib/db/queries/dna-singular.ts`. Server actions: `app/actions/dna-singular.ts`. Remaining: AI-driven generate/refresh flows — re-architected 2026-04-30 to run as chat skills (see `01-design/briefs/DNA-02-singular-dna-intake.md`). Now blocked on OUT-01a (chat skills infrastructure), OUT-01b (adaptive context pane), OUT-01c (LLM database write tool), and UX-14 (generation gating).
+- **Implementation:** Auto-saving edit views for business overview (two-column with summary card), brand meaning (featured statement blocks with accent border), value proposition (featured statements + SectionCard grouping). Query layer: `lib/db/queries/dna-singular.ts`. Server actions: `app/actions/dna-singular.ts`. AI-driven generate/refresh flows architected as chat skills (see `01-design/briefs/DNA-02-singular-dna-intake.md`). Brand-meaning skill brief approved 2026-05-13 (`01-design/briefs/DNA-02-brand-meaning-skill.md`) — first save-bearing skill, drawer-on-page launch with expandable two-width drawer, `onComplete` direct-write via `lib/db/writes/dna/brand-meaning.ts`. Business overview and value proposition skills to follow.
 
 ### DNA-03: Plural DNA elements — Audience segments
 - **What:** CRUD for audience segments. Each segment: name, demographics, psychographics, voice-of-customer statements across problems, desires, objections, beliefs (VOCs), notes, overview, avatar.
@@ -452,7 +452,8 @@
 - **Size:** M
 - **Depends on:** SRC-01, DASH-01
 - **Enables:** OUT-02
-- **Status:** planned
+- **Status:** done — shipped as `/inputs/sources` (browse/filter/search over source documents, inbox count tracking, preview, delete, bulk select + process). Closed 2026-05-13.
+- **Note:** Current surface focuses on `src_source_documents`. The other source-knowledge types (testimonials, statistics, stories, own research) don't yet have a unified library UI — if/when that becomes important, raise a follow-up rather than reopening this.
 
 ---
 
@@ -469,7 +470,7 @@
 - **Size:** M
 - **Depends on:** OUT-02 (`library_items` schema; REG-01 superseded), DASH-01
 - **Enables:** User understanding of output patterns
-- **Status:** planned
+- **Status:** done — shipped as part of OUT-02-P4b (`/content/library`). Library table with sortable + filterable columns covering title, content type, date, source, status, audience, offer, platform, knowledge asset, topic. Library Detail Modal handles full-record edit. Provenance via the structured `tags` jsonb on `library_items`. Closed 2026-05-13.
 
 ---
 
@@ -558,7 +559,7 @@
 - **Size:** M
 - **Depends on:** INP-03, DASH-01
 - **Enables:** Prevents inbox overwhelm
-- **Status:** done
+- **Status:** superseded by INP-12 (2026-05-13) — Sources + Results pages under the source × lens model replace the queue/triage model. The `/inputs/queue` route still exists but is no longer the primary triage surface; remove or fold into INP-12 cleanup once Phase 2+ ships.
 - **Notes:** Built 2026-04-14. Queue list with review panel (reuses ResultsPanel from INP-03). Delete support added 2026-04-15. Dedup detection backlogged as INP-10.
 
 ### INP-10: Queue-time dedup detection
@@ -609,7 +610,7 @@
 - **Feature-build progress (started 2026-05-12):** 5-phase split.
   - **Phase 0 done (2026-05-12)** — foundation: types, prompts, graph, canonical, fragment validator, BUG-01 schema-rename callers. Session log: `2026-05-12-inp12-phase0-foundation-r7k.md`.
   - **Phase 1 done (2026-05-12)** — ingest pipeline: chunker (per-source-type strategies) + summariser (~300 words, Haiku-first) + batch embedder + orchestrator (writes SourceDocument + SourceChunk graph nodes + PART_OF edges, idempotent re-chunk) + `_summary.md` prompt fragment + POST `/api/sources/[id]/ingest` manual trigger + background-fire on POST `/api/sources`. Session log: `2026-05-12-inp12-phase1-ingest-pipeline-h8m.md`.
-  - **Phase 2 next — Pass 1 UI build:** Sources page + bulk-triage modal + source detail at `/inputs/sources/[id]` + lens picker modal. 5 new molecules + `InlineWarningBanner` info-tone extension + `lib/source-types.ts` helper. Delete old INP-11 routes `/inputs/{queue,process,results}` wholesale per Phase 0 plan-gate decision. P4b overlap notes: `DateField` is a distinct molecule from the untracked `date-picker.tsx` (popover button vs InlineField-parity); `TagListEditor` is distinct from the untracked `tag-chip-editor.tsx` (free-form `string[]` vs `LibraryTag[]` discriminated union).
+  - **Phase 2 done (2026-05-14)** — Pass 1 UI build: Sources page (NEW filter + side preview pane + selection bar + bulk actions + URL-driven filters) + bulk-triage modal (set-all + per-row) + source detail at `/inputs/sources/[id]` (PageChrome + InPageNav with smooth-scroll + 5 sections, 4 for dataset) + lens picker modal (7-tile grid + per-lens disabled states + dataset bypass banner + LensInputForm slot) + paste-text modal (replaces deleted `/inputs/process` text path). 11 new molecules + `InlineWarningBanner` `info`-tone extension: `DateField`, `TagListEditor`, `ParticipantsPicker`, `LensPickerCard`, `ChunkPreviewRow`, `SourceListRow`, `LensInputForm`, `SectionLabel`, `LinkButton`, `PlainTextField`, plus `lib/source-types.ts` + `lib/lens-meta.ts` + `lib/tag-hue.ts` helpers. Old INP-11 routes `/inputs/{queue,process}` + `/api/process/{individual,batch,reflective,synthesis}` + `/api/sources/triage` deleted; `/inputs/results` legacy kept until Phase 3 replaces it. Two candidate templates flagged for post-Phase-3 registration: `sources-inbox-list`, `source-detail-pane`. P4b overlap respected: `DateField` is a distinct molecule from the P4b `date-picker.tsx` (popover button vs InlineField-parity); `TagListEditor` is distinct from `tag-chip-editor.tsx` (free-form `string[]` vs `LibraryTag[]` discriminated union). Session log: `2026-05-13-inp12-phase2-pass1-build-q4n.md`.
   - Phase 3 — Pass 2 UI build (lens review surface).
   - Phase 4 — Pass 3 UI build (committed lens-report page).
 - **Known fallout:** BUG-01 — schema-rename portion closed in Phase 0 (2026-05-12); see updated BUG-01 entry. The forwardRef prerender failure on `/` is a separate, still-open sub-issue.
@@ -902,6 +903,17 @@
 - **Status:** planned
 - **Note:** Fits naturally as a "Strategy health" view in the dashboard, triggerable on demand. Could also run on a schedule (AUTO pattern). LLM loads relevant DNA records and returns structured JSON findings — no new storage needed beyond what DNA-01 provides.
 
+### OUT-06: Funnel generation from offers
+- **What:** Generate a sales funnel view from existing offers — how offers ladder together, entry points, upsell paths, gaps in the value ladder. Lightweight generation feature, not a full funnel builder. Could live as a dashboard view or a generation action from the offers list.
+- **Layer:** output
+- **Problems:** P2, P5
+- **Size:** M
+- **Depends on:** DNA-04 (offers must exist with customer journeys)
+- **Enables:** Strategic visibility across the offer portfolio
+- **Status:** planned
+- **Priority:** Low — nice-to-have once multiple offers exist with customer journeys populated.
+- **History:** Originally tracked as UX-08 (Funnel Gen). Moved to Outputs 2026-05-13 — it's a feature, not a UX polish item.
+
 ---
 
 ## DASHBOARD
@@ -913,8 +925,9 @@
 - **Size:** M
 - **Depends on:** INF-01, INF-05
 - **Enables:** All dashboard sub-views (DNA-02 through DNA-08, SRC-02, REG-02, KG-03, INP-07)
-- **Status:** in-progress
+- **Status:** done — closed 2026-05-13
 - **Brief:** `01-design/briefs/DASH-01-dashboard-shell.md` (approved 2026-04-12)
+- **Note:** Closed on usage evidence — shell has supported every M3/M4/M5 surface built on it without structural blockers. A review pass is appropriate but it's an after-use review, not pre-done work.
 
 ### DS-01: Design system
 - **What:** Establish the molecule component layer, token system, and design-system skill to ensure visual consistency before further feature builds. Refactor existing rough components (PageHeader, ContentPane, InlineField, SectionCard) and build missing molecules (SectionDivider, TabbedPane, InPageNav, PageChrome). Fix diagnosed visual issues (zone separation, field definition, sidebar dividers, button padding).
@@ -1351,13 +1364,14 @@ That's the thinnest vertical slice: infra → storage → processing → retriev
 - **Priority:** P2 — nice to have once core DNA features are built
 
 ### UX-02: Creation modal — document upload path
-- **What:** Second path in the DNA item creation modal — paste or upload a source document, system infers field values, asks for any missing required fields, then generates. Currently stubbed as "coming soon" in all DNA creation modals.
+- **What:** Second path in the DNA item creation modal — paste or upload a source document, system infers field values, asks for any missing required fields, then generates.
 - **Layer:** input + output
 - **Problems:** P1, P2
 - **Size:** M
 - **Depends on:** SRC-01 (source knowledge schema), INF-06 (LLM integration)
 - **Enables:** Faster DNA population from existing documents
-- **Status:** planned — blocked on SRC-01 + INF-06
+- **Status:** partial — shipped on knowledge assets (`create-asset-modal.tsx`) and platforms (`create-platform-modal.tsx`) via `SourceDocPicker` integration. Offers, audience segments and singular DNA types do not yet have it. Status reviewed 2026-05-13.
+- **Next:** Decide whether the pattern is a universal capability on every DNA item type (i.e. write a brief and roll it out) or a per-type judgement call. The current ad-hoc state — "it's there if the build felt like adding it" — is the worst of both worlds. Likely a small design pass to define which DNA types benefit, then a build sweep using `SKL-07: feature-update`.
 
 ### UX-03: Generation progress UX in creation modal
 - **What:** When the LLM generation job is triggered from a DNA creation modal, the modal transitions to a "generating" state — spinner, "This takes about 30 seconds", "Don't close this tab", Cancel button. Currently stubbed.
@@ -1382,10 +1396,11 @@ That's the thinnest vertical slice: infra → storage → processing → retriev
 - **Layer:** output
 - **Problems:** P1, P3
 - **Size:** L
-- **Depends on:** INP-03 (done)
+- **Depends on:** INP-03 (done), INP-12 Phase 3 (review UX is being rebuilt under the source × lens model — likely absorbs this entry)
 - **Enables:** Processing transcripts in under 2 minutes rather than 10+; reduces cognitive load enough to make regular use realistic
-- **Status:** planned
+- **Status:** planned — likely folded into INP-12 Phase 3 (Pass 2 lens-review surface). Revisit when Phase 3 ships and decide whether anything remains.
 - **Priority:** High — the pipeline is only useful if reviewing extractions isn't painful. Current UX works for testing but not for regular use.
+- **Open clash (raised 2026-05-13):** The Sources page (INP-12) only has an Upload action; the legacy `/inputs/process` page is now a divorced text + tag input that hasn't been pulled into Sources. Either the text-input path moves into Sources (canonical), or `/inputs/process` is explicitly retired (and text input becomes upload-or-paste in the Sources Upload flow), or a third route is justified. Resolve as part of INP-12 Phase 2/3 — don't leave both surfaces drifting in parallel.
 
 ### UX-06: Tab and panel design consistency
 - **What:** Establish canonical tab variant and left-panel pattern before building more tabbed content. Three issues found during DNA-09 build: (1) ToV tabs render differently in style to audience segments tabs — need one canonical tab treatment, (2) left panels on both audience segments and ToV pages lack proper visual distinction from the main content area, (3) field label treatment is inconsistent between pages. Fix requires a DS-01 design system pass to define these patterns as molecules, then apply to both existing pages.
@@ -1420,15 +1435,8 @@ That's the thinnest vertical slice: infra → storage → processing → retriev
 - **Status:** planned
 - **Priority:** Low — v1 validates indexes on load and shows "(statement removed)" for out-of-range. This is the upgrade path.
 
-### UX-08: Funnel Gen — sales funnel generation from offers
-- **What:** Generate a sales funnel view from existing offers — how offers ladder together, entry points, upsell paths, gaps in the value ladder. Lightweight generation feature, not a full funnel builder. Could live as a dashboard view or a generation action from the offers list.
-- **Layer:** output
-- **Problems:** P2, P5
-- **Size:** M
-- **Depends on:** DNA-04 (offers must exist with customer journeys)
-- **Enables:** Strategic visibility across the offer portfolio
-- **Status:** planned
-- **Priority:** Low — nice-to-have once multiple offers exist with customer journeys populated.
+### UX-08: ~~Funnel Gen~~ — moved to OUT-06
+- **Status:** moved 2026-05-13. Funnel generation is a feature, not a UX polish item — see **OUT-06: Funnel generation from offers** in the Outputs section.
 
 ### UX-09: InPageNav consistency audit
 - **What:** Audit all tabbed detail views to ensure every tab with 2+ sections uses the `InPageNav` molecule with the canonical sticky-nav + scrolling-content pattern. The molecule now includes its own positioning (`w-36 shrink-0 self-start sticky top-0`) — no wrapper div needed. Any view that manually positions InPageNav or uses a different scroll pattern must be migrated. Pattern documented in `dna-plural-item-template.md` and `design-system.md`.
@@ -1459,7 +1467,8 @@ That's the thinnest vertical slice: infra → storage → processing → retriev
 - **Size:** S
 - **Depends on:** DNA-05 (established the pattern)
 - **Enables:** Smoother creation flow across all DNA types
-- **Status:** planned
+- **Status:** partial — knowledge assets (header `Generate` button, `handleGenerate`) and offers (in-page "This offer is ready to generate" banner with `handleGenerateFromInputs`) both ship working draft→Generate flows. Platforms and audience segments do not yet have it. Status reviewed 2026-05-13.
+- **Remaining:** Add the equivalent to platforms and audience segments. Decide whether the affordance is a header button (KA pattern) or an in-page banner (offer pattern) — pick one before rolling out so the third + fourth DNA types don't drift further. Likely header button since it's discoverable from any tab.
 
 ### UX-11: Fixed tab headings and scrollable content pane
 - **What:** DNA-07 (Platforms) established a pattern where tab headings are fixed and the content area scrolls independently. This needs to be applied consistently across all tabbed DNA detail views (audience segments, knowledge assets, offers, etc.). Currently some views scroll the entire page including tabs.
@@ -1468,7 +1477,7 @@ That's the thinnest vertical slice: infra → storage → processing → retriev
 - **Size:** S
 - **Depends on:** None
 - **Enables:** Consistent UX across all DNA detail views
-- **Status:** planned
+- **Status:** done — closed 2026-05-13. `TabbedPane` molecule (`02-app/components/tabbed-pane.tsx`) renders fixed TabsList + scrollable TabsContent (`overflow-y-auto`). Pattern used consistently across DNA detail views.
 
 ### UX-14: Generation gating (DNA prerequisites)
 - **What:** App-level rules for which DNA items can be generated based on what upstream DNA already exists. v1 minimum graph: business overview + at least one audience segment + tone of voice required before generating downstream DNA (offers, value proposition, content, etc.). When blocked, the UI surfaces what's missing with a direct path to fill it. Cross-cutting — applies to every DNA generation entry point.

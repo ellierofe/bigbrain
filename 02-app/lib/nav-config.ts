@@ -23,6 +23,7 @@ import {
   FolderKanban,
   Compass,
   Home,
+  SquareLibrary,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -114,7 +115,6 @@ export const navEntries: NavEntry[] = [
     items: [
       { title: 'Sources', href: '/inputs/sources', icon: Library, badge: 'inbox_count' },
       { title: 'Results', href: '/inputs/results', icon: ListOrdered },
-      { title: 'Process', href: '/inputs/process', icon: Upload },
       { title: 'Ideas',   href: '/inputs/ideas',   icon: Lightbulb },
     ],
   },
@@ -123,8 +123,9 @@ export const navEntries: NavEntry[] = [
     label: 'Ask BigBrain',
     icon: BrainCircuit,
     items: [
-      { title: 'Chat',   href: '/chat',           icon: MessageSquare },
-      { title: 'Create', href: '/content',  icon: Sparkles },
+      { title: 'Chat',    href: '/chat',           icon: MessageSquare },
+      { title: 'Create',  href: '/content',        icon: Sparkles },
+      { title: 'Library', href: '/content/library', icon: SquareLibrary },
     ],
   },
   { type: 'divider' },

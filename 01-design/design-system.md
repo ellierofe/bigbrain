@@ -946,6 +946,49 @@ interface ActionButtonProps {
 
 ---
 
+### SkillLaunchButton
+
+**File:** `02-app/components/skill-launch-button.tsx`
+**Purpose:** Three-state launcher button for skill-driven generation flows on a DNA page (or other singular-record page). Renders one of Generate / Refresh / Resume, depending on whether the underlying record is populated and whether an unfinished skill conversation exists for the same skill. Clicking either re-opens the existing conversation (Resume) or mints a new one (Generate / Refresh), then opens the chat drawer in expanded mode with the skill attached.
+
+**Anatomy:**
+- Wraps `ActionButton`. State derivation is internal:
+  - `inProgressConversationId !== null` → state `resume` → icon `Play`, label `Resume`
+  - else `recordPopulated === true` → state `refresh` → icon `RotateCw`, label `Refresh` (and seeds `gathered._isRefresh = true` on the new conversation)
+  - else → state `generate` → icon `Sparkles`, label `Generate`
+- Labels are overridable per state via the `labels` prop (e.g. for page-specific copy `{ generate: 'Generate brand meaning' }`).
+- Click handler calls `useChatDrawer().openWithSkillConversation(id)` after either reusing the in-progress id (resume) or minting a new one via `createConversationWithSkillAction(skillId, seed)`.
+
+**Behavioural states:**
+- **Idle**: standard `ActionButton` in default variant.
+- **Loading**: during the click → server-action → drawer-open round trip, `ActionButton.loading=true` engages (spinner replaces leading icon, click handler doesn't fire again).
+- **Error**: on action failure, a toast surfaces and loading clears.
+
+**Edge cases:**
+- **Stale in-progress id** (conversation deleted between page load and click): the server action fails on the resume path; SkillLaunchButton catches it, surfaces a toast, and the user can click again to start fresh.
+
+**Accessibility:**
+- Children of ActionButton are the visible (and accessible) label. No `aria-label` needed.
+
+**Props:**
+```ts
+type SkillLaunchState = 'generate' | 'refresh' | 'resume'
+
+interface SkillLaunchButtonProps {
+  skillId: string                           // must exist in lib/skills/registry.ts
+  recordPopulated: boolean                  // drives generate vs refresh
+  inProgressConversationId: string | null   // takes priority over recordPopulated
+  labels?: Partial<Record<SkillLaunchState, string>>
+}
+```
+
+**Do not:**
+- Use for plural-DNA list pages (those use `+ New X` buttons that mint rows directly, not a skill).
+- Add a generic `label` prop — let the three-state mapping drive copy unless there's a concrete reason to override per-state.
+- Pass `recordPopulated=true` for plural records — this molecule is for the singular case (one row per brand per skill).
+
+---
+
 ### Modal
 
 **File:** `02-app/components/modal.tsx`
@@ -1599,37 +1642,38 @@ interface ConversationListProps {
 ### ChatDrawer
 
 **File:** `02-app/components/chat-drawer.tsx`
-**Purpose:** Slide-out drawer from the right for contextual chat from any page. 440px wide, backdrop overlay, compact message rendering. Header with new-chat button, title, open-in-full-view, close. Distinct from full chat page (`/chat`) — same `ChatArea` inside, different chrome.
+**Purpose:** Slide-out drawer from the right for contextual chat from any page. Two width states — collapsed (440px, chat only) for freeform top-toolbar entry, expanded (680px, chat + context pane) for skill conversations launched from a `SkillLaunchButton`. Backdrop overlay, compact message rendering inside. Header with new-chat button, title, width toggle, open-in-full-view, close. Distinct from the full chat page (`/chat`) — same `ChatArea` inside, different chrome and pane behaviour.
+
+**State source:** the drawer is stateless and reads `open`, `conversationId`, and `width` from `useChatDrawer()` (provided by `ChatDrawerProvider`, mounted once in the dashboard layout). All entry points (top-toolbar chat button, `SkillLaunchButton`, future page-launched skills) open the drawer via the hook.
 
 **Anatomy:**
-- Backdrop: `fixed inset-0 z-40 bg-foreground/20`.
-- Drawer panel: `fixed right-0 top-0 bottom-0 z-50 w-[440px] bg-card shadow-overlay`. Slides in from right via `motion`/`framer-motion`.
-- Header: row with `Plus` (new chat), title, `ExternalLink` (open in full chat page), `X` (close). All icon buttons.
-- Body: `ChatArea` component (shared with full chat page) in compact mode.
+- Backdrop: `fixed inset-0 z-40 bg-foreground/10`.
+- Drawer panel: `fixed right-0 top-0 z-40 h-full border-l border-border bg-background shadow-[var(--shadow-overlay)]`. Width animates between 440px (collapsed) and 680px (expanded) via `motion`.
+- Header (left to right): `Plus` (new chat button — collapses back to a freeform chat), centre title, then three icon buttons: width toggle, open-in-full-view, close.
+  - **Width toggle**: `PanelRightOpen` (when collapsed — invites expansion) ↔ `PanelRightClose` (when expanded). Tooltip "Expand drawer" / "Collapse drawer". Disabled below 900px viewport with tooltip "Drawer expansion requires wider viewport".
+  - **Open in full view**: `Maximize2`. Routes to `/chat/<id>` (or `/chat` if no conversation). Separate intent from the width toggle.
+  - **Close**: `X`.
+- Body: `ChatArea` mounted with `paneSurface='none'` (collapsed) or `paneSurface='drawer'` (expanded, mounts `ContextPane` at fixed slim width).
 
 **Behavioural states:**
 - **Closed**: nothing rendered.
-- **Open**: backdrop + panel visible, animated in.
+- **Collapsed** (440px): chat only, no context pane. Default for top-toolbar entry.
+- **Expanded** (680px): chat + context pane mounted at 240px content width. Default for `openWithSkillConversation()`.
 - **Closing**: animated out via `AnimatePresence`.
 - **Escape key**: closes the drawer.
+- **Viewport below 900px**: width auto-collapses to 440px and the toggle is disabled.
 
 **Edge cases:**
-- **Open in full view**: navigates to `/chat/{conversationId}` if a conversation is active, else `/chat`.
-- **New chat from drawer**: resets local conversationId to null.
+- **Open in full view**: navigates to `/chat/{conversationId}` if a conversation is active, else `/chat`. Closes drawer first.
+- **New chat from drawer**: resets to collapsed mode with no conversation.
+- **Drawer state outside `/dashboard`**: `useChatDrawer()` throws — only usable inside `ChatDrawerProvider`.
 
-**Props:**
-```ts
-interface ChatDrawerProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
-```
-
-**Composes:** `ChatArea` from `app/(dashboard)/chat/chat-area`. (Cross-imports an organism — flagged in DS-08 audit; chat-area is reused in both contexts and will likely move to `components/` in a future cleanup.)
+**Composes:** `ChatArea` from `app/(dashboard)/chat/chat-area`, `ContextPane` indirectly via the expanded `ChatArea`. (`ChatArea` is technically an organism cross-import from a route — same pre-existing arrangement flagged in earlier DS audits; no change to that boundary in this build.)
 
 **Do not:**
-- Render the backdrop without `pointer-events` correct — it must trap clicks.
+- Add a `ChatDrawerProps` shape that takes `open`/`onOpenChange` again — the drawer reads from context now. The single mount in `app/(dashboard)/layout.tsx` is the canonical instance.
 - Use this for non-chat content. It's chat-specific by design.
+- Pass `conversationId` directly as a prop — open via `useChatDrawer().openWithSkillConversation(id)`.
 
 ---
 
@@ -2847,18 +2891,19 @@ interface ConversationListRowIconProps {
 
 ### InlineWarningBanner
 
-**File:** `02-app/components/inline-warning-banner.tsx` *(consumed by OUT-01a, OUT-01b)*
-**Purpose:** Thin coloured banner that sits above content in a page region — not a toast, not a centred empty state. Two tones: `'warning'` (default — OUT-01a's registry-miss banner above the chat stream, OUT-01b's "state update failed" row at the top of the context pane) and `'success'` (OUT-01b's skill-completion banner above the skill summary card). Tone parameterisation was added in OUT-01b's build (2026-05-01) after the second consumer needed the same shape with success tokens; sibling success/error molecules were ruled out as premature.
+**File:** `02-app/components/inline-warning-banner.tsx` *(consumed by OUT-01a, OUT-01b, INP-12)*
+**Purpose:** Thin coloured banner that sits above content in a page region — not a toast, not a centred empty state. Three tones: `'warning'` (default — OUT-01a's registry-miss banner above the chat stream, OUT-01b's "state update failed" row at the top of the context pane), `'success'` (OUT-01b's skill-completion banner above the skill summary card), and `'info'` (INP-12 Pass 1 — "Datasets bypass lens processing" notice on lens picker modal and source detail page when `sourceType='dataset'`). Tone parameterisation was added in OUT-01b's build (2026-05-01) after the second consumer needed the same shape with success tokens; the `'info'` tone was added in INP-12 Pass 1 (2026-05-13) when the dataset-bypass surface required a third, semantically distinct tone — the "extend tone only when a real consumer needs it" rule is the gate.
 
 **Anatomy:**
 - Outer wrapper: `flex items-start gap-2 rounded-md border px-3 py-2`. Surface tokens vary by tone (see Tone tokens below).
-- Leading icon: 16px on the left, `mt-0.5` to align with first line of text. `AlertTriangle` for warning tone; `CheckCircle2` for success tone.
+- Leading icon: 16px on the left, `mt-0.5` to align with first line of text. `AlertTriangle` for warning tone; `CheckCircle2` for success tone; `Info` for info tone.
 - Text block: `flex-1 min-w-0`. Title is `text-sm`. Subtitle (optional) sits on a second line as `text-xs text-muted-foreground`.
 - Dismiss (when `onDismiss` provided): `IconButton` ghost variant with `X`, anchored right. Omitted entirely when `onDismiss` is undefined — there is no "dismissible: false" prop; the existence of the handler IS the contract.
 
 **Tone tokens:**
 - `warning` (default): border `--color-warning`, background `--color-warning-bg`, foreground `--color-warning-foreground`, icon colour `--color-warning`, glyph `AlertTriangle`.
 - `success`: border `--color-success`, background `--color-success-bg`, foreground `--color-success-foreground`, icon colour `--color-success`, glyph `CheckCircle2`.
+- `info` *(INP-12)*: border `--color-info`, background `--color-info-bg`, foreground `--color-info-foreground`, icon colour `--color-info`, glyph `Info`.
 
 **Behavioural states:**
 - Idle (rendered).
@@ -2873,13 +2918,13 @@ interface ConversationListRowIconProps {
 interface InlineWarningBannerProps {
   title: string
   subtitle?: string
-  tone?: 'warning' | 'success'  // default 'warning'
+  tone?: 'warning' | 'success' | 'info'  // default 'warning'
   onDismiss?: () => void
 }
 ```
 
 **Do not:**
-- Add `error` or `info` tones speculatively. Extend tone only when a real consumer needs them — the rule preventing premature variants still applies; this molecule has two tones because it has two consumers requiring them.
+- Add `error` tone speculatively. Extend tone only when a real consumer needs it — the rule preventing premature variants still applies; each tone has at least one real consumer requiring it.
 - Render this as a centred empty state — that's `EmptyState`'s job. This molecule is a thin top-of-region bar.
 - Use this for transient feedback — that's the toast pattern's job. This molecule is for persistent state visibility.
 
@@ -3976,6 +4021,471 @@ interface TypedTagPickerProps {
 - Edit auto-tag labels in place. Labels are denormalised at tag-creation time; mutating them only desyncs display from the underlying entity. Removal-and-re-add is the supported flow.
 - Allow cross-kind tag entry from the free-text chip (free-text stays free-text). Use the typed dropdowns for kinded references.
 - Use this molecule for filter UI. Filter UIs live in `ColumnFilterFlyout` — they use the same option sources but render multi-select checkboxes against a single column's value, not a multi-kind composite.
+
+---
+
+### DateField
+
+**File:** `02-app/components/date-field.tsx` *(INP-12 Pass 1)*
+**Purpose:** Date input with `InlineField`-parity envelope (always-visible border, floating label patch, active-state token swap, Saved/Failed feedback). Wraps the existing `DatePicker` molecule for the calendar engine so the picker chrome stays a single primitive, but presents within the form-field family for inline use alongside `InlineField` / `SelectField` on detail pages. `DatePicker` remains the right primitive for the standalone popover-button shape (e.g. inside `ColumnFilterFlyout`); `DateField` is the InlineField-shaped wrapper.
+
+**Anatomy:**
+- Outer wrapper: `relative mt-3`. Active-state focus is owned by `onFocusCapture` / `onBlurCapture` on the wrapper so the calendar's focus traversal flips the chrome.
+- Field container: `rounded-md border px-3 pt-5 pb-2 transition-colors duration-100`.
+- Border: idle `border-border/60`, hover `hover:border-border`, active (any descendant focused) `border-field-active/50 bg-field-active/[0.03]`.
+- Label patch: `absolute -top-2 left-2.5 flex items-center gap-1 px-1 ${labelBg ?? 'bg-card'}`. Style `text-[10px] font-semibold capitalize tracking-wide text-muted-foreground`. Transitions to `text-field-active` when active. Optional icon (default `Calendar` Lucide).
+- Save feedback: inline beside label, same rules as InlineField (`Saved` `text-success` / `Failed` `text-destructive`, auto-clears 2s on success, persists on error).
+- Inner control: composes `<DatePicker value={asDate(value)} onChange={...} placeholder={placeholder} disabled={disabled} className="border-0 px-0 py-0.5 hover:bg-transparent" />`. The DatePicker's own trigger chrome is suppressed via className override so it reads as a value inside the InlineField envelope.
+
+**Behavioural states:**
+- Idle / hover / active (any descendant focused — the calendar trigger or popover content).
+- Saving / Saved / Error from `useDebouncedSave`.
+- Disabled — opacity 50, popover trigger disabled, `onSave` not invoked.
+
+**Edge cases:**
+- **`value === null`** — DatePicker shows placeholder ("Pick a date" by default or `placeholder` override).
+- **Clear** — DatePicker's built-in Clear button triggers `onSave(null)`.
+- **Saving in flight when user re-opens picker** — save proceeds; new selection enqueues another save (useDebouncedSave handles overlap).
+- **Invalid ISO string passed as value** — defensive: rendered as null; never throws.
+- **Boundary conversion**: stored value is ISO `YYYY-MM-DD`; converted to/from `Date` at the DatePicker boundary inside the molecule.
+
+**Props:**
+```ts
+interface DateFieldProps {
+  value: string | null                                       // ISO date (YYYY-MM-DD) or null
+  onSave: (value: string | null) => Promise<{ ok: boolean; error?: string }>
+  label: string
+  placeholder?: string                                        // default "Pick a date"
+  icon?: LucideIcon                                           // default Calendar
+  description?: string                                        // info-tooltip beside label
+  labelBg?: string                                            // default 'bg-card'
+  disabled?: boolean
+  debounceMs?: number                                         // default 500
+  className?: string
+}
+```
+
+**Do not:**
+- Reach for raw `<input type="date">` — that's the DS-01 violation `DateField` exists to prevent.
+- Style the DatePicker trigger from outside via className overrides beyond the chrome-suppression — the trigger chrome belongs to `DatePicker`. If the embed visual breaks, fix it by extending `DatePicker` with a `bare` variant rather than overriding through className.
+- Render time-of-day — date only. Time becomes a separate molecule when a time-bearing field appears.
+- Range selection — handled by side-by-side `DatePicker`s in `ColumnFilterFlyout` per `DatePicker` spec.
+
+**Save contract:** "Text fields" row of the [Save contract](#save-contract) — `useDebouncedSave`-driven, 500ms debounce. Calendar-click commits are debounced to protect against rapid open / select / clear bursts.
+
+---
+
+### TagListEditor
+
+**File:** `02-app/components/tag-list-editor.tsx` *(INP-12 Pass 1)*
+**Purpose:** Inline-editable list of free-form `string[]` tags with hash-hued chip removal, free-text add, and optional suggestion chips. Composes `TypeBadge` for chip rendering and `useDebouncedSave` for the save contract. Distinct from `TagChipEditor` (P4b) which edits a `LibraryTag` discriminated union — `TagListEditor` is strictly free-form strings, broader reuse expected (DNA tag fields, lens-report tags, source tags).
+
+**Anatomy:**
+- Outer wrapper: `flex flex-col gap-2`. Optional label header `text-[10px] font-semibold uppercase tracking-wide text-muted-foreground` — matches InlineField label style.
+- Chip row: `flex flex-wrap items-center gap-1.5`:
+  - Each tag chip: `TypeBadge size="xs" hue={tagHue(tag)} label={tag}` wrapped in a `group relative inline-flex items-center` container. Trailing `IconButton` `X` (size sm, variant ghost, `h-4 w-4 rounded-full bg-card shadow-sm`) absolute-positioned top-right; hidden by default, `inline-flex` on group hover.
+  - "+ Add tag" affordance — when not editing: small text button `text-xs text-muted-foreground hover:text-foreground`. When clicked, swaps to inline `<input>` (cell-context convention: `bg-transparent border-0 px-1 text-xs focus:outline-none w-32`); Enter creates the tag after `normaliseTag()` (trim + lowercase + collapse internal whitespace); Esc / blur cancels and reverts to the button.
+- Suggestion row (when `suggestions.length > 0` AND at least one suggestion is not already in `value`): below the chip row, `flex flex-wrap items-center gap-1.5`. Label `text-[11px] text-muted-foreground` "Suggested:". Each suggestion: `TypeBadge` rendered with leading `+` micro-glyph and `opacity-60 hover:opacity-100`. Click adds it to the current array.
+- Save feedback: inline beside the optional label (`text-[10px] text-success` "Saved" / `text-destructive` "Failed"), no reserved slot when label is omitted (parent owns the chrome in that case).
+
+**Save contract:**
+- Full-array save on every change (add, remove, accept suggestion). Per the brief: "save full array on every change".
+- Wraps `useDebouncedSave` from `lib/save-feedback.ts` with the array as the value. Local state is the source of truth; on parent revalidate, the `useEffect` keeps it in sync.
+- Standard `Saved` / `Failed` + `debouncedSaveToast` global behaviour.
+
+**Behavioural states:**
+- Idle / hover (chip `X` icons fade in on chip hover).
+- Editing (inline input visible).
+- Saving / Saved / Error from `useDebouncedSave`.
+- Read-only (`readOnly` prop, true) — chips render without `X`, "+ Add tag" hidden, suggestions hidden.
+
+**Edge cases:**
+- **Duplicate tag added** — silently coalesced (compare after `normaliseTag`).
+- **Empty / whitespace-only add** — no-op; input clears, editing closes.
+- **Long tag string** — chip width grows; consumer can clamp via `className` if needed.
+- **Save error** — local state has already updated; inline "Failed" + error toast surfaces. Caller is responsible for revalidating if revert is required.
+- **Unmount with pending save** — `useDebouncedSave` cleanup cancels the timer.
+
+**Props:**
+```ts
+interface TagListEditorProps {
+  value: string[]
+  onSave: (value: string[]) => Promise<{ ok: boolean; error?: string }>
+  suggestions?: string[]                 // greyed-out one-click-add chips; default []
+  label?: string                          // optional uppercase label above the row
+  placeholder?: string                    // input placeholder; default "Add tag"
+  readOnly?: boolean                      // default false
+  debounceMs?: number                     // default 500
+  className?: string
+}
+```
+
+**Do not:**
+- Fork into a typed-tag variant — that's `TagChipEditor`'s job (P4b). Free-form strings only.
+- Skip the `normaliseTag()` step on add — tag retrieval relies on it being consistent.
+- Hardcode tag hues — `tagHue()` only.
+- Save per-keystroke — only on commit events (add, remove, accept suggestion).
+
+**Save contract:** "Inline list rows" row of the [Save contract](#save-contract).
+
+---
+
+### LensPickerCard
+
+**File:** `02-app/components/lens-picker-card.tsx` *(INP-12 Pass 1)*
+**Purpose:** Single tile in the lens picker modal grid. Lighter contract than `ContentTypeCard` (no favourites, no lock, no thumbnail, no link wrapping). Selected / hover / disabled states with optional tooltip showing the disabled reason. Composable into any future "picker tile" use case (Pass 3's report-action picker may reuse).
+
+**Anatomy:**
+- Outer: `<button>` with `flex flex-col gap-2 rounded-lg border p-4 text-left transition-colors min-h-[140px]`. Min-height aligns tiles in the grid.
+- Border + bg states:
+  - Idle: `border-border bg-card`.
+  - Hover (not disabled, not selected): `hover:border-primary/40 hover:bg-muted/30`.
+  - Selected: `border-primary bg-primary/5` (overrides hover).
+  - Disabled: `border-border bg-card opacity-60 cursor-not-allowed` (hover suppressed; tabIndex −1).
+- Top: lens name (`text-sm font-display font-semibold`).
+- Body: description (`text-xs text-muted-foreground line-clamp-3`).
+- Bottom (when `caveat` present): `text-[11px] text-muted-foreground mt-auto` so the caveat sits at the bottom regardless of description length.
+- Disabled tooltip: when `disabled && disabledReason`, the entire tile is wrapped in a tooltip showing `disabledReason`.
+
+**Behavioural states:**
+- Idle / hover / selected / disabled. Click on disabled → no-op; keyboard focus skips disabled tiles (`tabIndex={-1}`).
+
+**Edge cases:**
+- **Long lens name** — wraps; `min-h-[140px]` keeps grid rows aligned.
+- **No description** (defensive) — body still renders, just empty.
+- **Caveat + selected** — caveat stays muted; selection styling is on border + background only.
+
+**Props:**
+```ts
+interface LensPickerCardProps {
+  lens: LensId
+  name: string
+  description: string
+  caveat?: string
+  selected: boolean
+  disabled?: boolean
+  disabledReason?: string                                   // tooltip text when disabled
+  onSelect: (lens: LensId) => void
+  className?: string
+}
+```
+
+**Do not:**
+- Render a leading icon — keeps the tile light; the lens name alone carries the identity.
+- Wrap in a Link — the picker dispatches via a server action, not a navigation.
+- Use this for content-type tiles — `ContentTypeCard` is the right molecule there (favourites, channel meta, thumbnail).
+- Hardcode width — tile width is owned by the parent grid.
+
+---
+
+### ChunkPreviewRow
+
+**File:** `02-app/components/chunk-preview-row.tsx` *(INP-12 Pass 1)*
+**Purpose:** Compact, read-only renderer for one source chunk. Supports speaker-turn, paragraph, section, slide, row, and item shapes. Composed by the Sources page quick-preview pane (first 5 chunks) and the source detail Chunks section (all chunks). No edit affordance — chunks are immutable per brief / per `src-source-chunks.md`.
+
+**Anatomy:**
+- Outer: `flex flex-col gap-1 py-3 border-b border-border/30 last:border-b-0`.
+- Meta line (when present, varies by chunk type): `text-xs font-medium uppercase tracking-wide text-muted-foreground truncate max-w-[300px]`.
+  - `speaker-turn`: `{speaker uppercased}` (+ trailing `· #{position}` when `showPosition`).
+  - `section` / `paragraph`: `metadata.sectionHeading` when present; omitted otherwise.
+  - `slide`: `SLIDE {metadata.slideNumber ?? position+1}` + optional `· {slideTitle}`.
+  - `row` / `item`: meta line omitted.
+- Body: `text-sm text-foreground whitespace-pre-wrap leading-relaxed`.
+- Truncation (when `truncateAt` set): renders `{text.slice(0, truncateAt)}…` plus inline "Show more" button (`text-xs text-primary hover:text-primary/80`) that swaps to full text. Unset → always full text.
+
+**Behavioural states:**
+- Idle / expanded (truncated → full).
+
+**Edge cases:**
+- **No speaker on a `speaker-turn` chunk** (defensive) — meta line omitted, body still renders.
+- **Section heading on a `paragraph` chunk** — supported via `metadata.sectionHeading`; rendered identically to `section` chunks.
+- **Very long speaker name** — truncated via `truncate max-w-[300px]` on the meta line.
+- **Image-only chunks** (INP-05 forward-compat) — `text` may be empty when `imageRefs` / `imageDescription` are populated; v1 ignores the image fields and renders the empty body. Image rendering is a separate task in INP-05.
+
+**Props:**
+```ts
+interface ChunkLike {
+  chunkType: 'speaker-turn' | 'paragraph' | 'section' | 'slide' | 'row' | 'item'
+  text: string
+  speaker: string | null
+  position: number
+  metadata?: Record<string, unknown>
+}
+
+interface ChunkPreviewRowProps {
+  chunk: ChunkLike
+  truncateAt?: number                                       // chars; omit for full text
+  showPosition?: boolean                                    // default false; preview pane shows it
+  className?: string
+}
+```
+
+**Do not:**
+- Add edit affordances — chunks are immutable.
+- Add selection or annotation — v2 features.
+- Render image attachments today — INP-05 forward-compat; this molecule grows the rules when image-bearing chunks land.
+- Compose anything taller than a single body + meta — anything richer (chunk cards with confirm/reject) is `LensReviewItemCard` territory (Pass 2).
+
+---
+
+### SourceListRow
+
+**File:** `02-app/components/source-list-row.tsx` *(INP-12 Pass 1)*
+**Purpose:** Single row of the Sources list. Owns the dual click-affordance (body click = preview; trailing chevron click or Cmd/Ctrl-click on body = detail), the NEW indicator placement, the hash-hued tag row, the source-type icon, and the active-state precedence rules. Centralises the row shape so it doesn't drift between the Sources page list and any future "source-like list" surface.
+
+**Anatomy:**
+- Outer: `flex items-center gap-3 py-3 px-3 pr-4 border-b border-border/30 transition-colors`. Mouse-enter / mouse-leave drive a local `hovered` state that controls the trailing-slot opacity.
+- Active-state bg (precedence: previewing > selected > idle hover):
+  - `previewing` → `bg-muted/60`.
+  - `selected` (checkbox checked) → `bg-primary/5`.
+  - Idle → `hover:bg-muted/40`.
+- **Leading slot:** `flex items-center gap-3 shrink-0`:
+  - Checkbox button (16px, `Square` / `CheckSquare` Lucide; `text-muted-foreground/50` idle, `text-primary` checked). Click toggles selection only; never propagates to body.
+  - Source-type icon (16px, `text-muted-foreground`) resolved via `getSourceTypeMeta(sourceType).icon`. Falls back to `File` when unknown.
+- **Body (button, flex-1):** `flex flex-col gap-0.5 min-w-0`:
+  - **Line 1:** `flex items-center gap-2` — title (`text-sm font-medium truncate`) + trailing NEW indicator (`StatusBadge` with `state='info'` and `label='NEW'`, no onChange → read-only); badge rendered only when `inboxStatus === 'new'`.
+  - **Line 2:** `text-xs text-muted-foreground truncate` meta line, pipe-separated: `{sourceTypeLabel} · {authorityLabel} · {chunkCount} chunks · processed {processingHistoryCount}× · {relativeDate}`. `chunks` segment hidden when count = 0 (dataset / collection). `processed Nx` segment hidden when count = 0. Relative time derived from `createdAt` via `Intl.RelativeTimeFormat`.
+  - **Line 3:** `flex items-center flex-wrap gap-1.5 mt-0.5` — first 3 tags as `TypeBadge size="xs"` with `hue={tagHue(tag)}`. `+N more` overflow as `text-xs text-muted-foreground`. Whole line hidden when no tags.
+- **Trailing slot:** `flex items-center gap-1 shrink-0 transition-opacity` — `opacity-100` on hover, `opacity-0` otherwise. Two `IconButton`s (variant ghost, size sm): `ArrowRight` ("Open detail") + `Trash2` ("Delete source").
+
+**Click semantics** (encoded in the molecule, not the organism):
+- Body click (anywhere except checkbox or trailing slot) → `onPreview(id)`.
+- Body Cmd/Ctrl-click → `onOpenDetail(id, { newTab: true })`.
+- Trailing `ArrowRight` click → `onOpenDetail(id)` (no modifier needed).
+- Trailing `Trash2` click → `onDelete(id)`.
+- Checkbox click → `onToggleSelect(id)`; never propagates to body.
+
+**Behavioural states:**
+- Idle / hover (trailing icons fade in).
+- `previewing` — muted bg wins.
+- `selected` — primary/5 bg (only when not previewing).
+- Disabled — not in v1.
+
+**Edge cases:**
+- **Long title** — truncates via `text-sm font-medium truncate` on line 1.
+- **No tags** — line 3 omitted entirely (no empty strip).
+- **No source type icon** — falls back to `File` Lucide.
+- **`inboxStatus === null`** — treated as non-new (no badge).
+- **Very old `createdAt`** — `Intl.RelativeTimeFormat` falls back to year unit.
+
+**Props:**
+```ts
+interface SourceListRowProps {
+  source: SourceListRowData                                  // id, title, sourceType, authority, chunkCount, tags, inboxStatus, processingHistoryCount, documentDate, createdAt, summaryPreview
+  selected: boolean
+  previewing: boolean
+  onToggleSelect: (id: string) => void
+  onPreview: (id: string) => void
+  onOpenDetail: (id: string, opts?: { newTab?: boolean }) => void
+  onDelete: (id: string) => void
+}
+```
+
+**Do not:**
+- Compose this row inline in the organism — the dual-affordance rules and active-state precedence belong in one place.
+- Hardcode tag hues — always go through `tagHue(label)`.
+- Add per-row actions inside the body — they belong in the trailing slot to keep line-1 click semantics clean.
+- Render the NEW indicator anywhere other than line 1 — visual continuity with the inbox-status filter chip's leading dot.
+
+---
+
+### ParticipantsPicker
+
+**File:** `02-app/components/participants-picker.tsx` *(INP-12 Pass 1)*
+**Purpose:** Inline-editable list of Person references (graph node ids) with chip removal, search-existing-People type-ahead, suggestion chips, and a "Park as unresolved" affordance for sources where the user can't decide on canonical resolution today. Pass 2 owns the full canonical-resolution + contact-card flow; Pass 1's picker stays scoped to link-or-park.
+
+**Anatomy:**
+- Outer wrapper: `flex flex-col gap-2`. Optional uppercase label header above (same convention as `TagListEditor`).
+- Chip row: `flex flex-wrap items-center gap-1.5`:
+  - Each chip: `group relative inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-foreground`. Renders `{name}` and, when the id was parked, `(unresolved)` (`text-[10px] text-warning ml-0.5`).
+  - Trailing `IconButton` `X` (size sm, variant ghost, `h-4 w-4`) revealed on group hover → removes the chip.
+- "+ Add person" trigger: small text button `text-xs text-muted-foreground hover:text-foreground`. Click opens a `FloatingMenu` (align start, side bottom, `minWidth: 280px`, `className: w-72`) anchored to the trigger:
+  - Top: search input (`bg-transparent border-0 px-0 py-1 text-sm focus:outline-none`, autofocus on open).
+  - Body (`max-h-56 overflow-y-auto py-1`): search results (debounced 300ms via `searchPeople` callback). Each result is a row (`flex items-center gap-2 px-2 py-1.5 hover:bg-muted rounded-md cursor-pointer w-full text-left`) with `User` Lucide + name + optional role/org meta. Click adds the chip and closes the popover.
+  - Empty states inside the body: query empty → `Type to search people` (`text-xs text-muted-foreground`); searching → `Searching…`; no matches → `No matches`.
+  - Bottom (always visible): `border-t border-border/40 px-2 py-1.5`. "Park as unresolved" button — `text-xs rounded-md px-2 py-1`, `text-warning hover:bg-warning-bg` when enabled, muted-and-disabled when search query is empty. Label echoes the typed query: `Park "{query}" as unresolved`. Click → invokes `onParkUnresolved(query)` and adds the returned Person to chips.
+- Suggestion row (when `suggestions.length > 0` and at least one is not already in `value`): below the chip row, `flex flex-wrap items-center gap-1.5`. Label `text-[11px] text-muted-foreground` "Suggested:". Each suggestion: `inline-flex items-center gap-1 rounded-md border border-border/60 px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40` with leading `+`. Click adds to the chip row.
+
+**Save contract:**
+- Same as `TagListEditor` — full-array save on every change (add, remove, park, accept suggestion). Wraps `useDebouncedSave`.
+- Local people cache merges hydrated ids (from parent) with freshly-added / parked results so chips render immediately without round-tripping.
+
+**Behavioural states:**
+- Idle / search-open (popover open) / searching / parking / saving / saved / error / read-only.
+
+**Edge cases:**
+- **Parked Person, then search reveals a real match** — the chip row doesn't auto-reconcile; user has to remove the parked chip manually. Pass 2's canonical-resolution flow offers a merge affordance later.
+- **Duplicate add** — silently coalesced (compare by Person id).
+- **Whitespace-only query** — park button disabled.
+- **Hydration miss** — chip renders `Unknown` as the name (defensive; the parent should hydrate all ids in `value`).
+- **Save error** — local optimistic update; inline "Failed" + error toast.
+
+**Props:**
+```ts
+interface PersonSummary { id: string; name: string; role?: string; org?: string }
+
+interface ParticipantsPickerProps {
+  value: string[]                                          // Person graph_node ids
+  hydratedPeople: PersonSummary[]                          // host pre-fetches metadata for ids in `value`
+  onSave: (ids: string[]) => Promise<{ ok: boolean; error?: string }>
+  searchPeople: (query: string) => Promise<PersonSummary[]>
+  onParkUnresolved: (
+    name: string,
+  ) => Promise<{ ok: true; person: PersonSummary } | { ok: false; error: string }>
+  suggestions?: PersonSummary[]                            // from speaker-turn analysis; default []
+  label?: string
+  readOnly?: boolean
+  debounceMs?: number
+  className?: string
+}
+```
+
+**Do not:**
+- Create Persons silently in the molecule itself — `onParkUnresolved` is the host's hook. The molecule never writes to graph directly.
+- Auto-park on every "no match" — explicit user action only (avoid accidental graph pollution per Q5 gate).
+- Skip the trim on `query` before parking — empty/whitespace queries must disable the park button.
+
+**Save contract:** "Inline list rows" row of the [Save contract](#save-contract).
+
+---
+
+### LensInputForm
+
+**File:** `02-app/components/lens-input-form.tsx` *(INP-12 Pass 1)*
+**Purpose:** Per-lens input form rendered inside the lens picker modal when the selected lens requires user-supplied context. Pass 1 spec line 608 promised this as a "registry slot — its registry maps each lens id to an optional input form". v1 implements only the `decision-support` case (the brief's free-form decision-text textarea); other lenses return null. Extension point for future lenses (e.g. a "since when?" date picker for catch-up) is to add a new branch here, not to fork the modal.
+
+**Anatomy:**
+- Returns `null` when the lens has no input form (currently all except `decision-support`).
+- For `decision-support`:
+  - Outer: `flex flex-col gap-1`.
+  - Label: `text-[10px] font-semibold uppercase tracking-wide text-muted-foreground` reading "Decision text".
+  - Textarea: `w-full rounded-md border border-border/60 bg-transparent px-3 py-2 text-sm focus:outline-none focus:border-field-active/50 focus:bg-field-active/[0.03] resize-none`, rows=3.
+  - Helper line: `text-[11px] text-muted-foreground` "Required for decision-support."
+
+**Behavioural states:**
+- Stateless / controlled. Caller owns `value` and `onChange`. No save contract — submission happens at modal commit, not on field change.
+
+**Edge cases:**
+- **Unknown lens id** — renders nothing (defensive).
+- **`decision-support` with empty value** — modal's submit button stays disabled until non-empty; this molecule doesn't enforce that itself.
+
+**Props:**
+```ts
+interface LensInputFormProps {
+  lens: LensId
+  value: string
+  onChange: (value: string) => void
+  className?: string
+}
+```
+
+**Do not:**
+- Wire this to `useDebouncedSave` — this is gather-then-submit, not autosave. The modal submits the lens run as a single action.
+- Render the textarea as `InlineField` (which is autosave-shaped) — the lens input is one-shot per modal open.
+
+---
+
+### SectionLabel
+
+**File:** `02-app/components/section-label.tsx` *(INP-12 Pass 1)*
+**Purpose:** Small uppercase label used to title a sub-block — above a chip row, above a free-form input, above a result list — without invoking the full `SectionCard` envelope. Matches InlineField's floating label patch so the visual language of "labelled grouping" is consistent. Promoted to a molecule because Pass 1 organisms repeated the inline `text-[10px] font-semibold uppercase tracking-wide text-muted-foreground` pattern five-plus times.
+
+**Anatomy:**
+- `<span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{children}</span>`.
+- Default surface bg inherits from the parent — no patch behind the label (unlike InlineField's positioned label).
+
+**Behavioural states:**
+- Stateless.
+
+**Edge cases:**
+- **Save feedback inline beside it** — pair with `text-success` / `text-destructive` siblings in a flex row; the molecule is just the label itself, not the row.
+- **Long label** — flows; no truncation. Consumer's row container provides the layout.
+
+**Props:**
+```ts
+interface SectionLabelProps {
+  children: React.ReactNode
+  className?: string
+}
+```
+
+**Do not:**
+- Use as a `SectionCard` title — that's `SectionCard`'s job. SectionLabel is for *sub-blocks* inside a card or modal.
+- Use for primary headings — H1–H3 atoms are correct for those.
+- Carry the label patch chrome (the white-on-card background behind InlineField's label) — that's positional, owned by InlineField.
+
+---
+
+### LinkButton
+
+**File:** `02-app/components/link-button.tsx` *(INP-12 Pass 1)*
+**Purpose:** Inline text-link affordance for cues like "Show more", "View all N →", "Re-summarise", "Open report →" that sit inline with body copy. Distinct from `ActionButton` (which is a real button surface with icon slot and padding) and `IconButton` (icon-only). Tone-driven so consumers don't carry inline `text-primary` / `text-destructive` / `text-muted-foreground` classes.
+
+**Anatomy:**
+- Renders as `<button>` (when `onClick` provided) or `<Link>` (when `href` provided).
+- Base: `inline-flex items-center gap-1 transition-colors`.
+- Tone (token-driven):
+  - `primary` (default): `text-primary hover:text-primary/80`.
+  - `muted`: `text-muted-foreground hover:text-foreground`.
+  - `destructive`: `text-destructive hover:text-destructive/80`.
+- Size:
+  - `xs`: `text-[11px]`.
+  - `sm` (default): `text-xs`.
+
+**Behavioural states:**
+- Idle / hover.
+- Disabled (button form only): `opacity-50 cursor-not-allowed`.
+
+**Edge cases:**
+- **Both `href` and `onClick`** — TypeScript prevents this via the discriminated union; the props are mutually exclusive.
+- **Disabled link** — not supported; if a link needs to disable, use the button form with a no-op handler.
+
+**Props:**
+```ts
+type LinkButtonProps =
+  | { children, tone?, size?, className?, onClick: () => void; disabled?: boolean }
+  | { children, tone?, size?, className?, href: string }
+```
+
+**Do not:**
+- Use for primary CTAs — those are `ActionButton`'s job.
+- Carry an icon as a separate prop — pass it as a child if needed (`<LinkButton><Icon /> Label</LinkButton>`).
+- Reach for `text-success` tone speculatively — extend only when a real consumer needs it.
+
+---
+
+### PlainTextField
+
+**File:** `02-app/components/plain-text-field.tsx` *(INP-12 Pass 1)*
+**Purpose:** Controlled, non-autosave text input or textarea for use inside modals and explicit-submit forms. Captures the InlineField-adjacent chrome (semantic border + focus tokens) without the InlineField autosave contract. Used where the value is collected and submitted as a batch — paste-text modal, future explicit-submit creation flows.
+
+**Anatomy:**
+- Outer wrapper: `flex flex-col gap-1`.
+- Label header: composes `SectionLabel`.
+- Inner control: native `<input type="text">` or `<textarea>` (per `variant`).
+  - Class set: `w-full rounded-md border border-border/60 bg-transparent px-3 py-2 text-sm focus:outline-none focus:border-field-active/50 focus:bg-field-active/[0.03]`.
+  - Textarea adds `resize-none` and `rows` (default 3).
+  - Disabled: `opacity-50 cursor-not-allowed` + native `disabled`.
+
+**Behavioural states:**
+- Stateless / controlled — caller owns the value and onChange.
+- No save state — submission is the caller's responsibility on a different trigger (form submit / modal commit).
+
+**Edge cases:**
+- **Empty value** — passes through; caller decides validity.
+- **Disabled while parent is submitting** — visually muted, no keystrokes accepted.
+
+**Props:**
+```ts
+type PlainTextFieldProps =
+  | { label, value, onChange, placeholder?, disabled?, className?, variant?: 'input' }
+  | { label, value, onChange, placeholder?, disabled?, className?, variant: 'textarea', rows?: number }
+```
+
+**Do not:**
+- Use for autosaving fields — that's InlineField's job.
+- Use for inline-list rows — that's ListRowField's job (no envelope, denser).
+- Wire to `useDebouncedSave` — explicit-submit only.
 
 ---
 

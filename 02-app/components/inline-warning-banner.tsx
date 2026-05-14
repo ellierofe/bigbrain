@@ -1,9 +1,9 @@
 'use client'
 
-import { AlertTriangle, CheckCircle2, X } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Info, X, type LucideIcon } from 'lucide-react'
 import { IconButton } from '@/components/icon-button'
 
-type InlineBannerTone = 'warning' | 'success'
+type InlineBannerTone = 'warning' | 'success' | 'info'
 
 interface InlineWarningBannerProps {
   title: string
@@ -24,6 +24,17 @@ const TONE_CLASSES: Record<InlineBannerTone, { container: string; icon: string }
       'border-[var(--color-success)] bg-[var(--color-success-bg)] text-[var(--color-success-foreground)]',
     icon: 'text-[var(--color-success)]',
   },
+  info: {
+    container:
+      'border-[var(--color-info)] bg-[var(--color-info-bg)] text-[var(--color-info-foreground)]',
+    icon: 'text-[var(--color-info)]',
+  },
+}
+
+const TONE_GLYPH: Record<InlineBannerTone, LucideIcon> = {
+  warning: AlertTriangle,
+  success: CheckCircle2,
+  info: Info,
 }
 
 export function InlineWarningBanner({
@@ -32,7 +43,7 @@ export function InlineWarningBanner({
   tone = 'warning',
   onDismiss,
 }: InlineWarningBannerProps) {
-  const Icon = tone === 'success' ? CheckCircle2 : AlertTriangle
+  const Icon = TONE_GLYPH[tone]
   const styles = TONE_CLASSES[tone]
   return (
     <div

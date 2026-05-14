@@ -1,26 +1,51 @@
-import { PageHeader } from '@/components/page-header'
-import { SourcesClient } from './sources-client'
-import { getSourceDocuments, getInboxCount } from '@/lib/db/queries/sources'
+import { Suspense } from 'react'
+import { PageSkeleton } from '@/components/page-skeleton'
+import { listSources, getInboxCount } from '@/lib/db/queries/sources'
+import type { SourceListFilters } from '@/lib/types/source-list'
+import { SourcesPageClient } from './sources-page-client'
 
 const BRAND_ID = 'ea444c72-d332-4765-afd5-8dda97f5cf6f'
 
-export default async function SourcesPage() {
-  const [sources, inboxCount] = await Promise.all([
-    getSourceDocuments(BRAND_ID),
-    getInboxCount(BRAND_ID),
-  ])
+interface SourcesPageProps {
+  searchParams: Promise<{
+    inbox?: string
+    type?: string
+    authority?: string
+    q?: string
+  }>
+}
+
+export default async function SourcesPage({ searchParams }: SourcesPageProps) {
+  const sp = await searchParams
+
+  const inboxCount = await getInboxCount(BRAND_ID)
+
+  const filters: SourceListFilters = {
+    inboxStatus:
+      sp.inbox === 'new'
+        ? 'new'
+        : sp.inbox === 'triaged'
+          ? 'triaged'
+          : sp.inbox === 'all'
+            ? 'all'
+            : inboxCount > 0
+              ? 'new'
+              : 'all',
+    sourceType: (sp.type as SourceListFilters['sourceType']) || undefined,
+    authority: (sp.authority as SourceListFilters['authority']) || undefined,
+    search: sp.q || undefined,
+  }
+
+  const sources = await listSources(BRAND_ID, filters)
 
   return (
-    <div className="flex flex-col h-full gap-4">
-      <PageHeader
-        title="Sources"
-        subtitle={inboxCount > 0 ? `${inboxCount} new in inbox` : `${sources.length} sources`}
-      />
-      <SourcesClient
+    <Suspense fallback={<PageSkeleton />}>
+      <SourcesPageClient
         sources={sources}
         inboxCount={inboxCount}
         brandId={BRAND_ID}
+        initialFilters={filters}
       />
-    </div>
+    </Suspense>
   )
 }

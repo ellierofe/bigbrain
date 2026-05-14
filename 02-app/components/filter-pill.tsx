@@ -15,7 +15,7 @@ export function FilterPill({ label, active, onClick, icon: Icon, count }: Filter
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-medium transition-colors ${
+      className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-medium transition-colors cursor-pointer ${
         active
           ? 'bg-primary text-primary-foreground'
           : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
